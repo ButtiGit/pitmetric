@@ -9,7 +9,7 @@ test('profile page is displayed', function () {
     $this->get(route('profile.edit'))->assertOk();
 });
 
-test('profile information can be updated', function () {
+test('updating an email address marks the user as unverified', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user);
@@ -25,7 +25,7 @@ test('profile information can be updated', function () {
 
     expect($user->name)->toEqual('Test User');
     expect($user->email)->toEqual('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
+    expect($user->hasVerifiedEmail())->toBeFalse();
 });
 
 test('email verification status is unchanged when email address is unchanged', function () {

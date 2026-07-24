@@ -2,12 +2,30 @@
 
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::emailVerification());
+});
+
+test('newly registered users receive an email verification notification', function () {
+    Notification::fake();
+
+    $this->post(route('register.store'), [
+        'name' => 'John Doe',
+        'email' => 'test@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    Notification::assertSentTo(
+        User::query()->where('email', 'test@example.com')->sole(),
+        VerifyEmail::class,
+    );
 });
 
 test('email verification screen can be rendered', function () {
