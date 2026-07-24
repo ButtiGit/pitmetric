@@ -28,6 +28,37 @@
     --color-accent-foreground: var(--color-white);
 }
 
+@theme inline {
+    --color-pm-page: var(--pm-page);
+    --color-pm-nav: var(--pm-nav);
+    --color-pm-surface: var(--pm-surface);
+    --color-pm-elevated: var(--pm-elevated);
+    --color-pm-subtle: var(--pm-subtle);
+    --color-pm-border: var(--pm-border);
+    --color-pm-border-strong: var(--pm-border-strong);
+    --color-pm-text: var(--pm-text);
+    --color-pm-text-secondary: var(--pm-text-secondary);
+    --color-pm-muted: var(--pm-muted);
+    --color-pm-text-on-accent: var(--pm-text-on-accent);
+    --color-pm-accent: var(--pm-accent);
+    --color-pm-accent-hover: var(--pm-accent-hover);
+    --color-pm-accent-pressed: var(--pm-accent-pressed);
+    --color-pm-accent-subtle: var(--pm-accent-subtle);
+    --color-pm-success: var(--pm-success);
+    --color-pm-success-subtle: var(--pm-success-subtle);
+    --color-pm-warning: var(--pm-warning);
+    --color-pm-warning-subtle: var(--pm-warning-subtle);
+    --color-pm-danger: var(--pm-danger);
+    --color-pm-danger-subtle: var(--pm-danger-subtle);
+    --color-pm-info: var(--pm-info);
+    --color-pm-info-subtle: var(--pm-info-subtle);
+    --color-pm-focus: var(--pm-focus);
+    --color-pm-hover: var(--pm-hover);
+    --color-pm-selected: var(--pm-selected);
+    --color-pm-disabled-surface: var(--pm-disabled-surface);
+    --color-pm-disabled-text: var(--pm-disabled-text);
+}
+
 @layer theme {
     .dark {
         --color-accent: var(--color-white);
@@ -45,6 +76,77 @@
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
+
+    /* PitMetric tokens only apply after the authenticated shell adds this scope. */
+    .pitmetric-app {
+        --pm-page: #f5f6f8;
+        --pm-nav: #fafafb;
+        --pm-surface: #ffffff;
+        --pm-elevated: #ffffff;
+        --pm-subtle: #f0f2f4;
+        --pm-border: #d7dce2;
+        --pm-border-strong: #aab2bd;
+        --pm-text: #15191f;
+        --pm-text-secondary: #59626e;
+        --pm-muted: #727c8a;
+        --pm-text-on-accent: #1a100d;
+        --pm-accent: #FF5A36;
+        --pm-accent-hover: #e94b29;
+        --pm-accent-pressed: #c93c20;
+        --pm-accent-subtle: #ffe4dc;
+        --pm-success: #18764d;
+        --pm-success-subtle: #dff5eb;
+        --pm-warning: #8a5a08;
+        --pm-warning-subtle: #fff1d2;
+        --pm-danger: #9d2e2e;
+        --pm-danger-subtle: #fde4e4;
+        --pm-info: #185db5;
+        --pm-info-subtle: #e2efff;
+        --pm-focus: #b83a21;
+        --pm-hover: #eceff2;
+        --pm-selected: #ffe4dc;
+        --pm-disabled-surface: #e4e7eb;
+        --pm-disabled-text: #59626e;
+        --pm-checker: rgb(21 25 31 / 0.05);
+        --pm-elevation-shadow: 0 8px 20px rgb(21 25 31 / 0.08);
+
+        background-color: var(--pm-page);
+        color: var(--pm-text);
+    }
+
+    .dark .pitmetric-app,
+    .pitmetric-app.dark {
+        --pm-page: #0b0d10;
+        --pm-nav: #101216;
+        --pm-surface: #111419;
+        --pm-elevated: #181c21;
+        --pm-subtle: #20252b;
+        --pm-border: #303640;
+        --pm-border-strong: #4a525e;
+        --pm-text: #f5f7fa;
+        --pm-text-secondary: #a9b1bd;
+        --pm-muted: #727c8a;
+        --pm-text-on-accent: #1a100d;
+        --pm-accent: #FF5A36;
+        --pm-accent-hover: #ff704f;
+        --pm-accent-pressed: #d94829;
+        --pm-accent-subtle: #45251e;
+        --pm-success: #38b980;
+        --pm-success-subtle: #173b2c;
+        --pm-warning: #f2b84b;
+        --pm-warning-subtle: #47360f;
+        --pm-danger: #ef6a6a;
+        --pm-danger-subtle: #4a2024;
+        --pm-info: #6ca9ff;
+        --pm-info-subtle: #1c3454;
+        --pm-focus: #ff9b84;
+        --pm-hover: #242931;
+        --pm-selected: #45251e;
+        --pm-disabled-surface: #242930;
+        --pm-disabled-text: #a9b1bd;
+        --pm-checker: rgb(245 247 250 / 0.06);
+        --pm-elevation-shadow: 0 12px 24px rgb(0 0 0 / 0.18);
+    }
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {
@@ -59,6 +161,71 @@ input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+}
+
+@layer utilities {
+    .pitmetric-app .pm-page {
+        min-block-size: 100%;
+        background-color: var(--pm-page);
+        color: var(--pm-text);
+    }
+
+    .pitmetric-app .pm-elevated {
+        border: 1px solid var(--pm-border);
+        background-color: var(--pm-elevated);
+        box-shadow: var(--pm-elevation-shadow);
+    }
+
+    .pitmetric-app .pm-focus-ring:focus-visible {
+        outline: 2px solid var(--pm-focus);
+        outline-offset: 2px;
+    }
+
+    .pitmetric-app .pm-nav-selected {
+        background-color: var(--pm-selected);
+        box-shadow: inset 2px 0 0 var(--pm-accent);
+        color: var(--pm-text);
+        font-weight: 600;
+    }
+
+    .pitmetric-app .pm-disabled {
+        border-color: var(--pm-border);
+        background-color: var(--pm-disabled-surface);
+        color: var(--pm-disabled-text);
+        cursor: not-allowed;
+    }
+
+    .pitmetric-app .pm-safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .pitmetric-app .pm-mobile-nav-offset {
+        padding-bottom: 1rem;
+    }
+
+    /* Use on decorative header or navigation regions, never as a text treatment. */
+    .pitmetric-app .pm-checkered {
+        background-image: conic-gradient(from 90deg at 1px 1px, var(--pm-checker) 25%, transparent 0 50%, var(--pm-checker) 0 75%, transparent 0);
+        background-size: 1rem 1rem;
+    }
+
+    @media (max-width: 63.999rem) {
+        .pitmetric-app .pm-mobile-nav-offset {
+            padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .pitmetric-app,
+        .pitmetric-app *,
+        .pitmetric-app::before,
+        .pitmetric-app::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
 }
 
 /* \[:where(&)\]:size-4 {
