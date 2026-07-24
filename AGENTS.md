@@ -173,3 +173,110 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+# PitMetric Project Rules
+
+## Product
+
+- PitMetric is a Laravel 13, Livewire 4 and Flux 2 application for amateur kart owners.
+- The core product flow is: track session → component usage → maintenance status → maintenance record → cost analysis.
+- The first MVP is designed for one personal workspace per user.
+- Team collaboration, invitations and multiple roles are not part of the MVP.
+
+## Existing project conventions
+
+- Preserve the installed Laravel Livewire starter-kit architecture.
+- Preserve Livewire single-file components and the existing `⚡` filename convention.
+- Preserve `pages::` Livewire aliases.
+- Preserve Flux UI components and existing Flux overrides.
+- Preserve `wire:navigate`, persisted toast behaviour and dark-mode support.
+- Preserve Tailwind CSS 4 CSS-first configuration.
+- Do not introduce a Tailwind configuration file unless technically necessary.
+- Do not use Tailwind CSS 3 directives or conventions.
+- Keep code compatible with PHP 8.3 even if the local environment uses PHP 8.4.
+- Use Pest with the existing `test()` style.
+- Preserve UTF-8 and LF formatting.
+- Be cautious when editing Unicode filenames on Windows.
+
+## Architecture
+
+- Use Laravel, Livewire, Blade and Flux.
+- Do not introduce React, Vue or another frontend framework.
+- Prefer single-file Livewire components where consistent with the existing codebase.
+- Keep critical business logic out of large Livewire components.
+- Use action or service classes for transactional domain workflows.
+- Use Laravel policies and workspace-scoped queries.
+- Every PitMetric domain record must belong to the authenticated user's workspace.
+- Never trust a model ID received from the browser without checking authorization and workspace ownership.
+- Use database transactions for:
+  - session creation;
+  - session editing;
+  - session deletion;
+  - component installation changes;
+  - maintenance completion.
+- Store monetary values as integer cents.
+- Store durations and component usage as integer minutes.
+- Store lap times as integer milliseconds.
+- Prefer archiving historical entities instead of physically deleting them.
+
+## MVP limits
+
+Do not implement the following unless a later approved specification explicitly requests them:
+
+- team collaboration;
+- invitations;
+- multiple roles;
+- telemetry;
+- artificial intelligence features inside the product;
+- subscriptions;
+- payments;
+- public APIs;
+- native mobile applications;
+- social features;
+- marketplaces;
+- undocumented features.
+
+## Design direction
+
+- Professional motorsport operations software.
+- Dark interface.
+- Primary accent: #FF5A36.
+- Subtle Nintendo DS-era racing-menu influence only.
+- Large and clear selectable areas.
+- Strong active-navigation states.
+- Restrained checkered detailing.
+- Do not copy Nintendo or Mario Kart assets, branding, characters, fonts, sounds or exact layouts.
+- Prioritize readability and professional credibility over decorative effects.
+- Design mobile-first and support a 320px viewport.
+- The primary mobile action is Register Session.
+- Never use colour as the only way to communicate a state.
+- Forms must have visible labels.
+- Destructive actions require confirmation.
+- Loading, validation, success, empty and error states are required.
+- Avoid horizontal page scrolling.
+
+## Quality
+
+- Do not edit `.env`.
+- Do not commit secrets.
+- Do not commit `vendor`, `node_modules`, SQLite databases or generated build artefacts unless already intentionally tracked.
+- Add feature tests for every implemented workflow.
+- Add unit tests for important calculations.
+- Avoid unrelated refactors.
+- Inspect the current repository before adding files or choosing paths.
+
+Before completing every coding task, run:
+
+- php artisan test
+- vendor/bin/pint
+- vendor/bin/pint --test
+- npm run build
+
+For every completed task report:
+
+- changed files;
+- architectural decisions;
+- test results;
+- formatting result;
+- frontend build result;
+- any unresolved risk.
