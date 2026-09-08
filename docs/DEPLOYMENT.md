@@ -48,13 +48,13 @@ Store runtime variables in Coolify's encrypted environment-variable store. The l
 | Application | `APP_NAME`, `APP_ENV`, `APP_KEY`, `APP_DEBUG`, `APP_URL` |
 | Logging | `LOG_CHANNEL`, `LOG_LEVEL` |
 | MySQL | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` |
-| Mail | `MAIL_MAILER`, `MAIL_SCHEME`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` |
+| Mail (Resend) | `MAIL_MAILER`, `RESEND_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` |
 | Session and cache | `SESSION_DRIVER`, `SESSION_LIFETIME`, `SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE`, `CACHE_STORE` |
 | Queue | `QUEUE_CONNECTION` |
 | Filesystem | `FILESYSTEM_DISK` |
 | Nixpacks build | `NIXPACKS_NODE_VERSION` |
 
-Use a real mail transport for beta: password-reset and email-verification messages must be deliverable. `APP_URL` must match the HTTPS beta URL so that signed verification links are generated correctly. Until a queue worker is approved, configure `QUEUE_CONNECTION` for inline execution; a worker-backed connection would allow jobs to accumulate without being processed.
+Use the Resend mail transport for beta: password-reset and email-verification messages must be deliverable. The application reads the Resend API key only from `RESEND_KEY`. `APP_URL` must match the HTTPS beta URL so that signed verification links are generated correctly. Until a queue worker is approved, configure `QUEUE_CONNECTION` for inline execution; a worker-backed connection would allow jobs to accumulate without being processed. Laravel's standard email-verification notification is synchronous and does not require a queue worker.
 
 `PORT`, `NIXPACKS_PHP_ROOT_DIR`, and `NIXPACKS_PHP_FALLBACK_PATH` are defined in `nixpacks.toml`; they are not secrets and do not need duplicate Coolify entries.
 
@@ -72,11 +72,29 @@ The application currently uses database-backed session and cache stores by defau
 4. After the first container is healthy, open the Coolify terminal for that deployment and run:
 
    ```sh
+   php artisan config:clear
    php artisan migrate --force --no-interaction
+   php artisan optimize:clear --except=cache
+   php artisan optimize
+   php artisan pitmetric:mail-check
    ```
 
-5. Verify the `/up` health endpoint, HTTPS redirects, registration, login, password reset, email delivery, and the email-verification link flow.
-6. For later releases, run the migration command manually only when that release contains a migration. Take a MySQL backup first.
+5. Check that the diagnostic output reports the expected effective values, the `resend` mailer and transport, a present key, the installed Resend SDK, and `CONFIG_CACHED=yes` after `optimize`. It never prints the key itself. Send a real transport check only to an address you control with `php artisan pitmetric:mail-check --send=test@example.com`.
+6. Verify the `/up` health endpoint, HTTPS redirects, registration, login, password reset, email delivery, and the email-verification link flow.
+7. For later releases, run the migration command manually only when that release contains a migration. Take a MySQL backup first.
+
+## Configuration cache changes
+
+Do not depend on runtime secrets being available during the Nixpacks build or serialize runtime configuration and secrets into an image layer. The build therefore does not run migrations or cache Laravel configuration. After changing a Coolify runtime variable, redeploy and rebuild Laravel's production caches inside the new running container:
+
+```sh
+php artisan config:clear
+php artisan optimize:clear --except=cache
+php artisan optimize
+php artisan pitmetric:mail-check
+```
+
+The `--except=cache` option deliberately avoids flushing PitMetric's database-backed application cache. For a config-only refresh, `php artisan config:clear` followed by `php artisan config:cache` is sufficient. If these commands are later automated as Coolify post-deployment commands, check their logs because the deployment can already be marked complete before a post-deployment failure is reported.
 
 ## Rollback basics
 
@@ -90,7 +108,9 @@ Application-image rollback does not reverse database changes. Do not run `migrat
 - Disable debug output in beta, use the HTTPS beta URL for `APP_URL`, and keep secure session-cookie settings enabled. Test signed email-verification links after each proxy or domain change.
 - Restrict Coolify and server administrative access, keep Ubuntu/Coolify images updated, and verify MySQL backups and restore procedures periodically.
 - Expose the application through Coolify's HTTPS proxy only. Keep MySQL on the private Coolify network and never expose its port publicly.
-- The application currently has no explicit trusted-proxy configuration. Validate HTTPS redirects, secure cookies, and verification-link redirects behind the Coolify proxy before beta access is opened; changing proxy handling is outside this deployment-only scope.
+- The application trusts Coolify's reverse proxy. Validate HTTPS redirects, secure cookies, and verification-link redirects behind the proxy before beta access is opened.
+- Use only a sender address accepted by the Resend account. A Resend-provided testing sender is suitable only within its documented test restrictions; delivery to general beta users requires a verified sender domain. Do not invent or hardcode a domain in application code.
+- Keep Coolify's public domain and `APP_URL` aligned. Previously issued absolute signed links remain bound to the hostname used when generated; rebuild the configuration cache and request a new link after changing domains.
 - Start with the limits in `nixpacks.toml`, monitor PHP-FPM memory/CPU use and request latency, and adjust only from observed beta traffic.
 
 ## References

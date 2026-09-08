@@ -22,10 +22,10 @@ test('newly registered users receive an email verification notification', functi
         'password_confirmation' => 'password',
     ]);
 
-    Notification::assertSentTo(
-        User::query()->where('email', 'test@example.com')->sole(),
-        VerifyEmail::class,
-    );
+    $user = User::query()->where('email', 'test@example.com')->sole();
+
+    expect($user->hasVerifiedEmail())->toBeFalse();
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 test('email verification screen can be rendered', function () {
@@ -34,6 +34,20 @@ test('email verification screen can be rendered', function () {
     $response = $this->actingAs($user)->get(route('verification.notice'));
 
     $response->assertOk();
+});
+
+test('email verification notification can be resent', function () {
+    Notification::fake();
+
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->from(route('verification.notice'))
+        ->post(route('verification.send'))
+        ->assertRedirect(route('verification.notice'))
+        ->assertSessionHas('status', 'verification-link-sent');
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 test('email can be verified', function () {
