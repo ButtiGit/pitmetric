@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Update;
+use Illuminate\Database\Eloquent\Model;
 
 it('shows the public home page in English by default', function () {
     $this->get(route('home'))
@@ -57,6 +58,27 @@ it('lists published updates', function () {
         ->assertOk()
         ->assertSee($published->title)
         ->assertDontSee('Draft update');
+});
+
+it('keeps legacy update rows readable before the media migration is applied', function () {
+    Model::preventAccessingMissingAttributes();
+
+    try {
+        $update = new Update;
+        $update->setRawAttributes([
+            'title' => 'Legacy update',
+            'excerpt' => 'Legacy excerpt',
+            'content' => 'Legacy content',
+        ], true);
+        $update->exists = true;
+
+        expect($update->titleForLocale('it'))->toBe('Legacy update')
+            ->and($update->excerptForLocale('it'))->toBe('Legacy excerpt')
+            ->and($update->contentForLocale('it'))->toBe('Legacy content')
+            ->and($update->mediaSource())->toBeNull();
+    } finally {
+        Model::preventAccessingMissingAttributes(false);
+    }
 });
 
 it('shows localized update copy when available', function () {
