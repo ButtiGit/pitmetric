@@ -2,11 +2,39 @@
 
 use App\Models\Update;
 
-it('shows the public home page', function () {
+it('shows the public home page in English by default', function () {
     $this->get(route('home'))
         ->assertOk()
         ->assertSee('Know every lap.')
-        ->assertSee('Track every component.');
+        ->assertSee('PitMetric is motorsport software');
+});
+
+it('switches the public site to Italian using the locale cookie', function () {
+    $this->withCookie('pitmetric_locale', 'it')
+        ->get(route('home'))
+        ->assertOk()
+        ->assertSee('PitMetric è un software motorsport')
+        ->assertSee('Apri dashboard');
+});
+
+it('stores a valid language preference', function () {
+    $this->from(route('home'))
+        ->post(route('locale.update'), ['locale' => 'it'])
+        ->assertRedirect(route('home'))
+        ->assertCookie('pitmetric_locale', 'it');
+});
+
+it('rejects an unsupported locale', function () {
+    $this->from(route('home'))
+        ->post(route('locale.update'), ['locale' => 'fr'])
+        ->assertRedirect(route('home'))
+        ->assertSessionHasErrors('locale');
+});
+
+it('shows the cookie information page', function () {
+    $this->get(route('cookies'))
+        ->assertOk()
+        ->assertSee('Cookies on PitMetric');
 });
 
 it('shows the public about page', function () {
