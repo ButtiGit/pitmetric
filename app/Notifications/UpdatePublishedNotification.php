@@ -3,10 +3,12 @@
 namespace App\Notifications;
 
 use App\Models\Update;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
+use LogicException;
 
 class UpdatePublishedNotification extends Notification
 {
@@ -22,10 +24,15 @@ class UpdatePublishedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $locale = ($notifiable->newsletter_locale ?? 'en') === 'it' ? 'it' : 'en';
+        if (! $notifiable instanceof User) {
+            throw new LogicException('PitMetric newsletter notifications can only be sent to users.');
+        }
+
+        $locale = $notifiable->newsletter_locale === 'it' ? 'it' : 'en';
         $title = $this->update->titleForLocale($locale);
         $excerpt = $this->update->excerptForLocale($locale);
-        $unsubscribe = URL::signedRoute('newsletter.unsubscribe', ['user' => $notifiable->getKey()]);
+        $updateUrl = route('updates.show', ['update' => $this->update->slug]);
+        $unsubscribeUrl = URL::signedRoute('newsletter.unsubscribe', ['user' => $notifiable->id]);
 
         if ($locale === 'it') {
             return (new MailMessage)
@@ -33,9 +40,9 @@ class UpdatePublishedNotification extends Notification
                 ->greeting('Nuovo dal development log')
                 ->line($title)
                 ->line($excerpt)
-                ->action('Leggi l’aggiornamento', route('updates.show', $this->update))
+                ->action('Leggi l’aggiornamento', $updateUrl)
                 ->line('Ricevi questa email perché hai scelto di iscriverti agli aggiornamenti PitMetric.')
-                ->action('Disiscriviti dalla newsletter', $unsubscribe);
+                ->line('Per non ricevere più queste email puoi disiscriverti qui: '.$unsubscribeUrl);
         }
 
         return (new MailMessage)
@@ -43,8 +50,8 @@ class UpdatePublishedNotification extends Notification
             ->greeting('New from the development log')
             ->line($title)
             ->line($excerpt)
-            ->action('Read the update', route('updates.show', $this->update))
+            ->action('Read the update', $updateUrl)
             ->line('You are receiving this because you opted in to PitMetric development updates.')
-            ->action('Unsubscribe from the newsletter', $unsubscribe);
+            ->line('To stop receiving these emails, unsubscribe here: '.$unsubscribeUrl);
     }
 }
