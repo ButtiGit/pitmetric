@@ -1,4 +1,4 @@
-<x-layouts.public>
+<x-layouts::public>
     <section class="mx-auto max-w-7xl px-5 pb-20 pt-20 lg:px-8 lg:pt-28">
         <div class="max-w-4xl">
             <span class="inline-flex rounded-full border border-[#FF5A36]/35 bg-[#FF5A36]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#ff8a70]">Private beta · in development</span>
@@ -41,7 +41,7 @@
                 <div class="grid gap-3 font-mono text-sm">
                     <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><span class="text-zinc-500">01</span> <span class="ml-3 text-white">Race Build V3</span></div>
                     <div class="ml-6 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-zinc-300">Engine #02 · Chain #04 · Tyres #08</div>
-                    <div class="rounded-xl border border-[#FF5A36]/30 bg-[#FF5A36]/10 p-4 text-[#ffb09e]">40 giri × 1,250 km = 50,000 km</div>
+                    <div class="rounded-xl border border-[#FF5A36]/30 bg-[#FF5A36]/10 p-4 text-[#ffb09e]">1.250 m × 40 giri = 50 km</div>
                     <div class="ml-6 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-zinc-300">Propagazione automatica ai tracker compatibili</div>
                 </div>
             </div>
@@ -63,4 +63,4 @@
             @endforeach
         </div>
     </section>
-</x-layouts.public>
+</x-layouts::public>
