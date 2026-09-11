@@ -13,7 +13,6 @@
     <meta property="og:site_name" content="PitMetric">
     <link rel="canonical" href="{{ url()->current() }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="/favicon.ico" sizes="any">
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
