@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $published_at
+ */
 class Update extends Model
 {
     /** @use HasFactory<UpdateFactory> */
@@ -29,6 +32,10 @@ class Update extends Model
         ];
     }
 
+    /**
+     * @param  Builder<Update>  $query
+     * @return Builder<Update>
+     */
     public function scopePublished(Builder $query): Builder
     {
         return $query
