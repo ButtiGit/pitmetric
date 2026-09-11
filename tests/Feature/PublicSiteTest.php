@@ -59,6 +59,22 @@ it('lists published updates', function () {
         ->assertDontSee('Draft update');
 });
 
+it('shows localized update copy when available', function () {
+    $update = Update::factory()->create([
+        'title' => 'English update',
+        'title_it' => 'Aggiornamento italiano',
+        'excerpt_it' => 'Riassunto italiano',
+        'content_it' => 'Contenuto italiano',
+    ]);
+
+    $this->withCookie('pitmetric_locale', 'it')
+        ->get(route('updates.show', $update))
+        ->assertOk()
+        ->assertSee('Aggiornamento italiano')
+        ->assertSee('Riassunto italiano')
+        ->assertSee('Contenuto italiano');
+});
+
 it('shows a published update', function () {
     $update = Update::factory()->create();
 

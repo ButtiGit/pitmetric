@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PublicUpdateController;
+use App\Http\Controllers\UpdateStudioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,13 @@ Route::post('/locale', function (Request $request) {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
+
+    Route::middleware('can:manage-updates')
+        ->prefix('studio')
+        ->name('studio.')
+        ->group(function () {
+            Route::resource('updates', UpdateStudioController::class)->except('show');
+        });
 });
 
 require __DIR__.'/settings.php';

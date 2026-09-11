@@ -7,9 +7,21 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property Carbon|null $published_at
+ * @property string $title
+ * @property string|null $title_it
+ * @property string $excerpt
+ * @property string|null $excerpt_it
+ * @property string $content
+ * @property string|null $content_it
+ * @property string|null $media_type
+ * @property string|null $media_path
+ * @property string|null $media_url
+ * @property string|null $media_alt
+ * @property string|null $media_alt_it
  */
 class Update extends Model
 {
@@ -18,9 +30,17 @@ class Update extends Model
 
     protected $fillable = [
         'title',
+        'title_it',
         'slug',
         'excerpt',
+        'excerpt_it',
         'content',
+        'content_it',
+        'media_type',
+        'media_path',
+        'media_url',
+        'media_alt',
+        'media_alt_it',
         'status',
         'published_at',
     ];
@@ -42,5 +62,80 @@ class Update extends Model
             ->where('status', 'published')
             ->whereNotNull('published_at')
             ->where('published_at', '<=', Carbon::now());
+    }
+
+    public function titleForLocale(?string $locale = null): string
+    {
+        return $this->localizedValue($this->title, $this->title_it, $locale);
+    }
+
+    public function excerptForLocale(?string $locale = null): string
+    {
+        return $this->localizedValue($this->excerpt, $this->excerpt_it, $locale);
+    }
+
+    public function contentForLocale(?string $locale = null): string
+    {
+        return $this->localizedValue($this->content, $this->content_it, $locale);
+    }
+
+    public function mediaAltForLocale(?string $locale = null): string
+    {
+        $alt = $this->localizedValue($this->media_alt, $this->media_alt_it, $locale);
+
+        return $alt !== '' ? $alt : $this->titleForLocale($locale);
+    }
+
+    public function mediaSource(): ?string
+    {
+        if ($this->media_path !== null && $this->media_path !== '') {
+            return Storage::disk('public')->url($this->media_path);
+        }
+
+        if ($this->media_url !== null && $this->media_url !== '') {
+            return $this->media_url;
+        }
+
+        return null;
+    }
+
+    public function videoEmbedUrl(): ?string
+    {
+        if ($this->media_type !== 'video' || $this->media_url === null || $this->media_url === '') {
+            return null;
+        }
+
+        $host = strtolower((string) parse_url($this->media_url, PHP_URL_HOST));
+        $path = trim((string) parse_url($this->media_url, PHP_URL_PATH), '/');
+
+        if (in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com'], true)) {
+            parse_str((string) parse_url($this->media_url, PHP_URL_QUERY), $query);
+            $videoId = $query['v'] ?? null;
+
+            if (is_string($videoId) && preg_match('/^[A-Za-z0-9_-]{6,20}$/', $videoId) === 1) {
+                return 'https://www.youtube-nocookie.com/embed/'.$videoId;
+            }
+        }
+
+        if ($host === 'youtu.be' && preg_match('/^[A-Za-z0-9_-]{6,20}$/', $path) === 1) {
+            return 'https://www.youtube-nocookie.com/embed/'.$path;
+        }
+
+        if (in_array($host, ['vimeo.com', 'www.vimeo.com'], true) && preg_match('/^\d+$/', $path) === 1) {
+            return 'https://player.vimeo.com/video/'.$path;
+        }
+
+        return null;
+    }
+
+    private function localizedValue(?string $english, ?string $italian, ?string $locale): string
+    {
+        $activeLocale = $locale ?? app()->getLocale();
+
+        if ($activeLocale === 'it' && $italian !== null && trim($italian) !== '') {
+            return $italian;
+        }
+
+        return $english ?? '';
     }
 }
