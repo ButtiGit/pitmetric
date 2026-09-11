@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 220" role="img" aria-label="PitMetric"><path fill="#E10600" d="M286 36H470L458 44H296Z"/><path fill="#E10600" d="M298 57H505L486 65H307Z"/><path fill="#E10600" d="M307 78H458L444 86H314Z"/><path fill="#0B0D10" d="M31 151h111l15-15H52l20-14h99l18-17c12-11 27-17 43-17h14v31h-14c-10 0-19 4-27 10l-48 40H31Z"/><path fill="#0B0D10" d="M58 119c31-20 62-29 96-29h34l29-34h27l-20 34h22v17h-38c-15 0-29 5-41 15l-13 11H73Z"/><path fill="#E10600" d="M34 154h112l17-14H49Z"/><path fill="#0B0D10" d="M20 162h123l-10 8H15Z"/><path fill="#E10600" d="M18 164h104l-8 6H13Z"/><circle cx="252" cy="128" r="57" fill="#0B0D10"/><circle cx="252" cy="128" r="46" fill="none" stroke="#E10600" stroke-width="8"/><circle cx="252" cy="128" r="33" fill="none" stroke="#F4F4F5" stroke-width="4"/><circle cx="252" cy="128" r="7" fill="#F4F4F5"/><path fill="#009246" d="M82 153h16l-10 9H70Z"/><path fill="#FFFFFF" d="M98 153h16l-10 9H88Z"/><path fill="#CE2B37" d="M114 153h17l-10 9h-17Z"/><text x="365" y="151" fill="#0B0D10" font-family="Arial,Helvetica,sans-serif" font-size="88" font-weight="900" font-style="italic" letter-spacing="-3">PITMETRIC</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 220" role="img" aria-label="PitMetric">
+  <g>
+    <path fill="#111318" d="M24 163H135L151 151H49Z"/>
+    <path fill="#E10600" d="M14 179H124L137 168H27Z"/>
+    <path fill="#111318" d="M135 151H168L154 181H121Z"/>
+    <path fill="#111318" d="M78 151C113 132 148 116 184 104C204 97 224 93 244 93H255L272 108L261 131H228C199 131 174 138 147 151H78Z"/>
+    <path d="M94 146C127 130 157 118 188 108C207 102 224 100 243 100" fill="none" stroke="#E10600" stroke-width="6" stroke-linecap="round"/>
+    <path d="M239 169C226 151 224 126 231 105C240 79 262 65 288 65" fill="none" stroke="#111318" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="278" cy="128" r="58" fill="#111318"/>
+    <circle cx="278" cy="128" r="45" fill="none" stroke="#E10600" stroke-width="10"/>
+    <circle cx="278" cy="128" r="30" fill="#F4F4F5"/>
+    <circle cx="278" cy="128" r="8" fill="#111318"/>
+    <path fill="#009246" d="M196 113h12l-4 8h-12Z"/>
+    <path fill="#FFFFFF" d="M208 113h12l-4 8h-12Z" stroke="#d1d5db" stroke-width="1"/>
+    <path fill="#CE2B37" d="M220 113h12l-4 8h-12Z"/>
+    <path fill="#E10600" d="M326 42H475L463 51H337Z"/>
+    <path fill="#E10600" d="M338 64H510L493 73H349Z"/>
+    <path fill="#E10600" d="M350 86H460L449 95H360Z"/>
+  </g>
+  <text x="500" y="153" fill="#111318" font-family="Arial,Helvetica,sans-serif" font-size="88" font-weight="900" font-style="italic" letter-spacing="-3">PITMETRIC</text>
+</svg>
