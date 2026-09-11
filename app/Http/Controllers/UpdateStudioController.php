@@ -7,14 +7,37 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class UpdateStudioController extends Controller
 {
+    /** @var list<string> */
+    private const REQUIRED_COLUMNS = [
+        'title',
+        'title_it',
+        'slug',
+        'excerpt',
+        'excerpt_it',
+        'content',
+        'content_it',
+        'media_type',
+        'media_path',
+        'media_url',
+        'media_alt',
+        'media_alt_it',
+        'status',
+        'published_at',
+    ];
+
     public function index(): View
     {
+        if (! $this->schemaReady()) {
+            return $this->setupView();
+        }
+
         $updates = Update::query()
             ->latest('updated_at')
             ->paginate(12);
@@ -24,6 +47,10 @@ class UpdateStudioController extends Controller
 
     public function create(): View
     {
+        if (! $this->schemaReady()) {
+            return $this->setupView();
+        }
+
         return view('studio.updates.form', [
             'update' => new Update,
         ]);
@@ -31,6 +58,12 @@ class UpdateStudioController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (! $this->schemaReady()) {
+            return redirect()
+                ->route('studio.updates.index')
+                ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
+        }
+
         $update = new Update;
         $this->persist($request, $update);
 
@@ -41,11 +74,21 @@ class UpdateStudioController extends Controller
 
     public function edit(Update $update): View
     {
+        if (! $this->schemaReady()) {
+            return $this->setupView();
+        }
+
         return view('studio.updates.form', compact('update'));
     }
 
     public function update(Request $request, Update $update): RedirectResponse
     {
+        if (! $this->schemaReady()) {
+            return redirect()
+                ->route('studio.updates.index')
+                ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
+        }
+
         $this->persist($request, $update);
 
         return redirect()
@@ -55,8 +98,14 @@ class UpdateStudioController extends Controller
 
     public function destroy(Update $update): RedirectResponse
     {
-        if ($update->media_path !== null && $update->media_path !== '') {
-            Storage::disk('public')->delete($update->media_path);
+        if (! $this->schemaReady()) {
+            return redirect()
+                ->route('studio.updates.index')
+                ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
+        }
+
+        if ($update->getAttribute('media_path') !== null && $update->getAttribute('media_path') !== '') {
+            Storage::disk('public')->delete((string) $update->getAttribute('media_path'));
         }
 
         $update->delete();
@@ -90,7 +139,8 @@ class UpdateStudioController extends Controller
         $removeMedia = $request->boolean('remove_media');
         $hasExistingMedia = ! $removeMedia
             && $update->exists
-            && (($update->media_path !== null && $update->media_path !== '') || ($update->media_url !== null && $update->media_url !== ''));
+            && (($update->getAttribute('media_path') !== null && $update->getAttribute('media_path') !== '')
+                || ($update->getAttribute('media_url') !== null && $update->getAttribute('media_url') !== ''));
 
         if ($externalMedia !== '') {
             $scheme = strtolower((string) parse_url($externalMedia, PHP_URL_SCHEME));
@@ -149,9 +199,9 @@ class UpdateStudioController extends Controller
 
         if ($removeMedia) {
             $this->removeStoredMedia($update);
-            $update->media_path = null;
-            $update->media_url = null;
-            $update->media_type = null;
+            $update->setAttribute('media_path', null);
+            $update->setAttribute('media_url', null);
+            $update->setAttribute('media_type', null);
         }
 
         if ($uploaded instanceof UploadedFile) {
@@ -165,14 +215,14 @@ class UpdateStudioController extends Controller
             }
 
             $mime = (string) $uploaded->getMimeType();
-            $update->media_path = $path;
-            $update->media_url = null;
-            $update->media_type = str_starts_with($mime, 'video/') ? 'video' : 'image';
+            $update->setAttribute('media_path', $path);
+            $update->setAttribute('media_url', null);
+            $update->setAttribute('media_type', str_starts_with($mime, 'video/') ? 'video' : 'image');
         } elseif ($externalMedia !== '') {
             $this->removeStoredMedia($update);
-            $update->media_path = null;
-            $update->media_url = $externalMedia;
-            $update->media_type = (string) $data['media_type'];
+            $update->setAttribute('media_path', null);
+            $update->setAttribute('media_url', $externalMedia);
+            $update->setAttribute('media_type', (string) $data['media_type']);
         }
 
         $update->save();
@@ -180,8 +230,10 @@ class UpdateStudioController extends Controller
 
     private function removeStoredMedia(Update $update): void
     {
-        if ($update->media_path !== null && $update->media_path !== '') {
-            Storage::disk('public')->delete($update->media_path);
+        $mediaPath = $update->getAttribute('media_path');
+
+        if (is_string($mediaPath) && $mediaPath !== '') {
+            Storage::disk('public')->delete($mediaPath);
         }
     }
 
@@ -219,5 +271,19 @@ class UpdateStudioController extends Controller
         $value = trim($value);
 
         return $value !== '' ? $value : null;
+    }
+
+    private function schemaReady(): bool
+    {
+        if (! Schema::hasTable('updates')) {
+            return false;
+        }
+
+        return Schema::hasColumns('updates', self::REQUIRED_COLUMNS);
+    }
+
+    private function setupView(): View
+    {
+        return view('studio.updates.setup');
     }
 }
