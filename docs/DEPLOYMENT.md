@@ -1,6 +1,6 @@
 # Beta Deployment with Coolify and Nixpacks
 
-This guide covers PitMetric's beta environment only. It deploys the existing Laravel application as one web process; it does not add Redis, queue workers, scheduler processes, migrations during image build, or persistent application uploads.
+This guide covers PitMetric's beta environment. It deploys the Laravel application as one web process and now includes a small persistent public-upload area used by the Update Studio. Redis, queue workers and scheduler processes are still intentionally omitted.
 
 ## Local and beta environments
 
@@ -21,6 +21,7 @@ Internet
           Nginx on port 80 -> PHP-FPM
           public root: /app/public
           Laravel fallback: /index.php
+          persistent update media: /app/storage/app/public
       -> private Coolify network -> MySQL 8 resource
 ```
 
@@ -46,6 +47,7 @@ Store runtime variables in Coolify's encrypted environment-variable store. The l
 | Purpose | Variable names |
 | --- | --- |
 | Application | `APP_NAME`, `APP_ENV`, `APP_KEY`, `APP_DEBUG`, `APP_URL` |
+| PitMetric publishing | `PITMETRIC_EDITOR_EMAILS` |
 | Logging | `LOG_CHANNEL`, `LOG_LEVEL` |
 | MySQL | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` |
 | Mail (Resend) | `MAIL_MAILER`, `RESEND_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` |
@@ -54,9 +56,31 @@ Store runtime variables in Coolify's encrypted environment-variable store. The l
 | Filesystem | `FILESYSTEM_DISK` |
 | Nixpacks build | `NIXPACKS_NODE_VERSION` |
 
+`PITMETRIC_EDITOR_EMAILS` is a comma-separated allow-list of account email addresses that may open `/studio/updates` and publish public development posts. Keep it restricted to trusted accounts; normal registered users receive a 403 response for those routes.
+
 Use the Resend mail transport for beta: password-reset and email-verification messages must be deliverable. The application reads the Resend API key only from `RESEND_KEY`. `APP_URL` must match the HTTPS beta URL so that signed verification links are generated correctly. Until a queue worker is approved, configure `QUEUE_CONNECTION` for inline execution; a worker-backed connection would allow jobs to accumulate without being processed. Laravel's standard email-verification notification is synchronous and does not require a queue worker.
 
 `PORT`, `NIXPACKS_PHP_ROOT_DIR`, and `NIXPACKS_PHP_FALLBACK_PATH` are defined in `nixpacks.toml`; they are not secrets and do not need duplicate Coolify entries.
+
+## Persistent media for Update Studio
+
+Update Studio can publish text-only posts, remote image/video URLs, or uploaded media files. Uploaded files use Laravel's `public` disk under `/app/storage/app/public`.
+
+In Coolify, attach a persistent storage volume to the application and mount it at:
+
+```text
+/app/storage/app/public
+```
+
+Without that volume, uploaded images and videos can disappear after a redeploy. External media URLs are stored in the database and do not need this volume.
+
+After the first deployment that enables Update Studio, open the Coolify terminal and run:
+
+```sh
+php artisan storage:link
+```
+
+The command creates `/app/public/storage` pointing to the persistent public disk. Run it again only if the symlink is missing in a new container.
 
 ## MySQL internal networking
 
@@ -67,21 +91,23 @@ The application currently uses database-backed session and cache stores by defau
 ## First deployment
 
 1. Create and back up the MySQL resource, then create the Coolify application resource with the settings above.
-2. Add the required variable names in Coolify. Generate `APP_KEY` securely and save it only as a Coolify secret.
-3. Deploy from `main`. Confirm in the build log that dependency installation and `npm run build` complete, then confirm that Nginx and PHP-FPM start.
-4. After the first container is healthy, open the Coolify terminal for that deployment and run:
+2. Add the required variable names in Coolify. Generate `APP_KEY` securely and save it only as a Coolify secret. Add your trusted account email to `PITMETRIC_EDITOR_EMAILS` if you need Update Studio.
+3. Configure the persistent `/app/storage/app/public` volume if you plan to upload media directly from PitMetric.
+4. Deploy from `main`. Confirm in the build log that dependency installation and `npm run build` complete, then confirm that Nginx and PHP-FPM start.
+5. After the first container is healthy, open the Coolify terminal for that deployment and run:
 
    ```sh
    php artisan config:clear
    php artisan migrate --force --no-interaction
+   php artisan storage:link
    php artisan optimize:clear --except=cache
    php artisan optimize
    php artisan pitmetric:mail-check
    ```
 
-5. Check that the diagnostic output reports the expected effective values, the `resend` mailer and transport, a present key, the installed Resend SDK, and `CONFIG_CACHED=yes` after `optimize`. It never prints the key itself. Send a real transport check only to an address you control with `php artisan pitmetric:mail-check --send=test@example.com`.
-6. Verify the `/up` health endpoint, HTTPS redirects, registration, login, password reset, email delivery, and the email-verification link flow.
-7. For later releases, run the migration command manually only when that release contains a migration. Take a MySQL backup first.
+6. Check that the diagnostic output reports the expected effective values, the `resend` mailer and transport, a present key, the installed Resend SDK, and `CONFIG_CACHED=yes` after `optimize`. It never prints the key itself. Send a real transport check only to an address you control with `php artisan pitmetric:mail-check --send=test@example.com`.
+7. Verify the `/up` health endpoint, HTTPS redirects, registration, login, password reset, email delivery, the email-verification link flow, and `/studio/updates` with an allowed editor account.
+8. For later releases, run the migration command manually only when that release contains a migration. Take a MySQL backup first.
 
 ## Configuration cache changes
 
@@ -104,7 +130,9 @@ Application-image rollback does not reverse database changes. Do not run `migrat
 
 ## Security and operational notes
 
-- Keep `APP_KEY`, database credentials, and mail credentials in Coolify secrets only. Never put them in Git, the image, logs, or a command history.
+- Keep `APP_KEY`, database credentials, mail credentials and `PITMETRIC_EDITOR_EMAILS` in Coolify runtime configuration only. Never put secret values in Git, the image, logs, or a command history.
+- Keep the update editor allow-list narrow. Public registration must never imply publishing access.
+- Uploaded files are restricted to common image/video extensions and 50 MB at the Laravel layer. Web-server/PHP upload limits may be lower and should be raised deliberately rather than globally disabling limits.
 - Disable debug output in beta, use the HTTPS beta URL for `APP_URL`, and keep secure session-cookie settings enabled. Test signed email-verification links after each proxy or domain change.
 - Restrict Coolify and server administrative access, keep Ubuntu/Coolify images updated, and verify MySQL backups and restore procedures periodically.
 - Expose the application through Coolify's HTTPS proxy only. Keep MySQL on the private Coolify network and never expose its port publicly.

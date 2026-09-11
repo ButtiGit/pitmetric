@@ -10,10 +10,10 @@
                 <p class="mt-7 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">{{ __('pitmetric.home.intro') }}</p>
                 <div class="mt-9 flex flex-wrap gap-3">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="rounded-full bg-[#E10600] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#F01812]">{{ __('pitmetric.home.open_dashboard') }}</a>
+                        <a href="{{ route('dashboard') }}" class="pm-race-button">{{ __('pitmetric.home.open_dashboard') }}</a>
                     @else
-                        <a href="{{ route('register') }}" class="rounded-full bg-[#E10600] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#F01812]">{{ __('pitmetric.home.discover') }}</a>
-                        <a href="{{ route('login') }}" class="rounded-full border border-white/20 bg-black/20 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:border-white/40">{{ __('pitmetric.nav.login') }}</a>
+                        <a href="{{ route('register') }}" class="pm-race-button">{{ __('pitmetric.home.discover') }}</a>
+                        <a href="{{ route('login') }}" class="pm-ghost-button pm-ghost-button-dark">{{ __('pitmetric.nav.login') }}</a>
                     @endauth
                 </div>
             </div>
@@ -23,9 +23,9 @@
     </section>
 
     <section class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
-        <div class="grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 md:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             @foreach ([['01', __('pitmetric.home.configuration'), __('pitmetric.home.configuration_copy')],['02', __('pitmetric.home.usage'), __('pitmetric.home.usage_copy')],['03', __('pitmetric.home.maintenance'), __('pitmetric.home.maintenance_copy')],['04', __('pitmetric.home.costs'), __('pitmetric.home.costs_copy')]] as [$number, $heading, $copy])
-                <article class="bg-[#0b0e12] p-7 lg:p-8"><span class="font-mono text-xs text-[#E10600]">{{ $number }}</span><h2 class="mt-8 text-xl font-bold text-white">{{ $heading }}</h2><p class="mt-3 text-sm leading-6 text-zinc-400">{{ $copy }}</p></article>
+                <article class="pm-race-card group p-7 lg:p-8"><div class="flex items-center justify-between"><span class="font-mono text-xs text-[#E10600]">{{ $number }}</span><span class="pm-status-dot opacity-50 transition group-hover:opacity-100"></span></div><h2 class="mt-8 text-xl font-bold text-white">{{ $heading }}</h2><p class="mt-3 text-sm leading-6 text-zinc-400">{{ $copy }}</p></article>
             @endforeach
         </div>
     </section>
@@ -37,5 +37,5 @@
         </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-5 py-20 lg:px-8"><div class="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><div><p class="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#ff4b47]">{{ __('pitmetric.home.roadmap') }}</p><h2 class="mt-4 text-3xl font-black tracking-[-0.03em] text-white sm:text-4xl">{{ __('pitmetric.home.roadmap_title') }}</h2><a href="{{ route('updates.index') }}" class="mt-7 inline-flex text-sm font-bold text-white underline decoration-[#E10600] decoration-2 underline-offset-8">{{ __('pitmetric.home.follow_updates') }}</a></div><div class="grid gap-6 sm:grid-cols-3">@foreach ([['A', __('pitmetric.home.roadmap_1_title'), __('pitmetric.home.roadmap_1_copy')],['B', __('pitmetric.home.roadmap_2_title'), __('pitmetric.home.roadmap_2_copy')],['C', __('pitmetric.home.roadmap_3_title'), __('pitmetric.home.roadmap_3_copy')]] as [$number, $heading, $copy])<article class="border-t border-white/15 pt-5"><span class="font-mono text-xs text-[#E10600]">{{ $number }}</span><h3 class="mt-3 font-bold text-white">{{ $heading }}</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ $copy }}</p></article>@endforeach</div></div></section>
+    <section class="mx-auto max-w-7xl px-5 py-20 lg:px-8"><div class="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><div><p class="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#ff4b47]">{{ __('pitmetric.home.roadmap') }}</p><h2 class="mt-4 text-3xl font-black tracking-[-0.03em] text-white sm:text-4xl">{{ __('pitmetric.home.roadmap_title') }}</h2><a href="{{ route('updates.index') }}" class="pm-ghost-button pm-ghost-button-dark mt-7">{{ __('pitmetric.home.follow_updates') }}</a></div><div class="grid gap-5 sm:grid-cols-3">@foreach ([['A', __('pitmetric.home.roadmap_1_title'), __('pitmetric.home.roadmap_1_copy')],['B', __('pitmetric.home.roadmap_2_title'), __('pitmetric.home.roadmap_2_copy')],['C', __('pitmetric.home.roadmap_3_title'), __('pitmetric.home.roadmap_3_copy')]] as [$number, $heading, $copy])<article class="pm-race-card p-5"><span class="font-mono text-xs text-[#E10600]">{{ $number }}</span><h3 class="mt-3 font-bold text-white">{{ $heading }}</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ $copy }}</p></article>@endforeach</div></div></section>
 </x-layouts::public>
