@@ -14,7 +14,7 @@ it('switches the public site to Italian using the locale cookie', function () {
         ->get(route('home'))
         ->assertOk()
         ->assertSee('PitMetric è un software motorsport')
-        ->assertSee('Apri dashboard');
+        ->assertSee('Scopri PitMetric');
 });
 
 it('stores a valid language preference', function () {
