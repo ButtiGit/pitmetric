@@ -3,15 +3,15 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.header>
+    <body class="min-h-screen bg-[#0b0d10] text-zinc-100">
+        <flux:sidebar sticky collapsible="mobile" class="border-e border-[#242932] bg-[#111317]">
+            <flux:sidebar.header class="border-b border-white/5 pb-4">
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid">
+            <flux:sidebar.nav class="pt-4">
+                <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
                     @can('manage-updates')
                         <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
@@ -21,24 +21,28 @@
 
             <flux:spacer />
 
-            <flux:sidebar.nav>
+            <flux:sidebar.nav class="border-t border-white/5 pt-4">
                 <flux:sidebar.item icon="globe-alt" :href="route('home')">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="newspaper" :href="route('updates.index')">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="user" :href="route('about')">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
             </flux:sidebar.nav>
 
-            <div class="mx-2 mb-3 mt-2 rounded-xl border border-zinc-200 p-2 dark:border-zinc-700">
-                <div class="grid grid-cols-2 gap-2">
+            <div class="mx-2 mb-3 mt-4 rounded-xl border border-white/8 bg-white/[0.02] p-1.5">
+                <div class="grid grid-cols-2 gap-1.5">
                     @foreach (['en' => '🇬🇧 EN', 'it' => '🇮🇹 IT'] as $locale => $label)
-                        <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="w-full rounded-lg px-2 py-1.5 text-xs font-semibold {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white' : 'text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}">{{ $label }}</button></form>
+                        <form method="POST" action="{{ route('locale.update') }}">
+                            @csrf
+                            <input type="hidden" name="locale" value="{{ $locale }}">
+                            <button class="w-full rounded-lg px-2 py-2 text-xs font-semibold transition {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white shadow-sm' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200' }}">{{ $label }}</button>
+                        </form>
                     @endforeach
                 </div>
             </div>
 
-            <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+            <x-desktop-user-menu class="hidden border-t border-white/5 pt-3 lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
-        <flux:header class="lg:hidden">
+        <flux:header class="border-b border-white/5 bg-[#111317] lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
             <flux:spacer />
             <flux:dropdown position="top" align="end">
