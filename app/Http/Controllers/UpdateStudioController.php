@@ -104,10 +104,7 @@ class UpdateStudioController extends Controller
                 ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
         }
 
-        if ($update->getAttribute('media_path') !== null && $update->getAttribute('media_path') !== '') {
-            Storage::disk('public')->delete((string) $update->getAttribute('media_path'));
-        }
-
+        $this->removeStoredMedia($update);
         $update->delete();
 
         return redirect()
@@ -117,19 +114,20 @@ class UpdateStudioController extends Controller
 
     private function persist(Request $request, Update $update): void
     {
+        $this->normalizeLegacyComposerInput($request);
+
         $data = $request->validate([
-            'title' => ['required', 'string', 'max:180'],
-            'title_it' => ['nullable', 'string', 'max:180'],
+            'primary_locale' => ['required', 'in:en,it'],
+            'primary_title' => ['required', 'string', 'max:180'],
+            'primary_excerpt' => ['nullable', 'string', 'max:500'],
+            'primary_content' => ['nullable', 'string'],
+            'translation_title' => ['nullable', 'string', 'max:180'],
+            'translation_excerpt' => ['nullable', 'string', 'max:500'],
+            'translation_content' => ['nullable', 'string'],
             'slug' => ['nullable', 'string', 'max:190', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
-            'excerpt' => ['nullable', 'string', 'max:500'],
-            'excerpt_it' => ['nullable', 'string', 'max:500'],
-            'content' => ['nullable', 'string'],
-            'content_it' => ['nullable', 'string'],
             'media' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,mp4,webm,mov', 'max:51200'],
             'media_url' => ['nullable', 'url', 'max:2000'],
             'media_type' => ['nullable', 'in:image,video'],
-            'media_alt' => ['nullable', 'string', 'max:255'],
-            'media_alt_it' => ['nullable', 'string', 'max:255'],
             'remove_media' => ['nullable', 'boolean'],
             'status' => ['required', 'in:draft,published'],
         ]);
@@ -142,6 +140,8 @@ class UpdateStudioController extends Controller
             && (($update->getAttribute('media_path') !== null && $update->getAttribute('media_path') !== '')
                 || ($update->getAttribute('media_url') !== null && $update->getAttribute('media_url') !== ''));
 
+        $externalMediaType = null;
+
         if ($externalMedia !== '') {
             $scheme = strtolower((string) parse_url($externalMedia, PHP_URL_SCHEME));
 
@@ -151,35 +151,60 @@ class UpdateStudioController extends Controller
                 ]);
             }
 
-            if (($data['media_type'] ?? null) === null) {
+            $externalMediaType = $this->inferExternalMediaType($externalMedia, $data['media_type'] ?? null);
+
+            if ($externalMediaType === null) {
                 throw ValidationException::withMessages([
-                    'media_type' => __('pitmetric.studio.media_type_required'),
+                    'media_url' => __('pitmetric.studio.media_detect_failed'),
                 ]);
             }
         }
 
-        $englishContent = trim((string) ($data['content'] ?? ''));
-        $italianContent = trim((string) ($data['content_it'] ?? ''));
+        $primaryLocale = (string) $data['primary_locale'];
+        $primaryTitle = trim((string) $data['primary_title']);
+        $primaryContent = trim((string) ($data['primary_content'] ?? ''));
+        $primaryExcerpt = $this->nullableString($data['primary_excerpt'] ?? null)
+            ?? $this->buildExcerpt($primaryContent !== '' ? $primaryContent : $primaryTitle);
+
+        $translationTitle = $this->nullableString($data['translation_title'] ?? null);
+        $translationContent = $this->nullableString($data['translation_content'] ?? null);
+        $translationExcerpt = $this->nullableString($data['translation_excerpt'] ?? null);
+
+        if ($translationExcerpt === null && $translationContent !== null) {
+            $translationExcerpt = $this->buildExcerpt($translationContent);
+        }
+
         $hasNewMedia = $uploaded instanceof UploadedFile || $externalMedia !== '';
 
-        if ($englishContent === '' && $italianContent === '' && ! $hasNewMedia && ! $hasExistingMedia) {
+        if ($primaryContent === '' && ! $hasNewMedia && ! $hasExistingMedia) {
             throw ValidationException::withMessages([
-                'content' => __('pitmetric.studio.content_or_media'),
+                'primary_content' => __('pitmetric.studio.content_or_media'),
             ]);
         }
 
-        $title = trim((string) $data['title']);
-        $titleIt = $this->nullableString($data['title_it'] ?? null);
-        $excerpt = $this->nullableString($data['excerpt'] ?? null)
-            ?? $this->buildExcerpt($englishContent !== '' ? $englishContent : $title);
-        $excerptIt = $this->nullableString($data['excerpt_it'] ?? null);
+        if ($primaryLocale === 'it') {
+            $titleIt = $primaryTitle;
+            $excerptIt = $primaryExcerpt;
+            $contentIt = $primaryContent;
 
-        if ($excerptIt === null && $italianContent !== '') {
-            $excerptIt = $this->buildExcerpt($italianContent);
+            $title = $translationTitle ?? $this->existingString($update, 'title') ?? $primaryTitle;
+            $content = $translationContent ?? $this->existingString($update, 'content') ?? $primaryContent;
+            $excerpt = $translationExcerpt
+                ?? $this->existingString($update, 'excerpt')
+                ?? $this->buildExcerpt($content !== '' ? $content : $title);
+        } else {
+            $title = $primaryTitle;
+            $excerpt = $primaryExcerpt;
+            $content = $primaryContent;
+
+            $titleIt = $translationTitle ?? $this->existingString($update, 'title_it');
+            $contentIt = $translationContent ?? $this->existingString($update, 'content_it');
+            $excerptIt = $translationExcerpt
+                ?? $this->existingString($update, 'excerpt_it');
         }
 
         $slug = $this->uniqueSlug(
-            trim((string) ($data['slug'] ?? '')) !== '' ? (string) $data['slug'] : $title,
+            trim((string) ($data['slug'] ?? '')) !== '' ? (string) $data['slug'] : $primaryTitle,
             $update,
         );
 
@@ -189,10 +214,10 @@ class UpdateStudioController extends Controller
             'slug' => $slug,
             'excerpt' => $excerpt,
             'excerpt_it' => $excerptIt,
-            'content' => $englishContent,
-            'content_it' => $italianContent !== '' ? $italianContent : null,
-            'media_alt' => $this->nullableString($data['media_alt'] ?? null),
-            'media_alt_it' => $this->nullableString($data['media_alt_it'] ?? null),
+            'content' => $content,
+            'content_it' => $contentIt,
+            'media_alt' => $title,
+            'media_alt_it' => $titleIt,
             'status' => $data['status'],
             'published_at' => $data['status'] === 'published' ? ($update->published_at ?? now()) : null,
         ]);
@@ -222,10 +247,51 @@ class UpdateStudioController extends Controller
             $this->removeStoredMedia($update);
             $update->setAttribute('media_path', null);
             $update->setAttribute('media_url', $externalMedia);
-            $update->setAttribute('media_type', (string) $data['media_type']);
+            $update->setAttribute('media_type', $externalMediaType);
         }
 
         $update->save();
+    }
+
+    private function normalizeLegacyComposerInput(Request $request): void
+    {
+        if (! $request->filled('primary_title') && $request->filled('title')) {
+            $request->merge([
+                'primary_locale' => 'en',
+                'primary_title' => $request->input('title'),
+                'primary_excerpt' => $request->input('excerpt'),
+                'primary_content' => $request->input('content'),
+                'translation_title' => $request->input('title_it'),
+                'translation_excerpt' => $request->input('excerpt_it'),
+                'translation_content' => $request->input('content_it'),
+            ]);
+        }
+    }
+
+    private function inferExternalMediaType(string $url, mixed $providedType): ?string
+    {
+        if (is_string($providedType) && in_array($providedType, ['image', 'video'], true)) {
+            return $providedType;
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $path = strtolower((string) parse_url($url, PHP_URL_PATH));
+
+        if (in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'vimeo.com', 'www.vimeo.com'], true)) {
+            return 'video';
+        }
+
+        $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+            return 'image';
+        }
+
+        if (in_array($extension, ['mp4', 'webm', 'mov'], true)) {
+            return 'video';
+        }
+
+        return null;
     }
 
     private function removeStoredMedia(Update $update): void
@@ -271,6 +337,15 @@ class UpdateStudioController extends Controller
         $value = trim($value);
 
         return $value !== '' ? $value : null;
+    }
+
+    private function existingString(Update $update, string $attribute): ?string
+    {
+        if (! $update->exists) {
+            return null;
+        }
+
+        return $this->nullableString($update->getAttribute($attribute));
     }
 
     private function schemaReady(): bool
