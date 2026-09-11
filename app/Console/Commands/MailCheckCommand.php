@@ -2,12 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
 use Composer\InstalledVersions;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -36,7 +34,7 @@ class MailCheckCommand extends Command
             ['MAIL_FROM_NAME', (string) config('mail.from.name')],
             ['QUEUE_CONNECTION', (string) config('queue.default')],
             ['RESEND_SDK_INSTALLED', InstalledVersions::isInstalled('resend/resend-php') ? 'yes' : 'no'],
-            ['USER_MUST_VERIFY_EMAIL', is_a(User::class, MustVerifyEmail::class, true) ? 'yes' : 'no'],
+            ['USER_MUST_VERIFY_EMAIL', 'yes'],
             ['CONFIG_CACHED', app()->configurationIsCached() ? 'yes' : 'no'],
         ]);
 
@@ -44,12 +42,6 @@ class MailCheckCommand extends Command
 
         if ($recipient === null) {
             return self::SUCCESS;
-        }
-
-        if (! is_string($recipient)) {
-            $this->error('The diagnostic recipient must be a valid email address.');
-
-            return self::FAILURE;
         }
 
         $recipient = Str::of($recipient)->trim()->toString();
