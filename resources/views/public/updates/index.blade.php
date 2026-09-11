@@ -1,4 +1,4 @@
-<x-layouts.public title="Updates" description="Aggiornamenti sullo sviluppo di PitMetric.">
+<x-layouts::public title="Updates" description="Aggiornamenti sullo sviluppo di PitMetric.">
     <section class="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
         <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#ff8a70]">Development log</p>
         <h1 class="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">Updates</h1>
@@ -21,4 +21,4 @@
             <div class="mt-10">{{ $updates->links() }}</div>
         @endif
     </section>
-</x-layouts.public>
+</x-layouts::public>

@@ -1,4 +1,4 @@
-<x-layouts.public title="About" description="Simone Butticè, sviluppatore full-stack e creatore di PitMetric.">
+<x-layouts::public title="About" description="Simone Butticè, sviluppatore full-stack e creatore di PitMetric.">
     <section class="mx-auto max-w-5xl px-5 py-20 lg:px-8 lg:py-28">
         <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#ff8a70]">Creator</p>
         <h1 class="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">Simone Butticè</h1>
@@ -39,4 +39,4 @@
             <p class="mt-5 max-w-3xl leading-7 text-zinc-300">PitMetric è il progetto con cui sto portando competenze da sviluppo gestionale in un dominio che mi interessa davvero: tracciare componenti, utilizzo, manutenzione e costi in modo affidabile, senza perdere lo storico tecnico del mezzo.</p>
         </div>
     </section>
-</x-layouts.public>
+</x-layouts::public>
