@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Update;
+use App\Services\NewsletterPublisher;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,20 +17,8 @@ class UpdateStudioController extends Controller
 {
     /** @var list<string> */
     private const REQUIRED_COLUMNS = [
-        'title',
-        'title_it',
-        'slug',
-        'excerpt',
-        'excerpt_it',
-        'content',
-        'content_it',
-        'media_type',
-        'media_path',
-        'media_url',
-        'media_alt',
-        'media_alt_it',
-        'status',
-        'published_at',
+        'title', 'title_it', 'slug', 'excerpt', 'excerpt_it', 'content', 'content_it',
+        'media_type', 'media_path', 'media_url', 'media_alt', 'media_alt_it', 'status', 'published_at',
     ];
 
     public function index(): View
@@ -38,9 +27,7 @@ class UpdateStudioController extends Controller
             return $this->setupView();
         }
 
-        $updates = Update::query()
-            ->latest('updated_at')
-            ->paginate(12);
+        $updates = Update::query()->latest('updated_at')->paginate(12);
 
         return view('studio.updates.index', compact('updates'));
     }
@@ -51,25 +38,23 @@ class UpdateStudioController extends Controller
             return $this->setupView();
         }
 
-        return view('studio.updates.form', [
-            'update' => new Update,
-        ]);
+        return view('studio.updates.form', ['update' => new Update]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, NewsletterPublisher $newsletter): RedirectResponse
     {
         if (! $this->schemaReady()) {
-            return redirect()
-                ->route('studio.updates.index')
-                ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
+            return redirect()->route('studio.updates.index')->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
         }
 
         $update = new Update;
         $this->persist($request, $update);
 
-        return redirect()
-            ->route('studio.updates.index')
-            ->with('status', __('pitmetric.studio.saved'));
+        if ($update->status === 'published') {
+            $newsletter->send($update);
+        }
+
+        return redirect()->route('studio.updates.index')->with('status', __('pitmetric.studio.saved'));
     }
 
     public function edit(Update $update): View
@@ -81,35 +66,32 @@ class UpdateStudioController extends Controller
         return view('studio.updates.form', compact('update'));
     }
 
-    public function update(Request $request, Update $update): RedirectResponse
+    public function update(Request $request, Update $update, NewsletterPublisher $newsletter): RedirectResponse
     {
         if (! $this->schemaReady()) {
-            return redirect()
-                ->route('studio.updates.index')
-                ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
+            return redirect()->route('studio.updates.index')->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
         }
 
+        $wasPublished = $update->status === 'published';
         $this->persist($request, $update);
 
-        return redirect()
-            ->route('studio.updates.index')
-            ->with('status', __('pitmetric.studio.saved'));
+        if (! $wasPublished && $update->status === 'published') {
+            $newsletter->send($update);
+        }
+
+        return redirect()->route('studio.updates.index')->with('status', __('pitmetric.studio.saved'));
     }
 
     public function destroy(Update $update): RedirectResponse
     {
         if (! $this->schemaReady()) {
-            return redirect()
-                ->route('studio.updates.index')
-                ->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
+            return redirect()->route('studio.updates.index')->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
         }
 
         $this->removeStoredMedia($update);
         $update->delete();
 
-        return redirect()
-            ->route('studio.updates.index')
-            ->with('status', __('pitmetric.studio.deleted'));
+        return redirect()->route('studio.updates.index')->with('status', __('pitmetric.studio.deleted'));
     }
 
     private function persist(Request $request, Update $update): void
@@ -146,17 +128,13 @@ class UpdateStudioController extends Controller
             $scheme = strtolower((string) parse_url($externalMedia, PHP_URL_SCHEME));
 
             if (! in_array($scheme, ['http', 'https'], true)) {
-                throw ValidationException::withMessages([
-                    'media_url' => __('pitmetric.studio.http_media_only'),
-                ]);
+                throw ValidationException::withMessages(['media_url' => __('pitmetric.studio.http_media_only')]);
             }
 
             $externalMediaType = $this->inferExternalMediaType($externalMedia, $data['media_type'] ?? null);
 
             if ($externalMediaType === null) {
-                throw ValidationException::withMessages([
-                    'media_url' => __('pitmetric.studio.media_detect_failed'),
-                ]);
+                throw ValidationException::withMessages(['media_url' => __('pitmetric.studio.media_detect_failed')]);
             }
         }
 
@@ -177,36 +155,26 @@ class UpdateStudioController extends Controller
         $hasNewMedia = $uploaded instanceof UploadedFile || $externalMedia !== '';
 
         if ($primaryContent === '' && ! $hasNewMedia && ! $hasExistingMedia) {
-            throw ValidationException::withMessages([
-                'primary_content' => __('pitmetric.studio.content_or_media'),
-            ]);
+            throw ValidationException::withMessages(['primary_content' => __('pitmetric.studio.content_or_media')]);
         }
 
         if ($primaryLocale === 'it') {
             $titleIt = $primaryTitle;
             $excerptIt = $primaryExcerpt;
             $contentIt = $primaryContent;
-
             $title = $translationTitle ?? $this->existingString($update, 'title') ?? $primaryTitle;
             $content = $translationContent ?? $this->existingString($update, 'content') ?? $primaryContent;
-            $excerpt = $translationExcerpt
-                ?? $this->existingString($update, 'excerpt')
-                ?? $this->buildExcerpt($content !== '' ? $content : $title);
+            $excerpt = $translationExcerpt ?? $this->existingString($update, 'excerpt') ?? $this->buildExcerpt($content !== '' ? $content : $title);
         } else {
             $title = $primaryTitle;
             $excerpt = $primaryExcerpt;
             $content = $primaryContent;
-
             $titleIt = $translationTitle ?? $this->existingString($update, 'title_it');
             $contentIt = $translationContent ?? $this->existingString($update, 'content_it');
-            $excerptIt = $translationExcerpt
-                ?? $this->existingString($update, 'excerpt_it');
+            $excerptIt = $translationExcerpt ?? $this->existingString($update, 'excerpt_it');
         }
 
-        $slug = $this->uniqueSlug(
-            trim((string) ($data['slug'] ?? '')) !== '' ? (string) $data['slug'] : $primaryTitle,
-            $update,
-        );
+        $slug = $this->uniqueSlug(trim((string) ($data['slug'] ?? '')) !== '' ? (string) $data['slug'] : $primaryTitle, $update);
 
         $update->fill([
             'title' => $title,
@@ -234,9 +202,7 @@ class UpdateStudioController extends Controller
             $path = $uploaded->store('updates', 'public');
 
             if ($path === false) {
-                throw ValidationException::withMessages([
-                    'media' => __('pitmetric.studio.upload_failed'),
-                ]);
+                throw ValidationException::withMessages(['media' => __('pitmetric.studio.upload_failed')]);
             }
 
             $mime = (string) $uploaded->getMimeType();
@@ -310,10 +276,7 @@ class UpdateStudioController extends Controller
         $slug = $base;
         $suffix = 2;
 
-        while (Update::query()
-            ->where('slug', $slug)
-            ->when($update->exists, fn ($query) => $query->where('id', '!=', $update->getKey()))
-            ->exists()) {
+        while (Update::query()->where('slug', $slug)->when($update->exists, fn ($query) => $query->where('id', '!=', $update->getKey()))->exists()) {
             $slug = $base.'-'.$suffix;
             $suffix++;
         }
@@ -350,11 +313,7 @@ class UpdateStudioController extends Controller
 
     private function schemaReady(): bool
     {
-        if (! Schema::hasTable('updates')) {
-            return false;
-        }
-
-        return Schema::hasColumns('updates', self::REQUIRED_COLUMNS);
+        return Schema::hasTable('updates') && Schema::hasColumns('updates', self::REQUIRED_COLUMNS);
     }
 
     private function setupView(): View
