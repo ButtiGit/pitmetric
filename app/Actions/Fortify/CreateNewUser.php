@@ -13,21 +13,27 @@ class CreateNewUser implements CreatesNewUsers
     use PasswordValidationRules, ProfileValidationRules;
 
     /**
-     * Validate and create a newly registered user.
-     *
-     * @param  array<string, string>  $input
+     * @param  array<string, mixed>  $input
      */
     public function create(array $input): User
     {
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+            'newsletter_opt_in' => ['nullable', 'boolean'],
+            'newsletter_locale' => ['nullable', 'in:en,it'],
         ])->validate();
+
+        $subscribed = filter_var($input['newsletter_opt_in'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'newsletter_subscribed_at' => $subscribed ? now() : null,
+            'newsletter_locale' => in_array($input['newsletter_locale'] ?? null, ['en', 'it'], true)
+                ? $input['newsletter_locale']
+                : 'en',
         ]);
     }
 }
