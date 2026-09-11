@@ -44,7 +44,10 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model has two-factor authentication configured.
+     * Keep the starter-kit helper valid even when two-factor fields are not enabled.
      */
-    public function withTwoFactor(): static {}
+    public function withTwoFactor(): static
+    {
+        return $this->state(fn (array $attributes): array => []);
+    }
 }
