@@ -1,8 +1,7 @@
 <x-layouts::public>
     <section class="mx-auto max-w-7xl px-5 pb-20 pt-20 lg:px-8 lg:pt-28">
         <div class="max-w-4xl">
-            <span class="inline-flex rounded-full border border-[#E10600]/40 bg-[#E10600]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#ff625e]">{{ __('pitmetric.home.badge') }}</span>
-            <h1 class="mt-7 text-5xl font-black tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">{{ __('pitmetric.home.title_1') }}<br><span class="text-[#E10600]">{{ __('pitmetric.home.title_2') }}</span></h1>
+            <h1 class="text-5xl font-black tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">{{ __('pitmetric.home.title_1') }}<br><span class="text-[#E10600]">{{ __('pitmetric.home.title_2') }}</span></h1>
             <p class="mt-7 max-w-2xl text-lg leading-8 text-zinc-400">{{ __('pitmetric.home.intro') }}</p>
             <div class="mt-9 flex flex-wrap gap-3">
                 @auth
