@@ -4,11 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Update;
 use Illuminate\Contracts\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Schema;
 
 class PublicUpdateController extends Controller
 {
     public function index(): View
     {
+        if (! Schema::hasTable('updates')) {
+            $updates = new LengthAwarePaginator(
+                items: [],
+                total: 0,
+                perPage: 9,
+                currentPage: LengthAwarePaginator::resolveCurrentPage(),
+                options: [
+                    'path' => request()->url(),
+                    'query' => request()->query(),
+                ],
+            );
+
+            return view('public.updates.index', compact('updates'));
+        }
+
         $updates = Update::query()
             ->published()
             ->latest('published_at')
