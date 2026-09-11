@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NewsletterPreferencesController;
 use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\UpdateStudioController;
 use Illuminate\Http\Request;
@@ -10,11 +11,12 @@ Route::view('/about', 'public.about')->name('about');
 Route::view('/cookies', 'public.cookies')->name('cookies');
 Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
 Route::get('/updates/{update:slug}', [PublicUpdateController::class, 'show'])->name('updates.show');
+Route::get('/newsletter/unsubscribe/{user}', [NewsletterPreferencesController::class, 'unsubscribe'])
+    ->middleware('signed')
+    ->name('newsletter.unsubscribe');
 
 Route::post('/locale', function (Request $request) {
-    $validated = $request->validate([
-        'locale' => ['required', 'in:en,it'],
-    ]);
+    $validated = $request->validate(['locale' => ['required', 'in:en,it']]);
 
     return back()->withCookie(cookie(
         'pitmetric_locale',
@@ -31,6 +33,13 @@ Route::post('/locale', function (Request $request) {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
+
+    foreach (['garage', 'components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
+        Route::view('/'.$section, 'demo.workspace', ['initialSection' => $section])->name('demo.'.$section);
+    }
+
+    Route::get('/newsletter', [NewsletterPreferencesController::class, 'edit'])->name('newsletter.edit');
+    Route::post('/newsletter', [NewsletterPreferencesController::class, 'update'])->name('newsletter.update');
 
     Route::middleware('can:manage-updates')
         ->prefix('studio')
