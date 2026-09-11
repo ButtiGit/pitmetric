@@ -66,34 +66,53 @@ class Update extends Model
 
     public function titleForLocale(?string $locale = null): string
     {
-        return $this->localizedValue($this->title, $this->title_it, $locale);
+        return $this->localizedValue(
+            $this->stringAttribute('title'),
+            $this->stringAttribute('title_it'),
+            $locale,
+        );
     }
 
     public function excerptForLocale(?string $locale = null): string
     {
-        return $this->localizedValue($this->excerpt, $this->excerpt_it, $locale);
+        return $this->localizedValue(
+            $this->stringAttribute('excerpt'),
+            $this->stringAttribute('excerpt_it'),
+            $locale,
+        );
     }
 
     public function contentForLocale(?string $locale = null): string
     {
-        return $this->localizedValue($this->content, $this->content_it, $locale);
+        return $this->localizedValue(
+            $this->stringAttribute('content'),
+            $this->stringAttribute('content_it'),
+            $locale,
+        );
     }
 
     public function mediaAltForLocale(?string $locale = null): string
     {
-        $alt = $this->localizedValue($this->media_alt, $this->media_alt_it, $locale);
+        $alt = $this->localizedValue(
+            $this->stringAttribute('media_alt'),
+            $this->stringAttribute('media_alt_it'),
+            $locale,
+        );
 
         return $alt !== '' ? $alt : $this->titleForLocale($locale);
     }
 
     public function mediaSource(): ?string
     {
-        if ($this->media_path !== null && $this->media_path !== '') {
-            return Storage::disk('public')->url($this->media_path);
+        $mediaPath = $this->stringAttribute('media_path');
+        $mediaUrl = $this->stringAttribute('media_url');
+
+        if ($mediaPath !== null && $mediaPath !== '') {
+            return Storage::disk('public')->url($mediaPath);
         }
 
-        if ($this->media_url !== null && $this->media_url !== '') {
-            return $this->media_url;
+        if ($mediaUrl !== null && $mediaUrl !== '') {
+            return $mediaUrl;
         }
 
         return null;
@@ -101,15 +120,18 @@ class Update extends Model
 
     public function videoEmbedUrl(): ?string
     {
-        if ($this->media_type !== 'video' || $this->media_url === null || $this->media_url === '') {
+        $mediaType = $this->stringAttribute('media_type');
+        $mediaUrl = $this->stringAttribute('media_url');
+
+        if ($mediaType !== 'video' || $mediaUrl === null || $mediaUrl === '') {
             return null;
         }
 
-        $host = strtolower((string) parse_url($this->media_url, PHP_URL_HOST));
-        $path = trim((string) parse_url($this->media_url, PHP_URL_PATH), '/');
+        $host = strtolower((string) parse_url($mediaUrl, PHP_URL_HOST));
+        $path = trim((string) parse_url($mediaUrl, PHP_URL_PATH), '/');
 
         if (in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com'], true)) {
-            parse_str((string) parse_url($this->media_url, PHP_URL_QUERY), $query);
+            parse_str((string) parse_url($mediaUrl, PHP_URL_QUERY), $query);
             $videoId = $query['v'] ?? null;
 
             if (is_string($videoId) && preg_match('/^[A-Za-z0-9_-]{6,20}$/', $videoId) === 1) {
@@ -137,5 +159,12 @@ class Update extends Model
         }
 
         return $english ?? '';
+    }
+
+    private function stringAttribute(string $key): ?string
+    {
+        $value = $this->getAttributes()[$key] ?? null;
+
+        return is_string($value) ? $value : null;
     }
 }
