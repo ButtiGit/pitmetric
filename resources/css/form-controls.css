@@ -1,0 +1,224 @@
+@layer components {
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        .pitmetric-app input[type='number'],
+        .pitmetric-app select
+    ) {
+        min-height: 2.75rem;
+        border: 1px solid var(--pm-border, #d7dce2);
+        border-radius: .75rem;
+        background-color: var(--pm-surface, #ffffff);
+        color: var(--pm-text, #15191f);
+        accent-color: var(--pm-accent, #E10600);
+        transition:
+            border-color 150ms ease,
+            box-shadow 150ms ease,
+            background-color 150ms ease;
+    }
+
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        .pitmetric-app input[type='number'],
+        .pitmetric-app select
+    ):hover:not(:disabled) {
+        border-color: var(--pm-border-strong, #aab2bd);
+        background-color: color-mix(in srgb, var(--pm-surface, #ffffff) 96%, var(--pm-hover, #eceff2));
+    }
+
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        .pitmetric-app input[type='number'],
+        .pitmetric-app select
+    ):focus,
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        .pitmetric-app input[type='number'],
+        .pitmetric-app select
+    ):focus-visible {
+        border-color: var(--pm-focus, #E10600);
+        outline: none;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--pm-focus, #E10600) 17%, transparent);
+    }
+
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        input[data-flux-control][type='date'],
+        input[data-flux-control][type='time'],
+        input[data-flux-control][type='datetime-local'],
+        input[data-flux-control][type='month'],
+        input[data-flux-control][type='week']
+    ) {
+        color-scheme: light;
+        cursor: pointer;
+        padding-inline-end: .65rem;
+    }
+
+    .dark :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        input[data-flux-control][type='date'],
+        input[data-flux-control][type='time'],
+        input[data-flux-control][type='datetime-local'],
+        input[data-flux-control][type='month'],
+        input[data-flux-control][type='week']
+    ) {
+        color-scheme: dark;
+    }
+
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        input[data-flux-control][type='date'],
+        input[data-flux-control][type='time'],
+        input[data-flux-control][type='datetime-local'],
+        input[data-flux-control][type='month'],
+        input[data-flux-control][type='week']
+    )::-webkit-calendar-picker-indicator {
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-inline-start: .4rem;
+        border-radius: .45rem;
+        padding: .35rem;
+        background-color: color-mix(in srgb, currentColor 8%, transparent);
+        cursor: pointer;
+        opacity: .82;
+        transition: background-color 150ms ease, opacity 150ms ease, transform 150ms ease;
+    }
+
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        input[data-flux-control][type='date'],
+        input[data-flux-control][type='time'],
+        input[data-flux-control][type='datetime-local'],
+        input[data-flux-control][type='month'],
+        input[data-flux-control][type='week']
+    )::-webkit-calendar-picker-indicator:hover {
+        background-color: color-mix(in srgb, var(--pm-accent, #E10600) 14%, transparent);
+        opacity: 1;
+        transform: scale(1.04);
+    }
+
+    :where(.pitmetric-app input[type='number'], input[data-flux-control][type='number']) {
+        appearance: textfield;
+        font-variant-numeric: tabular-nums;
+    }
+
+    :where(.pitmetric-app input[type='number'], input[data-flux-control][type='number'])::-webkit-inner-spin-button,
+    :where(.pitmetric-app input[type='number'], input[data-flux-control][type='number'])::-webkit-outer-spin-button {
+        margin: 0;
+        appearance: none;
+    }
+
+    .pitmetric-app select {
+        cursor: pointer;
+    }
+
+    :where(.pitmetric-app select[multiple], select[data-flux-control][multiple]) {
+        min-height: 8rem;
+        padding: .4rem;
+        cursor: default;
+        scrollbar-color: var(--pm-border-strong, #aab2bd) transparent;
+        scrollbar-width: thin;
+    }
+
+    :where(.pitmetric-app select[multiple], select[data-flux-control][multiple]) option {
+        margin-block: .15rem;
+        border-radius: .5rem;
+        padding: .55rem .65rem;
+        cursor: pointer;
+    }
+
+    :where(.pitmetric-app select[multiple], select[data-flux-control][multiple]) option:checked {
+        background: linear-gradient(
+            var(--pm-accent-subtle, #ffe7e6),
+            var(--pm-accent-subtle, #ffe7e6)
+        );
+        color: var(--pm-text, #15191f);
+        font-weight: 700;
+    }
+
+    .dark :where(.pitmetric-app select[multiple], select[data-flux-control][multiple]) option:checked {
+        background: linear-gradient(
+            var(--pm-accent-subtle, #341211),
+            var(--pm-accent-subtle, #341211)
+        );
+        color: var(--pm-text, #f5f7fa);
+    }
+
+    :where(.pitmetric-app select[multiple], select[data-flux-control][multiple]) option:hover {
+        background-color: var(--pm-hover, #eceff2);
+    }
+
+    .dark :where(.pitmetric-app select[multiple], select[data-flux-control][multiple]) option:hover {
+        background-color: var(--pm-hover, #20252c);
+    }
+
+    :where(
+        .pitmetric-app input[type='checkbox'],
+        .pitmetric-app input[type='radio'],
+        input[data-flux-control][type='checkbox'],
+        input[data-flux-control][type='radio'],
+        .pitmetric-app input[type='range'],
+        input[data-flux-control][type='range']
+    ) {
+        accent-color: var(--pm-accent, #E10600);
+        cursor: pointer;
+    }
+
+    :where(
+        .pitmetric-app input[type='date'],
+        .pitmetric-app input[type='time'],
+        .pitmetric-app input[type='datetime-local'],
+        .pitmetric-app input[type='month'],
+        .pitmetric-app input[type='week'],
+        .pitmetric-app input[type='number'],
+        .pitmetric-app select
+    ):disabled {
+        border-color: var(--pm-border, #d7dce2);
+        background-color: var(--pm-disabled-surface, #e4e7eb);
+        color: var(--pm-disabled-text, #59626e);
+        cursor: not-allowed;
+        opacity: .72;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :where(
+        .pitmetric-app input,
+        .pitmetric-app select,
+        input[data-flux-control],
+        select[data-flux-control]
+    ) {
+        transition-duration: 0.01ms !important;
+    }
+}
