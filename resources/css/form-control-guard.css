@@ -28,8 +28,22 @@
         appearance: none !important;
     }
 
-    .pitmetric-app .pm-custom-control {
-        isolation: isolate;
+    /*
+     * Do not isolate the custom control: isolation creates a stacking context
+     * and traps the calendar/select popover underneath later sibling panels.
+     * Elevate only the control that is currently open instead.
+     */
+    .pitmetric-app .pm-custom-control.is-open {
+        z-index: 1100;
+    }
+
+    /*
+     * The form itself is usually inside a .pm-panel. Raise that panel while a
+     * picker is open so the popover can paint above following panels/tables.
+     */
+    .pitmetric-app .pm-panel:has(.pm-custom-control.is-open) {
+        z-index: 1000;
+        overflow: visible;
     }
 
     .pitmetric-app .pm-control-trigger {
@@ -38,6 +52,6 @@
     }
 
     .pitmetric-app .pm-control-popover {
-        z-index: 1000;
+        z-index: 1200;
     }
 }
