@@ -40,7 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @return BelongsToMany<Workspace, $this> */
     public function workspaces(): BelongsToMany
     {
-        return $this->belongsToMany(Workspace::class)->withTimestamps();
+        return $this->belongsToMany(Workspace::class, 'workspace_user')->withTimestamps();
     }
 
     /**
