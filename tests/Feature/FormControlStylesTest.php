@@ -45,15 +45,40 @@ test('interactive non text controls use custom PitMetric popovers instead of nat
         ->toContain('.pm-number-control');
 });
 
+test('enhanced native pickers cannot be reactivated by wrapping labels', function () {
+    $javascript = file_get_contents(resource_path('js/form-control-guard.js'));
+    $css = file_get_contents(resource_path('css/form-control-guard.css'));
+
+    expect($javascript)
+        ->toContain('function rehomeNativeSource')
+        ->toContain("source.closest('label')")
+        ->toContain("source.dataset.pmRehomed = 'true'")
+        ->toContain("document.addEventListener('pointerdown', blockNativeActivation, true)")
+        ->toContain("document.addEventListener('click', blockNativeActivation, true)")
+        ->toContain("document.addEventListener('livewire:navigated'")
+        ->toContain('MutationObserver');
+
+    expect($css)
+        ->toContain(".pm-native-control-source[data-pm-rehomed='true']")
+        ->toContain('pointer-events: none !important')
+        ->toContain('display: block !important')
+        ->toContain('clip-path: inset(50%) !important');
+});
+
 test('custom form controls are loaded before the demo renderer', function () {
     $javascript = file_get_contents(resource_path('js/app.js'));
 
     expect($javascript)
         ->toContain("import '../css/form-controls.css';")
         ->toContain("import '../css/form-control-popovers.css';")
+        ->toContain("import '../css/form-control-guard.css';")
         ->toContain("import './form-controls';")
+        ->toContain("import './form-control-guard';")
         ->toContain("import './pitmetric-demo';");
 
     expect(strpos($javascript, "import './form-controls';"))
+        ->toBeLessThan(strpos($javascript, "import './form-control-guard';"));
+
+    expect(strpos($javascript, "import './form-control-guard';"))
         ->toBeLessThan(strpos($javascript, "import './pitmetric-demo';"));
 });

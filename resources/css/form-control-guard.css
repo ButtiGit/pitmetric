@@ -1,0 +1,43 @@
+@layer components {
+    /*
+     * Enhanced native controls remain in the form only as data/validation
+     * sources. Keep them focusable by validation code but physically outside
+     * the visual UI and completely immune to pointer activation.
+     *
+     * This deliberately overrides the older display:none fallback: Chromium
+     * can otherwise re-activate a hidden date/select through a wrapping label.
+     */
+    .pitmetric-app .pm-native-control-source[data-pm-rehomed='true'] {
+        position: absolute !important;
+        display: block !important;
+        width: 1px !important;
+        min-width: 0 !important;
+        height: 1px !important;
+        min-height: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0 0 0 0) !important;
+        clip-path: inset(50%) !important;
+        white-space: nowrap !important;
+        opacity: 0 !important;
+        border: 0 !important;
+        padding: 0 !important;
+        pointer-events: none !important;
+        user-select: none !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+    }
+
+    .pitmetric-app .pm-custom-control {
+        isolation: isolate;
+    }
+
+    .pitmetric-app .pm-control-trigger {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .pitmetric-app .pm-control-popover {
+        z-index: 1000;
+    }
+}
