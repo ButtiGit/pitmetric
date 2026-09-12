@@ -14,9 +14,12 @@ it('opens the real garage and keeps unfinished sections in the local demo', func
     $this->get(route('demo.garage'))
         ->assertOk()
         ->assertSee('SERVER WORKSPACE')
-        ->assertDontSee('localStorage');
+        ->assertDontSee('id="pitmetric-demo"', false);
 
     foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
-        $this->get(route('demo.'.$section))->assertOk()->assertSee('localStorage');
+        $this->get(route('demo.'.$section))
+            ->assertOk()
+            ->assertSee('localStorage')
+            ->assertSee('id="pitmetric-demo"', false);
     }
 });
