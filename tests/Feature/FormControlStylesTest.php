@@ -7,8 +7,18 @@ test('modern form control stylesheet covers native non text controls', function 
         ->toContain("input[type='date']")
         ->toContain("input[type='time']")
         ->toContain("input[type='number']")
+        ->toContain("input[type='checkbox']")
+        ->toContain("input[type='radio']")
+        ->toContain("input[type='range']")
+        ->toContain("input[type='file']")
+        ->toContain("input[type='color']")
         ->toContain('select[multiple]')
+        ->toContain('select:not([multiple]):not([size])')
+        ->toContain('appearance: none !important')
+        ->toContain('background-image: url(')
         ->toContain('::-webkit-calendar-picker-indicator')
+        ->toContain('::-webkit-slider-thumb')
+        ->toContain('::file-selector-button')
         ->toContain('option:checked')
         ->toContain('prefers-reduced-motion');
 });
