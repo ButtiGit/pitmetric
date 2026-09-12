@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NewsletterPreferencesController;
 use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\UpdateStudioController;
+use App\Http\Controllers\VehicleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -32,9 +34,14 @@ Route::post('/locale', function (Request $request) {
 })->name('locale.update');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    foreach (['garage', 'components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
+    Route::get('/garage', [VehicleController::class, 'index'])->name('demo.garage');
+    Route::post('/garage', [VehicleController::class, 'store'])->name('garage.store');
+    Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
+    Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');
+
+    foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
         Route::view('/'.$section, 'demo.workspace', ['initialSection' => $section])->name('demo.'.$section);
     }
 
