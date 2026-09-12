@@ -65,6 +65,17 @@ test('enhanced native pickers cannot be reactivated by wrapping labels', functio
         ->toContain('clip-path: inset(50%) !important');
 });
 
+test('open custom pickers stack above following PitMetric panels', function () {
+    $css = file_get_contents(resource_path('css/form-control-guard.css'));
+
+    expect($css)
+        ->toContain('.pm-custom-control.is-open')
+        ->toContain('.pm-panel:has(.pm-custom-control.is-open)')
+        ->toContain('overflow: visible')
+        ->toContain('z-index: 1200')
+        ->not->toContain('isolation: isolate');
+});
+
 test('custom form controls are loaded before the demo renderer', function () {
     $javascript = file_get_contents(resource_path('js/app.js'));
 
