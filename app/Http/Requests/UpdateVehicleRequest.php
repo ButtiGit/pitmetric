@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Vehicle;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,7 @@ class UpdateVehicleRequest extends FormRequest
             && ($this->user()?->can('update', $vehicle) ?? false);
     }
 
-    /** @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string> */
+    /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
         return [
