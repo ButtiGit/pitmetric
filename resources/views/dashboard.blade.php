@@ -2,7 +2,7 @@
     @php($it = app()->getLocale() === 'it')
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7" data-demo-dashboard data-user="{{ auth()->id() }}" data-pm-mobile-dashboard>
         <div class="mx-auto w-full max-w-[1360px] space-y-4 sm:space-y-5">
-            @if (! $domainReady)
+            @if ($databaseAccessEnabled && ! $domainReady)
                 <section class="pm-panel border-pm-warning/30 bg-pm-warning-subtle p-4 sm:p-5" role="status">
                     <div class="flex items-start gap-3">
                         <div class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-warning/30 bg-pm-warning-subtle text-sm font-black text-pm-warning">!</div>
