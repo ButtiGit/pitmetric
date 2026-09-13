@@ -29,28 +29,28 @@ class UserStudioController extends Controller
         return view('studio.users.index', [
             'users' => $users,
             'search' => $search,
-            'accessControlReady' => Schema::hasColumn('users', 'manager_access_enabled'),
+            'accessControlReady' => Schema::hasColumn('users', 'database_access_enabled'),
         ]);
     }
 
     public function updateAccess(Request $request, User $user): RedirectResponse
     {
-        if (! Schema::hasColumn('users', 'manager_access_enabled')) {
+        if (! Schema::hasColumn('users', 'database_access_enabled')) {
             return back()->with('studio_setup_error', __('users.setup_required'));
         }
 
         if (Gate::forUser($user)->allows('manage-updates')) {
-            abort(403, 'Editor access cannot be disabled from the user studio.');
+            abort(403, 'Editor database access cannot be disabled from the user studio.');
         }
 
         $validated = $request->validate([
-            'manager_access_enabled' => ['required', 'boolean'],
+            'database_access_enabled' => ['required', 'boolean'],
         ]);
 
-        $enabled = (bool) $validated['manager_access_enabled'];
+        $enabled = (bool) $validated['database_access_enabled'];
 
         $user->forceFill([
-            'manager_access_enabled' => $enabled,
+            'database_access_enabled' => $enabled,
         ])->save();
 
         return back()->with('status', $enabled
