@@ -5,7 +5,7 @@ use App\Services\WorkspaceContext;
 
 const IPHONE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Version/18.6 Mobile/15E148 Safari/604.1';
 
-it('lets an iPhone browser sign in and open the manager', function () {
+it('lets an iPhone browser sign in and open the manager in demo-only mode', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $this->withHeader('User-Agent', IPHONE_USER_AGENT)
@@ -22,18 +22,20 @@ it('lets an iPhone browser sign in and open the manager', function () {
         ->get(route('dashboard'))
         ->assertOk()
         ->assertSee('data-pm-mobile-header', false)
-        ->assertSee('data-pm-mobile-dashboard', false);
+        ->assertSee('data-pm-mobile-dashboard', false)
+        ->assertDontSee('Update in progress');
 
     $this->withHeader('User-Agent', IPHONE_USER_AGENT)
         ->get(route('demo.garage'))
         ->assertOk()
-        ->assertSee(__('garage.workspace.badge'));
+        ->assertSee(__('demo.local_badge'));
 
-    expect($user->workspaces()->count())->toBe(1);
+    expect($user->hasDatabaseAccess())->toBeFalse()
+        ->and($user->workspaces()->count())->toBe(1);
 });
 
-it('keeps dashboard and garage reachable while the workspace schema is being deployed', function () {
-    $user = User::factory()->create(['email_verified_at' => now()]);
+it('keeps database-enabled dashboard and garage reachable while the workspace schema is being deployed', function () {
+    $user = User::factory()->withDatabaseAccess()->create(['email_verified_at' => now()]);
     $workspaceContext = Mockery::mock(WorkspaceContext::class);
     $workspaceContext->shouldReceive('isReady')->twice()->andReturnFalse();
     $this->app->instance(WorkspaceContext::class, $workspaceContext);
