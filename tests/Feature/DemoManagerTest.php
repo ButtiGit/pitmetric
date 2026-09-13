@@ -15,13 +15,15 @@ it('opens the manager sections without public preview labels', function () {
         ->assertOk()
         ->assertSee('WORKSPACE')
         ->assertDontSee('SERVER WORKSPACE')
-        ->assertDontSee('DEMO LOCALE');
+        ->assertDontSee('DEMO LOCALE')
+        ->assertDontSee('browser demo');
 
     foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
         $this->get(route('demo.'.$section))
             ->assertOk()
             ->assertSee(__('demo.local_badge'))
-            ->assertDontSee('localStorage')
-            ->assertDontSee('DEMO LOCALE');
+            ->assertDontSee('DEMO LOCALE')
+            ->assertDontSee('LOCAL DEMO')
+            ->assertDontSee('stored locally in this browser');
     }
 });
