@@ -56,6 +56,7 @@ return [
         'created' => 'Vehicle added to your workspace.',
         'updated' => 'Vehicle updated.',
         'deleted' => 'Vehicle archived.',
+        'unavailable' => 'Garage is temporarily unavailable until the database update is completed.',
     ],
     'next' => [
         'title' => 'Next: real components',

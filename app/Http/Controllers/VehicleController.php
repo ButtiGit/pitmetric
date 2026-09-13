@@ -6,6 +6,7 @@ use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -13,7 +14,7 @@ use Illuminate\View\View;
 
 class VehicleController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, WorkspaceContext $workspaceContext): View
     {
         Gate::authorize('viewAny', Vehicle::class);
 
@@ -23,14 +24,29 @@ class VehicleController extends Controller
             abort(401);
         }
 
-        $workspace = $user->workspaces()->orderBy('workspaces.id')->firstOrFail();
+        if (! $workspaceContext->isReady()) {
+            return view('garage.unavailable');
+        }
+
+        $workspace = $workspaceContext->personal($user);
         $vehicles = Vehicle::query()->orderBy('name')->get();
 
         return view('garage.index', compact('workspace', 'vehicles'));
     }
 
-    public function store(StoreVehicleRequest $request): RedirectResponse
+    public function store(StoreVehicleRequest $request, WorkspaceContext $workspaceContext): RedirectResponse
     {
+        if (! $workspaceContext->isReady()) {
+            return to_route('demo.garage')->with('error', __('garage.messages.unavailable'));
+        }
+
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(401);
+        }
+
+        $workspaceContext->personal($user);
         Vehicle::create($request->validated());
 
         return to_route('demo.garage')->with('status', __('garage.messages.created'));

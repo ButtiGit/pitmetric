@@ -56,6 +56,7 @@ return [
         'created' => 'Mezzo aggiunto al tuo workspace.',
         'updated' => 'Mezzo aggiornato.',
         'deleted' => 'Mezzo archiviato.',
+        'unavailable' => 'Il Garage è temporaneamente non disponibile finché non viene completato l’aggiornamento del database.',
     ],
     'next' => [
         'title' => 'Prossimo passo: componenti reali',

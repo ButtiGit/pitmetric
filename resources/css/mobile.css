@@ -1,0 +1,160 @@
+@layer components {
+    .pm-mobile-header {
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .pm-mobile-sidebar {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+}
+
+@media (max-width: 42rem) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: hidden;
+        overscroll-behavior-x: none;
+    }
+
+    .pitmetric-app {
+        overflow-x: clip;
+    }
+
+    .pitmetric-app .pm-panel,
+    .pitmetric-app .pm-stat-card {
+        border-radius: .85rem;
+    }
+
+    .pitmetric-app .pm-race-button,
+    .pitmetric-app .pm-ghost-button,
+    .pitmetric-app .pm-danger-button {
+        width: 100%;
+        min-height: 3rem;
+        padding-inline: 1rem;
+    }
+
+    .pitmetric-app details > summary {
+        display: flex;
+        min-height: 2.75rem;
+        align-items: center;
+        touch-action: manipulation;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+        touch-action: manipulation;
+    }
+
+    input,
+    textarea,
+    select,
+    .pm-control-trigger,
+    .pm-number-input {
+        font-size: 16px !important;
+    }
+
+    .pm-control-trigger {
+        min-height: 3.15rem;
+    }
+
+    .pm-custom-control.is-open {
+        z-index: 1300;
+    }
+
+    .pm-control-popover,
+    .pm-calendar-popover,
+    .pm-time-popover {
+        position: fixed;
+        z-index: 1400;
+        inset-inline: .75rem;
+        top: auto;
+        bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-width: none;
+        max-height: min(72svh, 34rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border-radius: 1rem;
+        padding: .65rem;
+        box-shadow: 0 -12px 48px rgb(0 0 0 / .42), 0 12px 48px rgb(0 0 0 / .32);
+    }
+
+    .pm-select-popover {
+        max-height: min(66svh, 28rem);
+    }
+
+    .pm-select-option {
+        min-height: 3rem;
+        padding: .75rem;
+    }
+
+    .pm-calendar-header {
+        grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+        padding-bottom: .65rem;
+    }
+
+    .pm-picker-icon-button {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .pm-calendar-grid {
+        gap: .15rem;
+    }
+
+    .pm-calendar-day {
+        min-height: 2.55rem;
+        aspect-ratio: auto;
+        border-radius: .65rem;
+        font-size: .85rem;
+    }
+
+    .pm-picker-footer {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding-top: .75rem;
+    }
+
+    .pm-picker-secondary,
+    .pm-picker-primary {
+        min-height: 2.8rem;
+        padding: .65rem .75rem;
+    }
+
+    .pm-time-scroll {
+        max-height: min(34svh, 13rem);
+    }
+
+    .pm-time-option {
+        min-height: 2.75rem;
+    }
+
+    .pm-number-control {
+        grid-template-columns: 3.15rem minmax(0, 1fr) 3.15rem;
+    }
+
+    .pm-number-stepper {
+        min-height: 3.15rem;
+        font-size: 1.1rem;
+    }
+
+    .pm-native-control-source {
+        pointer-events: none !important;
+    }
+}
+
+@media (max-width: 22rem) {
+    .pm-control-popover,
+    .pm-calendar-popover,
+    .pm-time-popover {
+        inset-inline: .5rem;
+        bottom: calc(.5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .pm-calendar-day {
+        min-height: 2.35rem;
+        font-size: .78rem;
+    }
+}
