@@ -2,25 +2,25 @@
 
 return [
     'title' => 'I tuoi mezzi',
-    'description' => 'Questo è il primo modulo reale di PitMetric. I mezzi vengono salvati sul server e appartengono esclusivamente al tuo workspace.',
+    'description' => 'Organizza i mezzi che usi in pista e collegali progressivamente a configurazioni, sessioni, manutenzione e spese.',
     'validation_title' => 'Controlla i dati del mezzo evidenziati.',
     'workspace' => [
-        'badge' => 'WORKSPACE SERVER',
-        'copy' => 'I dati del Garage ora vengono salvati nel database PitMetric. Gli altri account non possono leggere o modificare i mezzi di questo workspace.',
+        'badge' => 'WORKSPACE',
+        'copy' => 'Qui trovi i mezzi associati al tuo account PitMetric e puoi mantenerne aggiornati i dati principali.',
         'vehicle_count' => 'Mezzi',
     ],
     'create' => [
         'title' => 'Aggiungi un mezzo',
-        'description' => 'Crea il mezzo che in seguito collegheremo a configurazioni, sessioni, manutenzione e spese.',
+        'description' => 'Inserisci kart, auto, moto o prototipi che vuoi gestire con PitMetric.',
         'submit' => 'Aggiungi mezzo',
     ],
     'list' => [
-        'title' => 'Garage del workspace',
-        'description' => 'Modifica o archivia i mezzi salvati nel tuo workspace personale.',
+        'title' => 'Garage',
+        'description' => 'Modifica o archivia i mezzi associati al tuo workspace.',
     ],
     'empty' => [
         'title' => 'Il tuo garage è vuoto',
-        'description' => 'Aggiungi il tuo primo kart, auto, moto o prototipo. Da questo momento sono dati reali sul server, non più una demo nel browser.',
+        'description' => 'Aggiungi il tuo primo kart, auto, moto o prototipo per iniziare a organizzare il lavoro.',
     ],
     'fields' => [
         'name' => 'Nome mezzo',
@@ -50,16 +50,16 @@ return [
     ],
     'delete' => [
         'submit' => 'Archivia mezzo',
-        'confirm' => 'Archiviare questo mezzo? Sparirà dal garage attivo ma resterà recuperabile nel database.',
+        'confirm' => 'Archiviare questo mezzo?',
     ],
     'messages' => [
         'created' => 'Mezzo aggiunto al tuo workspace.',
         'updated' => 'Mezzo aggiornato.',
         'deleted' => 'Mezzo archiviato.',
-        'unavailable' => 'Il Garage è temporaneamente non disponibile finché non viene completato l’aggiornamento del database.',
+        'unavailable' => 'Il Garage è temporaneamente non disponibile. Riprova dopo l’aggiornamento dell’applicazione.',
     ],
     'next' => [
-        'title' => 'Prossimo passo: componenti reali',
-        'description' => 'Le altre sezioni del gestionale sono ancora demo locali. La prossima vertical slice collegherà i componenti a questo workspace e a questi mezzi reali.',
+        'title' => 'Continua con i componenti',
+        'description' => 'Aggiungi e organizza i componenti del mezzo per costruire configurazioni e tenere sotto controllo utilizzo e manutenzione.',
     ],
 ];

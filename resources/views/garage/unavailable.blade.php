@@ -13,8 +13,7 @@
                     <div class="grid size-10 shrink-0 place-items-center rounded-xl border border-pm-warning/30 bg-pm-warning-subtle text-lg font-black text-pm-warning">!</div>
                     <div class="min-w-0">
                         <h2 class="text-lg font-black text-pm-text">{{ $it ? 'Garage temporaneamente non disponibile' : 'Garage temporarily unavailable' }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ $it ? 'Il codice del gestionale è online, ma il database di questo deploy non ha ancora tutte le tabelle necessarie per Workspace e Garage. La pagina resta accessibile invece di generare un errore 500 e nessun dato viene modificato.' : 'The manager code is online, but this deployment database does not have all Workspace and Garage tables yet. This page remains accessible instead of returning a 500 error, and no data is modified.' }}</p>
-                        <p class="mt-3 text-sm leading-6 text-pm-text-secondary">{{ $it ? 'Completa le migration sul server e ricarica la pagina per riattivare il CRUD del Garage.' : 'Complete the server migrations and reload the page to enable the Garage CRUD.' }}</p>
+                        <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ $it ? 'PitMetric sta completando un aggiornamento necessario per questa sezione. La pagina tornerà disponibile appena l’aggiornamento sarà terminato.' : 'PitMetric is completing an update required by this section. The page will be available again as soon as the update is finished.' }}</p>
                         <div class="mt-5 flex flex-col gap-2 sm:flex-row">
                             <a href="{{ route('dashboard') }}" class="pm-ghost-button w-full sm:w-auto">{{ $it ? 'Torna alla dashboard' : 'Back to dashboard' }}</a>
                             <a href="{{ route('demo.garage') }}" class="pm-race-button w-full sm:w-auto">{{ $it ? 'Riprova' : 'Retry' }}</a>

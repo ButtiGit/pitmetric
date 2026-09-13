@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $newsletter_subscribed_at
  * @property string $newsletter_locale
+ * @property bool $manager_access_enabled
  * @property string $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -51,8 +52,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'newsletter_subscribed_at' => 'datetime',
+            'manager_access_enabled' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function hasManagerAccess(): bool
+    {
+        if (! array_key_exists('manager_access_enabled', $this->getAttributes())) {
+            return true;
+        }
+
+        return (bool) $this->getAttribute('manager_access_enabled');
     }
 
     public function initials(): string

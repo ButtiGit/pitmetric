@@ -1,14 +1,14 @@
 <?php
 
 return [
-    'local_badge' => 'LOCAL DEMO',
-    'local_copy' => 'Your demo data stays in this browser on this device. PitMetric does not upload these records to the server.',
+    'local_badge' => 'MANAGER AREA',
+    'local_copy' => 'Manage this section’s operational data here and continue your work across the other PitMetric areas.',
     'seed' => 'Load sample data',
-    'reset' => 'Reset local demo',
+    'reset' => 'Reset data',
     'nav' => [
         'garage' => 'Garage', 'components' => 'Components', 'configurations' => 'Configurations', 'circuits' => 'Circuits',
         'sessions' => 'Sessions', 'maintenance' => 'Maintenance', 'expenses' => 'Expenses', 'newsletter' => 'Newsletter',
     ],
-    'locked' => 'Locked in demo',
-    'locked_copy' => 'Cloud sync, team collaboration, automated maintenance rules and exports are intentionally disabled in this public demo.',
+    'locked' => 'Features in development',
+    'locked_copy' => 'PitMetric keeps growing with new features for synchronization, collaboration, maintenance and exports.',
 ];

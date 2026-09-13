@@ -6,18 +6,24 @@
             <flux:sidebar.header class="border-b border-white/5 pb-4"><x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate /><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
 
             <flux:sidebar.nav class="pt-4">
-                <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="truck" :href="route('demo.garage')" :current="request()->routeIs('demo.garage')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="wrench-screwdriver" :href="route('demo.components')" :current="request()->routeIs('demo.components')">{{ __('demo.nav.components') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="squares-2x2" :href="route('demo.configurations')" :current="request()->routeIs('demo.configurations')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="map" :href="route('demo.circuits')" :current="request()->routeIs('demo.circuits')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="flag" :href="route('demo.sessions')" :current="request()->routeIs('demo.sessions')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-check" :href="route('demo.maintenance')" :current="request()->routeIs('demo.maintenance')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="banknotes" :href="route('demo.expenses')" :current="request()->routeIs('demo.expenses')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
-                </flux:sidebar.group>
+                @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
+                    <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
+                        <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="truck" :href="route('demo.garage')" :current="request()->routeIs('demo.garage')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="wrench-screwdriver" :href="route('demo.components')" :current="request()->routeIs('demo.components')">{{ __('demo.nav.components') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="squares-2x2" :href="route('demo.configurations')" :current="request()->routeIs('demo.configurations')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="map" :href="route('demo.circuits')" :current="request()->routeIs('demo.circuits')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="flag" :href="route('demo.sessions')" :current="request()->routeIs('demo.sessions')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="clipboard-document-check" :href="route('demo.maintenance')" :current="request()->routeIs('demo.maintenance')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="banknotes" :href="route('demo.expenses')" :current="request()->routeIs('demo.expenses')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endif
+
                 @can('manage-updates')
-                    <flux:sidebar.group :heading="__('pitmetric.studio.eyebrow')" class="mt-4 grid gap-1"><flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item></flux:sidebar.group>
+                    <flux:sidebar.group :heading="__('pitmetric.studio.eyebrow')" class="mt-4 grid gap-1">
+                        <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="users" :href="route('studio.users.index')" :current="request()->routeIs('studio.users.*')">{{ __('users.nav') }}</flux:sidebar.item>
+                    </flux:sidebar.group>
                 @endcan
             </flux:sidebar.nav>
 
@@ -35,7 +41,7 @@
 
         <flux:header data-pm-mobile-header class="pm-mobile-header sticky top-0 z-40 border-b border-white/5 bg-[#111317]/95 backdrop-blur-xl lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-            <a href="{{ route('dashboard') }}" class="ml-1 inline-flex min-w-0 items-center" wire:navigate aria-label="PitMetric dashboard">
+            <a href="{{ auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates') ? route('dashboard') : route('home') }}" class="ml-1 inline-flex min-w-0 items-center" wire:navigate aria-label="PitMetric">
                 <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-7 max-w-[8.5rem] w-auto">
             </a>
             <flux:spacer />

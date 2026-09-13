@@ -41,7 +41,7 @@ it('keeps dashboard and garage reachable while the workspace schema is being dep
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Data update in progress');
+        ->assertSee('Update in progress');
 
     $this->get(route('demo.garage'))
         ->assertOk()

@@ -2,25 +2,25 @@
 
 return [
     'title' => 'Your vehicles',
-    'description' => 'This is the first real PitMetric module. Vehicles are stored on the server and belong only to your workspace.',
+    'description' => 'Organize the vehicles you use on track and progressively connect them to configurations, sessions, maintenance and expenses.',
     'validation_title' => 'Check the highlighted vehicle data.',
     'workspace' => [
-        'badge' => 'SERVER WORKSPACE',
-        'copy' => 'Garage data is now saved in the PitMetric database. Other accounts cannot read or modify vehicles from this workspace.',
+        'badge' => 'WORKSPACE',
+        'copy' => 'Here you can manage the vehicles associated with your PitMetric account and keep their main details up to date.',
         'vehicle_count' => 'Vehicles',
     ],
     'create' => [
         'title' => 'Add a vehicle',
-        'description' => 'Create the vehicle that will later be linked to configurations, sessions, maintenance and expenses.',
+        'description' => 'Add the kart, car, motorcycle or prototype you want to manage with PitMetric.',
         'submit' => 'Add vehicle',
     ],
     'list' => [
-        'title' => 'Workspace garage',
-        'description' => 'Edit or archive the vehicles stored in your personal workspace.',
+        'title' => 'Garage',
+        'description' => 'Edit or archive vehicles associated with your workspace.',
     ],
     'empty' => [
         'title' => 'Your garage is empty',
-        'description' => 'Add your first kart, car, motorcycle or prototype. From this point on it is real server data, not a browser demo.',
+        'description' => 'Add your first kart, car, motorcycle or prototype to start organizing your work.',
     ],
     'fields' => [
         'name' => 'Vehicle name',
@@ -50,16 +50,16 @@ return [
     ],
     'delete' => [
         'submit' => 'Archive vehicle',
-        'confirm' => 'Archive this vehicle? It will disappear from the active garage but remains recoverable in the database.',
+        'confirm' => 'Archive this vehicle?',
     ],
     'messages' => [
         'created' => 'Vehicle added to your workspace.',
         'updated' => 'Vehicle updated.',
         'deleted' => 'Vehicle archived.',
-        'unavailable' => 'Garage is temporarily unavailable until the database update is completed.',
+        'unavailable' => 'Garage is temporarily unavailable. Try again after the application update.',
     ],
     'next' => [
-        'title' => 'Next: real components',
-        'description' => 'The remaining manager sections are still local demos. The next vertical slice will connect components to this workspace and these real vehicles.',
+        'title' => 'Continue with components',
+        'description' => 'Add and organize vehicle components to build configurations and keep usage and maintenance under control.',
     ],
 ];

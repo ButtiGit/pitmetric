@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NewsletterPreferencesController;
 use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\UpdateStudioController;
+use App\Http\Controllers\UserStudioController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,16 +35,20 @@ Route::post('/locale', function (Request $request) {
 })->name('locale.update');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::view('/access-paused', 'access.paused')->name('access.paused');
 
-    Route::get('/garage', [VehicleController::class, 'index'])->name('demo.garage');
-    Route::post('/garage', [VehicleController::class, 'store'])->name('garage.store');
-    Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
-    Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');
+    Route::middleware('manager.access')->group(function () {
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
-        Route::view('/'.$section, 'demo.workspace', ['initialSection' => $section])->name('demo.'.$section);
-    }
+        Route::get('/garage', [VehicleController::class, 'index'])->name('demo.garage');
+        Route::post('/garage', [VehicleController::class, 'store'])->name('garage.store');
+        Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
+        Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');
+
+        foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
+            Route::view('/'.$section, 'demo.workspace', ['initialSection' => $section])->name('demo.'.$section);
+        }
+    });
 
     Route::get('/newsletter', [NewsletterPreferencesController::class, 'edit'])->name('newsletter.edit');
     Route::post('/newsletter', [NewsletterPreferencesController::class, 'update'])->name('newsletter.update');
@@ -53,6 +58,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
+            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
         });
 });
 
