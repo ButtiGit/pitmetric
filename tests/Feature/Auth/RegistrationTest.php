@@ -13,7 +13,7 @@ test('registration screen can be rendered', function () {
     $response->assertOk();
 });
 
-test('new users can register and receive a personal workspace', function () {
+test('new users can register with demo-only access and receive a personal workspace', function () {
     $response = $this->post(route('register.store'), [
         'name' => 'John Doe',
         'email' => 'test@example.com',
@@ -28,6 +28,7 @@ test('new users can register and receive a personal workspace', function () {
 
     $user = User::query()->where('email', 'test@example.com')->firstOrFail();
 
-    expect($user->workspaces()->count())->toBe(1)
+    expect($user->hasDatabaseAccess())->toBeFalse()
+        ->and($user->workspaces()->count())->toBe(1)
         ->and($user->workspaces()->firstOrFail()->name)->toBe('John Doe Workspace');
 });
