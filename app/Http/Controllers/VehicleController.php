@@ -16,13 +16,19 @@ class VehicleController extends Controller
 {
     public function index(Request $request, WorkspaceContext $workspaceContext): View
     {
-        Gate::authorize('viewAny', Vehicle::class);
-
         $user = $request->user();
 
         if (! $user instanceof User) {
             abort(401);
         }
+
+        $hasDatabaseAccess = Gate::forUser($user)->allows('manage-updates') || $user->hasDatabaseAccess();
+
+        if (! $hasDatabaseAccess) {
+            return view('demo.workspace', ['initialSection' => 'garage']);
+        }
+
+        Gate::authorize('viewAny', Vehicle::class);
 
         if (! $workspaceContext->isReady()) {
             return view('garage.unavailable');
