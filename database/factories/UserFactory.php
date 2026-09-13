@@ -49,6 +49,13 @@ class UserFactory extends Factory
         ];
     }
 
+    public function withDatabaseAccess(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'database_access_enabled' => true,
+        ]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */
