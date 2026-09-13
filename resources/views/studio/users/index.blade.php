@@ -51,10 +51,10 @@
                             </div>
                             @if ($isEditor)
                                 <span class="shrink-0 rounded-full bg-pm-accent-subtle px-2.5 py-1 text-[11px] font-bold text-pm-accent">{{ __('users.editor') }}</span>
-                            @elseif ($user->hasManagerAccess())
+                            @elseif ($user->hasDatabaseAccess())
                                 <span class="shrink-0 rounded-full bg-pm-success-subtle px-2.5 py-1 text-[11px] font-bold text-pm-success">{{ __('users.active') }}</span>
                             @else
-                                <span class="shrink-0 rounded-full bg-pm-danger-subtle px-2.5 py-1 text-[11px] font-bold text-pm-danger">{{ __('users.paused') }}</span>
+                                <span class="shrink-0 rounded-full bg-pm-subtle px-2.5 py-1 text-[11px] font-bold text-pm-muted">{{ __('users.paused') }}</span>
                             @endif
                         </div>
 
@@ -67,11 +67,11 @@
                             @if ($isEditor)
                                 <span class="text-sm font-semibold text-pm-muted">{{ __('users.editor_access') }}</span>
                             @elseif ($accessControlReady)
-                                <form method="POST" action="{{ route('studio.users.access', $user) }}" onsubmit="return confirm(@js($user->hasManagerAccess() ? __('users.disable_confirm') : __('users.enable_confirm')))" >
+                                <form method="POST" action="{{ route('studio.users.access', $user) }}" onsubmit="return confirm(@js($user->hasDatabaseAccess() ? __('users.disable_confirm') : __('users.enable_confirm')))" >
                                     @csrf
                                     @method('PATCH')
-                                    <input type="hidden" name="manager_access_enabled" value="{{ $user->hasManagerAccess() ? '0' : '1' }}">
-                                    <button type="submit" class="{{ $user->hasManagerAccess() ? 'pm-danger-button' : 'pm-race-button' }} w-full">{{ $user->hasManagerAccess() ? __('users.disable') : __('users.enable') }}</button>
+                                    <input type="hidden" name="database_access_enabled" value="{{ $user->hasDatabaseAccess() ? '0' : '1' }}">
+                                    <button type="submit" class="{{ $user->hasDatabaseAccess() ? 'pm-danger-button' : 'pm-race-button' }} w-full">{{ $user->hasDatabaseAccess() ? __('users.disable') : __('users.enable') }}</button>
                                 </form>
                             @endif
                         </div>
@@ -103,21 +103,21 @@
                                     <td class="px-5 py-4">
                                         @if ($isEditor)
                                             <span class="rounded-full bg-pm-accent-subtle px-2.5 py-1 text-xs font-bold text-pm-accent">{{ __('users.editor') }}</span>
-                                        @elseif ($user->hasManagerAccess())
+                                        @elseif ($user->hasDatabaseAccess())
                                             <span class="rounded-full bg-pm-success-subtle px-2.5 py-1 text-xs font-bold text-pm-success">{{ __('users.active') }}</span>
                                         @else
-                                            <span class="rounded-full bg-pm-danger-subtle px-2.5 py-1 text-xs font-bold text-pm-danger">{{ __('users.paused') }}</span>
+                                            <span class="rounded-full bg-pm-subtle px-2.5 py-1 text-xs font-bold text-pm-muted">{{ __('users.paused') }}</span>
                                         @endif
                                     </td>
                                     <td class="px-5 py-4 text-right">
                                         @if ($isEditor)
                                             <span class="text-xs font-semibold text-pm-muted">{{ __('users.editor_access') }}</span>
                                         @elseif ($accessControlReady)
-                                            <form method="POST" action="{{ route('studio.users.access', $user) }}" class="inline" onsubmit="return confirm(@js($user->hasManagerAccess() ? __('users.disable_confirm') : __('users.enable_confirm')))" >
+                                            <form method="POST" action="{{ route('studio.users.access', $user) }}" class="inline" onsubmit="return confirm(@js($user->hasDatabaseAccess() ? __('users.disable_confirm') : __('users.enable_confirm')))" >
                                                 @csrf
                                                 @method('PATCH')
-                                                <input type="hidden" name="manager_access_enabled" value="{{ $user->hasManagerAccess() ? '0' : '1' }}">
-                                                <button type="submit" class="{{ $user->hasManagerAccess() ? 'pm-danger-button' : 'pm-race-button' }}">{{ $user->hasManagerAccess() ? __('users.disable') : __('users.enable') }}</button>
+                                                <input type="hidden" name="database_access_enabled" value="{{ $user->hasDatabaseAccess() ? '0' : '1' }}">
+                                                <button type="submit" class="{{ $user->hasDatabaseAccess() ? 'pm-danger-button' : 'pm-race-button' }}">{{ $user->hasDatabaseAccess() ? __('users.disable') : __('users.enable') }}</button>
                                             </form>
                                         @endif
                                     </td>
