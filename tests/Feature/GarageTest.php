@@ -4,8 +4,8 @@ use App\Models\User;
 use App\Models\Vehicle;
 
 it('shows only vehicles from the authenticated workspace', function () {
-    $user = User::factory()->create();
-    $otherUser = User::factory()->create();
+    $user = User::factory()->withDatabaseAccess()->create();
+    $otherUser = User::factory()->withDatabaseAccess()->create();
 
     $workspaceId = (int) $user->workspaces()->value('workspaces.id');
     $otherWorkspaceId = (int) $otherUser->workspaces()->value('workspaces.id');
@@ -32,7 +32,7 @@ it('shows only vehicles from the authenticated workspace', function () {
 });
 
 it('creates vehicles inside the authenticated workspace automatically', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withDatabaseAccess()->create();
     $workspaceId = (int) $user->workspaces()->value('workspaces.id');
 
     $this->actingAs($user)
@@ -58,7 +58,7 @@ it('creates vehicles inside the authenticated workspace automatically', function
 });
 
 it('validates vehicle data before storing it', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withDatabaseAccess()->create();
 
     $this->actingAs($user)
         ->post(route('garage.store'), [
@@ -71,7 +71,7 @@ it('validates vehicle data before storing it', function () {
 });
 
 it('updates a vehicle from the current workspace', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withDatabaseAccess()->create();
     $workspaceId = (int) $user->workspaces()->value('workspaces.id');
     $vehicle = Vehicle::factory()->create([
         'workspace_id' => $workspaceId,
@@ -103,7 +103,7 @@ it('updates a vehicle from the current workspace', function () {
 });
 
 it('soft deletes vehicles instead of destroying their history', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withDatabaseAccess()->create();
     $workspaceId = (int) $user->workspaces()->value('workspaces.id');
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspaceId]);
 
@@ -115,8 +115,8 @@ it('soft deletes vehicles instead of destroying their history', function () {
 });
 
 it('cannot bind or mutate a vehicle from another workspace', function () {
-    $user = User::factory()->create();
-    $otherUser = User::factory()->create();
+    $user = User::factory()->withDatabaseAccess()->create();
+    $otherUser = User::factory()->withDatabaseAccess()->create();
     $otherWorkspaceId = (int) $otherUser->workspaces()->value('workspaces.id');
     $vehicle = Vehicle::factory()->create([
         'workspace_id' => $otherWorkspaceId,
