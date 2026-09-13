@@ -20,7 +20,7 @@ it('opens the manager sections without public preview labels', function () {
     foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
         $this->get(route('demo.'.$section))
             ->assertOk()
-            ->assertSee('AREA GESTIONALE')
+            ->assertSee(__('demo.local_badge'))
             ->assertDontSee('localStorage')
             ->assertDontSee('DEMO LOCALE');
     }
