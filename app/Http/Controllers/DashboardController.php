@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -18,13 +19,15 @@ class DashboardController extends Controller
             abort(401);
         }
 
-        $domainReady = $workspaceContext->isReady();
+        $databaseAccessEnabled = Gate::forUser($user)->allows('manage-updates') || $user->hasDatabaseAccess();
+        $domainReady = $databaseAccessEnabled && $workspaceContext->isReady();
 
         if ($domainReady) {
             $workspaceContext->personal($user);
         }
 
         return view('dashboard', [
+            'databaseAccessEnabled' => $databaseAccessEnabled,
             'domainReady' => $domainReady,
             'vehicleCount' => $domainReady ? Vehicle::query()->count() : 0,
         ]);
