@@ -16,9 +16,11 @@
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-[#07090c] text-zinc-100 antialiased selection:bg-[#E10600] selection:text-white">
+<body class="pm-public-site min-h-screen bg-[#07090c] text-zinc-100 antialiased selection:bg-[#E10600] selection:text-white">
+    <div data-pm-scroll-progress class="pm-scroll-progress" aria-hidden="true"></div>
+
     <div class="min-h-screen">
-        <header class="sticky top-0 z-50 border-b border-white/10 bg-[#07090c]/90 backdrop-blur-xl">
+        <header data-pm-public-header class="sticky top-0 z-50 border-b border-white/10 bg-[#07090c]/90 backdrop-blur-xl">
             <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 lg:px-8">
                 <a href="{{ route('home') }}" class="inline-flex items-center" aria-label="PitMetric home">
                     <img src="{{ asset('brand/pitmetric-compact-dark.svg') }}" alt="PitMetric" class="h-9 w-auto sm:hidden">
