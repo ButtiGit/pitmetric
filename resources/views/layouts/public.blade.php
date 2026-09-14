@@ -32,11 +32,14 @@
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('about') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('about') }}">{{ __('pitmetric.nav.about') }}</a>
                 </nav>
                 <div class="flex items-center gap-2">
-                    <button type="button" data-language-open class="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-300 transition hover:border-white/30 hover:text-white"><span aria-hidden="true">{{ app()->getLocale() === 'it' ? '🇮🇹' : '🇬🇧' }}</span><span>{{ strtoupper(app()->getLocale()) }}</span></button>
+                    <button type="button" data-language-open class="pm-public-language inline-flex items-center" aria-label="{{ __('pitmetric.language.title') }}">
+                        <span class="pm-public-language__label" aria-hidden="true">LANG</span>
+                        <span>{{ strtoupper(app()->getLocale()) }}</span>
+                    </button>
                     @auth
-                        <a href="{{ route('dashboard') }}" class="rounded-full bg-[#E10600] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#F01812]">{{ __('pitmetric.nav.dashboard') }}</a>
+                        <a href="{{ route('dashboard') }}" class="pm-public-header-action pm-public-header-action--primary">{{ __('pitmetric.nav.dashboard') }}</a>
                     @else
-                        <a href="{{ route('login') }}" class="rounded-full border border-white/15 px-4 py-2 text-sm font-bold text-white transition hover:border-white/30 hover:bg-white/[0.04]">{{ __('pitmetric.nav.login') }}</a>
+                        <a href="{{ route('login') }}" class="pm-public-header-action">{{ __('pitmetric.nav.login') }}</a>
                     @endauth
                 </div>
             </div>
@@ -54,21 +57,21 @@
     </div>
 
     <div data-language-modal class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/85 p-5 backdrop-blur-md">
-        <div class="relative w-full max-w-lg rounded-3xl border border-white/10 bg-[#0d1014] p-7 shadow-2xl">
-            <button type="button" data-language-close class="absolute right-5 top-5 rounded-full border border-white/10 px-3 py-1.5 text-sm text-zinc-400 hover:text-white" aria-label="Close">×</button>
+        <div class="relative w-full max-w-lg border border-white/10 bg-[#0d1014] p-7 shadow-2xl">
+            <button type="button" data-language-close class="absolute right-5 top-5 border border-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400 hover:border-white/25 hover:text-white" aria-label="Close">Close</button>
             <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-9 w-auto">
             <h2 class="mt-8 text-2xl font-black tracking-tight text-white">{{ __('pitmetric.language.title') }}</h2>
             <p class="mt-3 leading-7 text-zinc-400">{{ __('pitmetric.language.copy') }}</p>
             <div class="mt-7 grid gap-3 sm:grid-cols-2">
-                @foreach (['en' => ['🇬🇧', __('pitmetric.language.english')], 'it' => ['🇮🇹', __('pitmetric.language.italian')]] as $locale => [$flag, $label])
-                    <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="flex w-full items-center justify-center gap-3 rounded-xl {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white' : 'border border-white/15 text-zinc-200 hover:border-white/30' }} px-4 py-3 font-semibold"><span class="text-xl" aria-hidden="true">{{ $flag }}</span><span>{{ $label }}</span></button></form>
+                @foreach (['en' => __('pitmetric.language.english'), 'it' => __('pitmetric.language.italian')] as $locale => $label)
+                    <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="pm-public-locale-option flex w-full items-center justify-center gap-3 {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white' : 'border border-white/15 text-zinc-200 hover:border-white/30' }} px-4 py-3 font-semibold"><span class="pm-public-locale-code" aria-hidden="true">{{ strtoupper($locale) }}</span><span>{{ $label }}</span></button></form>
                 @endforeach
             </div>
         </div>
     </div>
 
-    <div data-cookie-banner class="fixed inset-x-4 bottom-4 z-[60] hidden max-w-3xl rounded-2xl border border-white/10 bg-[#0d1014]/95 p-5 shadow-2xl backdrop-blur-xl md:left-1/2 md:right-auto md:w-[calc(100%-2rem)] md:-translate-x-1/2">
-        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><h2 class="font-bold text-white">{{ __('pitmetric.cookies.title') }}</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{{ __('pitmetric.cookies.copy') }} <a href="{{ route('cookies') }}" class="text-[#ff4d49] underline underline-offset-4">{{ __('pitmetric.cookies.settings') }}</a></p></div><div class="flex shrink-0 flex-wrap gap-2"><button type="button" data-cookie-choice="necessary" class="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-zinc-200">{{ __('pitmetric.cookies.necessary') }}</button><button type="button" data-cookie-choice="preferences" class="rounded-full bg-[#E10600] px-4 py-2 text-sm font-semibold text-white hover:bg-[#f01812]">{{ __('pitmetric.cookies.accept') }}</button></div></div>
+    <div data-cookie-banner class="fixed inset-x-4 bottom-4 z-[60] hidden max-w-3xl border border-white/10 bg-[#0d1014]/95 p-5 shadow-2xl backdrop-blur-xl md:left-1/2 md:right-auto md:w-[calc(100%-2rem)] md:-translate-x-1/2">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><h2 class="font-bold text-white">{{ __('pitmetric.cookies.title') }}</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{{ __('pitmetric.cookies.copy') }} <a href="{{ route('cookies') }}" class="text-[#ff4d49] underline underline-offset-4">{{ __('pitmetric.cookies.settings') }}</a></p></div><div class="flex shrink-0 flex-wrap gap-2"><button type="button" data-cookie-choice="necessary" class="border border-white/15 px-4 py-2 text-sm font-semibold text-zinc-200">{{ __('pitmetric.cookies.necessary') }}</button><button type="button" data-cookie-choice="preferences" class="bg-[#E10600] px-4 py-2 text-sm font-semibold text-white hover:bg-[#f01812]">{{ __('pitmetric.cookies.accept') }}</button></div></div>
     </div>
 
     <script>

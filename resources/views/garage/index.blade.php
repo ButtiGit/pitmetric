@@ -121,7 +121,7 @@
 
                 @if ($vehicles->isEmpty())
                     <div class="pm-panel border-dashed p-8 text-center">
-                        <div class="mx-auto grid size-11 place-items-center rounded-xl border border-pm-border bg-pm-subtle text-xl">🏁</div>
+                        <div class="mx-auto grid size-11 place-items-center rounded-xl border border-pm-border bg-pm-subtle"><span class="h-0.5 w-5 bg-pm-accent" aria-hidden="true"></span></div>
                         <h3 class="mt-4 font-bold text-pm-text">{{ __('garage.empty.title') }}</h3>
                         <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-pm-text-secondary">{{ __('garage.empty.description') }}</p>
                     </div>
@@ -230,7 +230,7 @@
 
             <section class="pm-panel p-5 sm:p-6">
                 <div class="flex items-start gap-3">
-                    <div class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-subtle text-sm">↗</div>
+                    <div class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-subtle"><span class="h-px w-4 bg-pm-accent" aria-hidden="true"></span></div>
                     <div>
                         <h2 class="font-bold text-pm-text">{{ __('garage.next.title') }}</h2>
                         <p class="mt-1 text-sm leading-6 text-pm-text-secondary">{{ __('garage.next.description') }}</p>

@@ -73,7 +73,7 @@
         <div class="mx-auto w-full max-w-[1180px] space-y-5">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <a href="{{ route('studio.updates.index') }}" class="text-sm font-semibold text-pm-text-secondary transition hover:text-pm-text">← {{ __('pitmetric.studio.back') }}</a>
+                    <a href="{{ route('studio.updates.index') }}" class="text-sm font-semibold text-pm-text-secondary transition hover:text-pm-text">{{ __('pitmetric.studio.back') }}</a>
                     <h1 class="mt-3 text-3xl font-black tracking-[-0.035em] text-pm-text">{{ $editing ? __('pitmetric.studio.edit_post') : __('pitmetric.studio.create_post') }}</h1>
                     <p class="mt-2 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.composer_hint', ['language' => $isItalian ? 'Italiano' : 'English']) }}</p>
                 </div>
@@ -98,7 +98,7 @@
                     <section class="pm-panel p-5 sm:p-7">
                         <div class="flex items-center justify-between gap-4">
                             <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-pm-accent">{{ $isItalian ? '🇮🇹 IT' : '🇬🇧 EN' }}</p>
+                                <p class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-pm-accent">{{ strtoupper($primaryLocale) }}</p>
                                 <h2 class="mt-2 text-xl font-black text-pm-text">{{ __('pitmetric.studio.write_post') }}</h2>
                             </div>
                             <span class="rounded-full border border-pm-border bg-pm-subtle px-3 py-1 text-xs font-semibold text-pm-muted">{{ __('pitmetric.studio.primary_language') }}</span>
@@ -132,21 +132,21 @@
 
                         <div class="mt-5 rounded-xl border border-pm-border bg-pm-subtle p-4" aria-live="polite">
                             <div x-show="removeMedia" x-cloak class="flex items-start gap-3">
-                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-danger-subtle text-pm-danger">×</span>
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-danger-subtle"><span class="h-0.5 w-4 bg-pm-danger" aria-hidden="true"></span></span>
                                 <div><p class="font-bold text-pm-text">{{ $mediaCopy['remove_status'] }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ $mediaCopy['remove_help'] }}</p></div>
                             </div>
                             <div x-show="!removeMedia && fileName" x-cloak class="flex items-start gap-3">
-                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10 text-pm-accent">✓</span>
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10"><span class="size-2 rounded-full bg-pm-accent" aria-hidden="true"></span></span>
                                 <div class="min-w-0"><p class="font-bold text-pm-text">{{ $mediaCopy['file_ready'] }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="fileName"></p><p class="mt-1 text-xs text-pm-muted">{{ $mediaCopy['file_help'] }}</p></div>
                             </div>
                             <div x-show="!removeMedia && !fileName && mediaUrlChanged && mediaUrl" x-cloak class="flex items-start gap-3">
-                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10 text-pm-accent">↗</span>
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10"><span class="h-px w-4 bg-pm-accent" aria-hidden="true"></span></span>
                                 <div class="min-w-0"><p class="font-bold text-pm-text">{{ $mediaCopy['link_ready'] }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="mediaUrl"></p><p class="mt-1 text-xs text-pm-muted">{{ $mediaCopy['link_help'] }}</p></div>
                             </div>
 
                             @if ($currentMediaSource)
                                 <div x-show="!removeMedia && !fileName && !(mediaUrlChanged && mediaUrl)" class="flex items-start gap-3">
-                                    <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">✓</span>
+                                    <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-500/10"><span class="size-2 rounded-full bg-emerald-400" aria-hidden="true"></span></span>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <p class="font-bold text-pm-text">{{ $mediaCopy['current'] }}</p>
@@ -159,7 +159,7 @@
                                 </div>
                             @else
                                 <div x-show="!removeMedia && !fileName && !(mediaUrlChanged && mediaUrl)" class="flex items-start gap-3">
-                                    <span class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-surface text-pm-muted">—</span>
+                                    <span class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-surface"><span class="h-px w-4 bg-pm-muted" aria-hidden="true"></span></span>
                                     <div><p class="font-bold text-pm-text">{{ $mediaCopy['empty'] }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ $mediaCopy['empty_help'] }}</p></div>
                                 </div>
                             @endif
@@ -180,7 +180,7 @@
                         <div class="mt-5 grid gap-4 md:grid-cols-2">
                             <label class="pm-upload-zone grid min-h-40 cursor-pointer content-center rounded-xl p-5 text-center transition" :class="fileName ? 'border-pm-accent bg-pm-accent/5' : ''">
                                 <div>
-                                    <div class="mx-auto grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-xl text-pm-accent">↑</div>
+                                    <div class="mx-auto grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface font-mono text-[10px] font-bold tracking-[0.12em] text-pm-accent">FILE</div>
                                     <p class="mt-3 font-bold text-pm-text">{{ $mediaCopy['upload'] }}</p>
                                     <p class="mt-1 text-xs leading-5 text-pm-muted">{{ $mediaCopy['upload_help'] }}</p>
                                     <p x-show="fileName" x-cloak class="mt-3 truncate rounded-lg bg-pm-accent/10 px-3 py-2 text-xs font-bold text-pm-accent" x-text="fileName"></p>
@@ -197,7 +197,7 @@
 
                             <div class="grid content-start gap-3 rounded-xl border border-pm-border bg-pm-subtle p-5 transition" :class="mediaUrlChanged && mediaUrl ? 'border-pm-accent bg-pm-accent/5' : ''">
                                 <div>
-                                    <div class="grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-lg text-pm-accent">↗</div>
+                                    <div class="grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface font-mono text-[10px] font-bold tracking-[0.12em] text-pm-accent">URL</div>
                                     <p class="mt-3 font-bold text-pm-text">{{ $mediaCopy['external'] }}</p>
                                     <p class="mt-1 text-xs leading-5 text-pm-muted">{{ $mediaCopy['external_help'] }}</p>
                                 </div>
@@ -228,8 +228,8 @@
 
                     <details class="pm-panel" @if($errors->has('translation_title') || $errors->has('translation_content')) open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6">
-                            <div><p class="text-xs font-semibold uppercase tracking-[0.14em] text-pm-muted">{{ $isItalian ? '🇬🇧 EN' : '🇮🇹 IT' }}</p><h2 class="mt-2 text-lg font-black text-pm-text">{{ __('pitmetric.studio.add_translation', ['language' => $translationLabel]) }}</h2><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.translation_optional') }}</p></div>
-                            <span class="text-xl text-pm-muted">＋</span>
+                            <div><p class="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-pm-muted">{{ $isItalian ? 'EN' : 'IT' }}</p><h2 class="mt-2 text-lg font-black text-pm-text">{{ __('pitmetric.studio.add_translation', ['language' => $translationLabel]) }}</h2><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.translation_optional') }}</p></div>
+                            <span class="relative size-4 text-pm-muted" aria-hidden="true"><span class="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-current"></span><span class="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-current"></span></span>
                         </summary>
                         <div class="border-t border-pm-border p-5 sm:p-6">
                             <div class="grid gap-4">
@@ -240,7 +240,7 @@
                     </details>
 
                     <details class="pm-panel">
-                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6"><div><h2 class="font-black text-pm-text">{{ __('pitmetric.studio.advanced') }}</h2><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.advanced_copy') }}</p></div><span class="text-xl text-pm-muted">＋</span></summary>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6"><div><h2 class="font-black text-pm-text">{{ __('pitmetric.studio.advanced') }}</h2><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.advanced_copy') }}</p></div><span class="relative size-4 text-pm-muted" aria-hidden="true"><span class="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-current"></span><span class="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-current"></span></span></summary>
                         <div class="grid gap-4 border-t border-pm-border p-5 sm:p-6">
                             <label class="grid gap-2"><span class="pm-label">{{ __('pitmetric.studio.excerpt') }}</span><textarea name="primary_excerpt" rows="3" maxlength="500" class="pm-input">{{ $primaryExcerpt }}</textarea></label>
                             <label class="grid gap-2"><span class="pm-label">{{ __('pitmetric.studio.slug') }}</span><input name="slug" value="{{ old('slug', $update->slug) }}" maxlength="190" class="pm-input font-mono" placeholder="{{ __('pitmetric.studio.slug_placeholder') }}"><span class="pm-help">{{ __('pitmetric.studio.slug_help') }}</span></label>
