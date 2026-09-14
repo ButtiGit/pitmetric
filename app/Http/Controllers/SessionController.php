@@ -125,7 +125,10 @@ class SessionController extends Controller
                 ->firstOrFail();
 
             $startedAt = Carbon::parse($validated['started_at']);
-            if ($startedAt->lt($raceEvent->start_date->startOfDay()) || $startedAt->gt($raceEvent->end_date->endOfDay())) {
+            $eventStartsAt = Carbon::parse($raceEvent->start_date)->startOfDay();
+            $eventEndsAt = Carbon::parse($raceEvent->end_date)->endOfDay();
+
+            if ($startedAt->lt($eventStartsAt) || $startedAt->gt($eventEndsAt)) {
                 throw ValidationException::withMessages([
                     'started_at' => __('The session date must be inside the race weekend.'),
                 ]);
