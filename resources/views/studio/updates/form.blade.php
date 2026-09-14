@@ -18,13 +18,55 @@
         $currentMediaProvider = match (true) {
             in_array($currentMediaHost, ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'], true) => 'YouTube',
             in_array($currentMediaHost, ['vimeo.com', 'www.vimeo.com'], true) => 'Vimeo',
-            $currentMediaStored => __('pitmetric.studio.media_source_uploaded'),
-            filled($currentMediaHost) => __('pitmetric.studio.media_source_external'),
+            $currentMediaStored => $isItalian ? 'File caricato' : 'Uploaded file',
+            filled($currentMediaHost) => $isItalian ? 'Link esterno' : 'External link',
             default => null,
         };
         $currentMediaLabel = $currentMediaStored ? $update->media_path : $update->media_url;
         $initialMediaUrl = (string) old('media_url', $update->media_url ?? '');
         $oldMediaUrlWasEntered = ! $editing && old('media_url') !== null && trim((string) old('media_url')) !== '';
+
+        $mediaCopy = $isItalian ? [
+            'help' => 'Scegli una sola sorgente. Vedrai subito qui sotto cosa verrà usato nel post.',
+            'remove_status' => 'Il media attuale verrà rimosso',
+            'remove_help' => 'Salva o pubblica il post per confermare la rimozione.',
+            'file_ready' => 'File selezionato e pronto',
+            'file_help' => 'Non è ancora online: verrà caricato su PitMetric quando salvi o pubblichi.',
+            'link_ready' => 'Link esterno selezionato',
+            'link_help' => 'PitMetric userà questo URL nel post e riconoscerà automaticamente immagine o video.',
+            'current' => 'Media già salvato',
+            'image' => 'Immagine',
+            'video' => 'Video',
+            'current_uploaded' => 'Questo file è già stato caricato e salvato su PitMetric.',
+            'current_external' => 'Questo media arriva da un servizio o URL esterno.',
+            'empty' => 'Nessun media selezionato',
+            'empty_help' => 'Il post verrà pubblicato solo con il testo, a meno che tu non scelga una sorgente qui sotto.',
+            'upload' => 'Carica dal dispositivo',
+            'upload_help' => 'Scegli una foto o un video dal computer. JPG, PNG, WEBP, GIF, MP4, WEBM o MOV.',
+            'external' => 'Usa un link esterno',
+            'external_help' => 'Per YouTube, Vimeo oppure un URL diretto a un’immagine o a un video.',
+            'replace_help' => 'Scegliendo un nuovo file o link sostituirai il media attuale quando salvi.',
+        ] : [
+            'help' => 'Choose one source. The status below will immediately show what the post will use.',
+            'remove_status' => 'The current media will be removed',
+            'remove_help' => 'Save or publish the post to confirm the removal.',
+            'file_ready' => 'File selected and ready',
+            'file_help' => 'It is not online yet: it will be uploaded to PitMetric when you save or publish.',
+            'link_ready' => 'External link selected',
+            'link_help' => 'PitMetric will use this URL in the post and detect image or video automatically.',
+            'current' => 'Media already saved',
+            'image' => 'Image',
+            'video' => 'Video',
+            'current_uploaded' => 'This file has already been uploaded and stored on PitMetric.',
+            'current_external' => 'This media comes from an external service or URL.',
+            'empty' => 'No media selected',
+            'empty_help' => 'The post will be published with text only unless you choose a source below.',
+            'upload' => 'Upload from device',
+            'upload_help' => 'Choose a photo or video from your computer. JPG, PNG, WEBP, GIF, MP4, WEBM or MOV.',
+            'external' => 'Use an external link',
+            'external_help' => 'For YouTube, Vimeo, or a direct image/video URL.',
+            'replace_help' => 'Choosing a new file or link will replace the current media when you save.',
+        ];
     @endphp
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -83,7 +125,7 @@
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.14em] text-pm-muted">Media</p>
                                 <h2 class="mt-2 text-xl font-black text-pm-text">{{ __('pitmetric.studio.add_media') }}</h2>
-                                <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ __('pitmetric.studio.media_help_clear') }}</p>
+                                <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ $mediaCopy['help'] }}</p>
                             </div>
                             <span class="rounded-full border border-pm-border px-3 py-1 text-xs font-semibold text-pm-muted">{{ __('pitmetric.studio.optional') }}</span>
                         </div>
@@ -91,15 +133,15 @@
                         <div class="mt-5 rounded-xl border border-pm-border bg-pm-subtle p-4" aria-live="polite">
                             <div x-show="removeMedia" x-cloak class="flex items-start gap-3">
                                 <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-danger-subtle text-pm-danger">×</span>
-                                <div><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_remove') }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.media_status_remove_help') }}</p></div>
+                                <div><p class="font-bold text-pm-text">{{ $mediaCopy['remove_status'] }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ $mediaCopy['remove_help'] }}</p></div>
                             </div>
                             <div x-show="!removeMedia && fileName" x-cloak class="flex items-start gap-3">
                                 <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10 text-pm-accent">✓</span>
-                                <div class="min-w-0"><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_file_ready') }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="fileName"></p><p class="mt-1 text-xs text-pm-muted">{{ __('pitmetric.studio.media_status_file_help') }}</p></div>
+                                <div class="min-w-0"><p class="font-bold text-pm-text">{{ $mediaCopy['file_ready'] }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="fileName"></p><p class="mt-1 text-xs text-pm-muted">{{ $mediaCopy['file_help'] }}</p></div>
                             </div>
                             <div x-show="!removeMedia && !fileName && mediaUrlChanged && mediaUrl" x-cloak class="flex items-start gap-3">
                                 <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10 text-pm-accent">↗</span>
-                                <div class="min-w-0"><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_link_ready') }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="mediaUrl"></p><p class="mt-1 text-xs text-pm-muted">{{ __('pitmetric.studio.media_status_link_help') }}</p></div>
+                                <div class="min-w-0"><p class="font-bold text-pm-text">{{ $mediaCopy['link_ready'] }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="mediaUrl"></p><p class="mt-1 text-xs text-pm-muted">{{ $mediaCopy['link_help'] }}</p></div>
                             </div>
 
                             @if ($currentMediaSource)
@@ -107,18 +149,18 @@
                                     <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">✓</span>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_current') }}</p>
+                                            <p class="font-bold text-pm-text">{{ $mediaCopy['current'] }}</p>
                                             <span class="rounded-full border border-pm-border bg-pm-surface px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-pm-muted">{{ $currentMediaProvider }}</span>
-                                            <span class="rounded-full border border-pm-border bg-pm-surface px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-pm-muted">{{ $update->media_type === 'video' ? __('pitmetric.studio.media_video') : __('pitmetric.studio.media_image') }}</span>
+                                            <span class="rounded-full border border-pm-border bg-pm-surface px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-pm-muted">{{ $update->media_type === 'video' ? $mediaCopy['video'] : $mediaCopy['image'] }}</span>
                                         </div>
                                         <p class="mt-1 truncate text-sm text-pm-text-secondary">{{ $currentMediaLabel }}</p>
-                                        <p class="mt-1 text-xs text-pm-muted">{{ $currentMediaStored ? __('pitmetric.studio.media_current_uploaded_help') : __('pitmetric.studio.media_current_external_help') }}</p>
+                                        <p class="mt-1 text-xs text-pm-muted">{{ $currentMediaStored ? $mediaCopy['current_uploaded'] : $mediaCopy['current_external'] }}</p>
                                     </div>
                                 </div>
                             @else
                                 <div x-show="!removeMedia && !fileName && !(mediaUrlChanged && mediaUrl)" class="flex items-start gap-3">
                                     <span class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-surface text-pm-muted">—</span>
-                                    <div><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_empty') }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.media_status_empty_help') }}</p></div>
+                                    <div><p class="font-bold text-pm-text">{{ $mediaCopy['empty'] }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ $mediaCopy['empty_help'] }}</p></div>
                                 </div>
                             @endif
                         </div>
@@ -139,8 +181,8 @@
                             <label class="pm-upload-zone grid min-h-40 cursor-pointer content-center rounded-xl p-5 text-center transition" :class="fileName ? 'border-pm-accent bg-pm-accent/5' : ''">
                                 <div>
                                     <div class="mx-auto grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-xl text-pm-accent">↑</div>
-                                    <p class="mt-3 font-bold text-pm-text">{{ __('pitmetric.studio.upload_from_device') }}</p>
-                                    <p class="mt-1 text-xs leading-5 text-pm-muted">{{ __('pitmetric.studio.upload_from_device_help') }}</p>
+                                    <p class="mt-3 font-bold text-pm-text">{{ $mediaCopy['upload'] }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-pm-muted">{{ $mediaCopy['upload_help'] }}</p>
                                     <p x-show="fileName" x-cloak class="mt-3 truncate rounded-lg bg-pm-accent/10 px-3 py-2 text-xs font-bold text-pm-accent" x-text="fileName"></p>
                                 </div>
                                 <input
@@ -156,8 +198,8 @@
                             <div class="grid content-start gap-3 rounded-xl border border-pm-border bg-pm-subtle p-5 transition" :class="mediaUrlChanged && mediaUrl ? 'border-pm-accent bg-pm-accent/5' : ''">
                                 <div>
                                     <div class="grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-lg text-pm-accent">↗</div>
-                                    <p class="mt-3 font-bold text-pm-text">{{ __('pitmetric.studio.use_external_link') }}</p>
-                                    <p class="mt-1 text-xs leading-5 text-pm-muted">{{ __('pitmetric.studio.use_external_link_help') }}</p>
+                                    <p class="mt-3 font-bold text-pm-text">{{ $mediaCopy['external'] }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-pm-muted">{{ $mediaCopy['external_help'] }}</p>
                                 </div>
                                 <input
                                     x-ref="mediaUrl"
@@ -175,7 +217,7 @@
 
                         @if ($currentMediaSource)
                             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-pm-border pt-4">
-                                <p class="text-xs text-pm-muted">{{ __('pitmetric.studio.media_replace_help') }}</p>
+                                <p class="text-xs text-pm-muted">{{ $mediaCopy['replace_help'] }}</p>
                                 <label class="text-sm font-semibold text-pm-danger">
                                     <input x-ref="removeMedia" x-model="removeMedia" type="checkbox" name="remove_media" value="1" class="mr-1 size-4 align-middle">
                                     {{ __('pitmetric.studio.remove_media') }}
