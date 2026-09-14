@@ -6,6 +6,7 @@ import '../css/mobile.css';
 import '../css/public-site.css';
 import '../css/home-editorial.css';
 import '../css/public-polish.css';
+import '../css/public-simplify.css';
 import './form-controls';
 import './form-controls-composite';
 import './form-control-guard';
