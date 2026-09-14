@@ -9,6 +9,7 @@
                 @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
                     <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
                         <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="calendar-days" :href="route('events.index')" :current="request()->routeIs('events.*')">{{ __('demo.nav.events') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="truck" :href="route('demo.garage')" :current="request()->routeIs('demo.garage')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="wrench-screwdriver" :href="route('demo.components')" :current="request()->routeIs('demo.components')">{{ __('demo.nav.components') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="squares-2x2" :href="route('demo.configurations')" :current="request()->routeIs('demo.configurations')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
