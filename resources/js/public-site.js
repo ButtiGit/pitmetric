@@ -117,7 +117,7 @@ const initPublicSite = () => {
 
     const cursorCar = document.querySelector('[data-pm-cursor-car]');
 
-    if (cursorCar && finePointer && !reduceMotion) {
+    if (cursorCar && !reduceMotion) {
         let targetX = -120;
         let targetY = -120;
         let currentX = -120;
@@ -140,6 +140,10 @@ const initPublicSite = () => {
         };
 
         window.addEventListener('pointermove', (event) => {
+            if (event.pointerType === 'touch') {
+                return;
+            }
+
             const dx = event.clientX - previousTargetX;
             const dy = event.clientY - previousTargetY;
             const distance = Math.hypot(dx, dy);
@@ -155,13 +159,15 @@ const initPublicSite = () => {
             }
 
             speed = Math.min(distance / 34, 1);
+            cursorCar.style.display = 'block';
 
             if (!active) {
                 active = true;
                 currentX = targetX;
                 currentY = targetY;
-                cursorCar.dataset.active = 'true';
             }
+
+            cursorCar.dataset.active = 'true';
         }, { passive: true });
 
         window.addEventListener('blur', () => {
