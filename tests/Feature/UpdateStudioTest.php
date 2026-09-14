@@ -2,6 +2,7 @@
 
 use App\Models\Update;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     config()->set('pitmetric.update_editor_emails', ['editor@example.com']);
@@ -69,4 +70,38 @@ it('lets an editor publish a media only update from an external url', function (
     $this->get(route('updates.show', $update))
         ->assertOk()
         ->assertSee('https://example.com/garage-preview.webp', false);
+});
+
+it('serves uploaded update media without relying on the public storage symlink', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('updates/devlog.webp', 'pitmetric-media');
+
+    $update = Update::factory()->create([
+        'slug' => 'stored-media-test',
+        'media_type' => 'image',
+        'media_path' => 'updates/devlog.webp',
+        'media_url' => null,
+        'status' => 'published',
+        'published_at' => now()->subMinute(),
+    ]);
+
+    expect($update->mediaSource())
+        ->toContain(route('updates.media', $update));
+
+    $this->get(route('updates.media', $update))
+        ->assertOk()
+        ->assertHeader('cache-control', 'public, max-age=31536000, immutable');
+});
+
+it('falls back to the bundled artwork for the first devlog when its uploaded file is missing', function () {
+    Storage::fake('public');
+
+    $update = Update::factory()->create([
+        'slug' => 'pitmetric-sta-prendendo-forma',
+        'media_type' => 'image',
+        'media_path' => 'updates/missing.webp',
+        'media_url' => null,
+    ]);
+
+    expect($update->mediaSource())->toBe(asset('media/devlog-001.webp'));
 });
