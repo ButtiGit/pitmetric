@@ -117,9 +117,9 @@
 
                 <div class="relative border-l border-white/15 pl-7 sm:pl-10">
                     @foreach ([
-                        ['A', __('pitmetric.home.roadmap_1_title'), __('pitmetric.home.roadmap_1_copy')],
-                        ['B', __('pitmetric.home.roadmap_2_title'), __('pitmetric.home.roadmap_2_copy')],
-                        ['C', __('pitmetric.home.roadmap_3_title'), __('pitmetric.home.roadmap_3_copy')],
+                        ['•', __('pitmetric.home.roadmap_1_title'), __('pitmetric.home.roadmap_1_copy')],
+                        ['•', __('pitmetric.home.roadmap_2_title'), __('pitmetric.home.roadmap_2_copy')],
+                        ['•', __('pitmetric.home.roadmap_3_title'), __('pitmetric.home.roadmap_3_copy')],
                     ] as [$number, $heading, $copy])
                         <article class="pm-home-roadmap-item relative pb-12 last:pb-0 sm:grid sm:grid-cols-[4rem_15rem_1fr] sm:gap-6">
                             <span class="pm-home-roadmap-marker">{{ $number }}</span>
