@@ -118,7 +118,10 @@ class Update extends Model
             return $mediaUrl;
         }
 
-        if ($this->getAttribute('slug') === 'pitmetric-sta-prendendo-forma') {
+        if (in_array($this->getAttribute('slug'), [
+            'pitmetric-sta-prendendo-forma',
+            'pitmetric-is-taking-shape',
+        ], true)) {
             return asset('media/devlog-001.webp');
         }
 
