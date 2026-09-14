@@ -31,10 +31,20 @@ class ExpenseController extends Controller
 
         $workspaceContext->personal($user);
         $expenses = Expense::query()->latest('occurred_at')->latest('id')->get();
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
 
         return view('expenses.index', [
             'expenses' => $expenses,
             'totalCents' => (int) $expenses->sum('amount_cents'),
+            'monthCents' => (int) $expenses
+                ->filter(fn (Expense $expense) => $expense->occurred_at->betweenIncluded($monthStart, $monthEnd))
+                ->sum('amount_cents'),
+            'linkedCount' => $expenses->whereNotNull('related_type')->count(),
+            'categoryTotals' => $expenses
+                ->groupBy('category')
+                ->map(fn ($items): int => (int) $items->sum('amount_cents'))
+                ->sortDesc(),
         ]);
     }
 
@@ -70,6 +80,11 @@ class ExpenseController extends Controller
     public function destroy(Expense $expense): RedirectResponse
     {
         Gate::authorize('delete', $expense);
+
+        if ($expense->related_type !== null) {
+            return to_route('demo.expenses')->with('error', __('Linked operational costs cannot be deleted independently from their source record.'));
+        }
+
         $expense->delete();
 
         return to_route('demo.expenses')->with('status', __('Expense deleted.'));
