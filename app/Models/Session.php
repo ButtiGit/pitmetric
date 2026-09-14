@@ -26,6 +26,8 @@ class Session extends Model
 {
     use BelongsToWorkspace;
 
+    protected $table = 'track_sessions';
+
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
