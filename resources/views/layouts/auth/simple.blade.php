@@ -16,13 +16,13 @@
 
             <main class="relative flex min-h-svh items-center justify-center px-6 py-12 sm:px-10">
                 <div class="absolute right-5 top-5 flex gap-2">
-                    @foreach (['en' => '🇬🇧 EN', 'it' => '🇮🇹 IT'] as $locale => $label)
-                        <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="rounded-full border px-3 py-1.5 text-xs font-semibold {{ app()->getLocale() === $locale ? 'border-[#E10600] bg-[#E10600] text-white' : 'border-white/10 text-zinc-400 hover:border-white/25 hover:text-white' }}">{{ $label }}</button></form>
+                    @foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)
+                        <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="border px-3 py-1.5 font-mono text-xs font-semibold tracking-[0.08em] transition {{ app()->getLocale() === $locale ? 'border-[#E10600] bg-[#E10600] text-white' : 'border-white/10 text-zinc-400 hover:border-white/25 hover:text-white' }}">{{ $label }}</button></form>
                     @endforeach
                 </div>
                 <div class="w-full max-w-sm">
                     <a href="{{ route('home') }}" class="mb-8 flex items-center justify-center lg:hidden" wire:navigate aria-label="PitMetric home"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-11 w-auto"></a>
-                    <div class="rounded-3xl border border-white/10 bg-white/[0.025] p-6 shadow-2xl shadow-black/20 sm:p-8">
+                    <div class="border border-white/10 bg-white/[0.025] p-6 shadow-2xl shadow-black/20 [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,12px_100%,0_calc(100%-12px))] sm:p-8">
                         {{ $slot }}
                     </div>
                 </div>
