@@ -42,7 +42,8 @@ it('keeps demo access available until an editor enables database access', functi
 
     $this->get(route('demo.garage'))
         ->assertOk()
-        ->assertSee(__('demo.local_badge'));
+        ->assertSee('id="pitmetric-demo"', false)
+        ->assertDontSee(__('demo.local_badge'));
 
     $this->post(route('garage.store'), [
         'name' => 'Blocked Kart',
@@ -81,7 +82,8 @@ it('lets an editor enable and disable database access', function () {
     $this->actingAs($member)
         ->get(route('demo.garage'))
         ->assertOk()
-        ->assertSee(__('demo.local_badge'));
+        ->assertSee('id="pitmetric-demo"', false)
+        ->assertDontSee(__('demo.local_badge'));
 });
 
 it('does not allow editor database access to be disabled from the user studio', function () {
