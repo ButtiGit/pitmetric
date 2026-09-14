@@ -38,11 +38,17 @@ it('shows the cookie information page', function () {
         ->assertSee('Cookies on PitMetric');
 });
 
-it('shows the public about page', function () {
+it('shows the public about page with Simone profile and contacts', function () {
     $this->get(route('about'))
         ->assertOk()
         ->assertSee('Simone Butticè')
-        ->assertSee('Junior Full-Stack Web Developer');
+        ->assertSee('Junior Full-Stack Web Developer')
+        ->assertSee('simonebuttice05@gmail.com')
+        ->assertSee('+39 389 262 5367')
+        ->assertSee('Cuneo (CN), Italia')
+        ->assertSee('mailto:simonebuttice05@gmail.com', false)
+        ->assertSee('tel:+393892625367', false)
+        ->assertSee('media/simone-buttice-profile.webp', false);
 });
 
 it('lists published updates', function () {
