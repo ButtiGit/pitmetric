@@ -7,7 +7,12 @@ NIXPACKS_PHP_ROOT_DIR = "/app/public"
 NIXPACKS_PHP_FALLBACK_PATH = "/index.php"
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+    "npm run build",
+    "mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache",
+    "chown -R $(id -u nobody):$(id -g nobody) storage bootstrap/cache",
+    "chmod -R u+rwX,g+rwX storage bootstrap/cache"
+]
 
 [staticAssets]
 "php-fpm.conf" = '''
