@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
+    'event_id',
     'component_id',
     'maintenance_schedule_id',
     'performed_at',
@@ -19,6 +20,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MaintenanceRecord extends Model
 {
     use BelongsToWorkspace;
+
+    /** @return BelongsTo<RaceEvent, $this> */
+    public function raceEvent(): BelongsTo
+    {
+        return $this->belongsTo(RaceEvent::class, 'event_id');
+    }
 
     /** @return BelongsTo<Component, $this> */
     public function component(): BelongsTo
