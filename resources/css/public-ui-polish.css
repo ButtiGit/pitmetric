@@ -1,0 +1,58 @@
+/* Public-site interaction polish inspired by open-source micro-interaction patterns.
+   Keep motion restrained, functional and isolated from the manager UI. */
+
+.pm-public-site {
+    --pm-ui-red: #e10600;
+    --pm-ui-red-bright: #ff3d37;
+    --pm-ui-hairline: rgb(255 255 255 / 0.12);
+}
+
+.pm-public-site [data-pm-public-header] {
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+
+.pm-public-site [data-pm-public-header]::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent 0 14%, rgb(225 6 0 / .58) 50%, transparent 86% 100%);
+    opacity: .45;
+}
+
+.pm-public-site [data-pm-public-header] nav a {
+    transition: color 180ms ease, opacity 180ms ease;
+}
+
+.pm-public-site [data-pm-public-header] nav:hover a:not(:hover) {
+    opacity: .56;
+}
+
+.pm-public-site .pm-media-frame {
+    position: relative;
+}
+
+.pm-public-site .pm-media-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 1px solid rgb(255 255 255 / .04);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / .2);
+}
+
+.pm-public-site a:focus-visible,
+.pm-public-site button:focus-visible {
+    outline: 2px solid var(--pm-ui-red-bright);
+    outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pm-public-site [data-pm-public-header] nav a {
+        transition: none !important;
+    }
+}
