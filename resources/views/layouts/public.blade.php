@@ -46,6 +46,20 @@
             <nav class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-5 pb-3 text-xs font-semibold text-zinc-400 md:hidden" aria-label="Mobile navigation"><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-white' : '' }}">{{ __('pitmetric.nav.home') }}</a><a href="{{ route('updates.index') }}" class="{{ request()->routeIs('updates.*') ? 'text-white' : '' }}">{{ __('pitmetric.nav.updates') }}</a><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'text-white' : '' }}">{{ __('pitmetric.nav.about') }}</a></nav>
         </header>
 
+        <aside data-partner-notice class="pm-partner-notice" aria-label="{{ app()->getLocale() === 'it' ? 'Collaborazione PitMetric' : 'PitMetric collaboration' }}">
+            <div class="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="pm-partner-notice__pulse" aria-hidden="true"></span>
+                    <span class="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#ff625e]">Partners / Open</span>
+                </div>
+                <button type="button" data-partner-notice-close class="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition hover:text-white">{{ app()->getLocale() === 'it' ? 'Nascondi' : 'Dismiss' }}</button>
+            </div>
+            <p class="mt-4 text-base font-semibold leading-6 text-white">{{ app()->getLocale() === 'it' ? 'Cerchiamo partner per sviluppare PitMetric sul campo.' : 'We are looking for partners to develop PitMetric in real motorsport workflows.' }}</p>
+            <p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Piloti, team e realtà motorsport possono contribuire con test, feedback e flussi di lavoro reali.' : 'Drivers, teams and motorsport organisations can contribute with testing, feedback and real workflows.' }}</p>
+            <p class="mt-4 border-l-2 border-[#E10600] pl-3 text-sm font-semibold leading-6 text-zinc-200">{{ app()->getLocale() === 'it' ? 'Per chi collabora attivamente allo sviluppo, PitMetric è 100% gratuito: nessun canone e nessun costo di licenza.' : 'Active development partners use PitMetric 100% free: no subscription and no licence fee.' }}</p>
+            <a href="mailto:simonebuttice05@gmail.com?subject=PitMetric%20Partnership" class="pm-home-text-link mt-5">{{ app()->getLocale() === 'it' ? 'Parliamone' : 'Talk to me' }}</a>
+        </aside>
+
         <main>{{ $slot }}</main>
 
         <footer class="border-t border-white/10 bg-[#06080a]">
@@ -90,6 +104,13 @@
             if (!cookie('pitmetric_cookie_consent')) showCookieBanner();
             document.querySelectorAll('[data-cookie-choice]').forEach(button => button.addEventListener('click', () => { setCookie('pitmetric_cookie_consent', button.dataset.cookieChoice); cookieBanner?.classList.add('hidden'); }));
             document.querySelectorAll('[data-cookie-settings]').forEach(button => button.addEventListener('click', showCookieBanner));
+
+            const partnerNotice = document.querySelector('[data-partner-notice]');
+            if (partnerNotice && sessionStorage.getItem('pitmetric_partner_notice_hidden') === '1') partnerNotice.remove();
+            document.querySelectorAll('[data-partner-notice-close]').forEach(button => button.addEventListener('click', () => {
+                sessionStorage.setItem('pitmetric_partner_notice_hidden', '1');
+                button.closest('[data-partner-notice]')?.remove();
+            }));
         })();
     </script>
 </body>
