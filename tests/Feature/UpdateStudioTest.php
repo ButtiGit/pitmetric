@@ -90,7 +90,7 @@ it('serves uploaded update media without relying on the public storage symlink',
 
     $this->get(route('updates.media', $update))
         ->assertOk()
-        ->assertHeader('cache-control', 'public, max-age=31536000, immutable');
+        ->assertHeader('cache-control', 'immutable, max-age=31536000, public');
 });
 
 it('falls back to the bundled artwork for the first devlog when its uploaded file is missing', function () {
