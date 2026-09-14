@@ -4,6 +4,7 @@ use App\Models\Component;
 use App\Models\ComponentTracker;
 use App\Models\ComponentType;
 use App\Models\ComponentUsageEntry;
+use App\Models\Expense;
 use App\Models\MaintenanceSchedule;
 use App\Models\UsageBatch;
 use App\Models\UsageMetricType;
@@ -12,7 +13,7 @@ use App\Services\CompleteMaintenanceService;
 use App\Services\ComponentUsageCalculator;
 use Illuminate\Support\Carbon;
 
-it('resets usage since service without erasing lifetime history', function () {
+it('resets usage since service without erasing lifetime history and links service cost', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $this->actingAs($user);
 
@@ -55,14 +56,19 @@ it('resets usage since service without erasing lifetime history', function () {
     expect($calculator->lifetime($tracker))->toBe(7200)
         ->and($calculator->sinceLastService($tracker))->toBe(7200);
 
-    app(CompleteMaintenanceService::class)->complete(
+    $record = app(CompleteMaintenanceService::class)->complete(
         $schedule,
         $user,
         Carbon::now(),
         'Engine rebuild',
+        12500,
     );
+
+    $expense = Expense::query()->where('related_type', 'maintenance_record')->where('related_id', $record->id)->firstOrFail();
 
     expect($tracker->resetEvents()->count())->toBe(1)
         ->and($calculator->lifetime($tracker))->toBe(7200)
-        ->and($calculator->sinceLastService($tracker))->toBe(0);
+        ->and($calculator->sinceLastService($tracker))->toBe(0)
+        ->and($expense->amount_cents)->toBe(12500)
+        ->and($expense->category)->toBe('maintenance');
 });

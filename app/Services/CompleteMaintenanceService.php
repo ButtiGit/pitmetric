@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\TrackerResetEvent;
@@ -44,6 +45,19 @@ class CompleteMaintenanceService
                 'reason' => $description,
                 'created_by' => $user->getKey(),
             ]);
+
+            if ($costCents !== null && $costCents > 0) {
+                Expense::create([
+                    'amount_cents' => $costCents,
+                    'currency' => 'EUR',
+                    'category' => 'maintenance',
+                    'description' => $lockedSchedule->tracker->component->name.' · '.$description,
+                    'occurred_at' => $performedAt,
+                    'related_type' => 'maintenance_record',
+                    'related_id' => $record->getKey(),
+                    'created_by' => $user->getKey(),
+                ]);
+            }
 
             return $record->load('component', 'schedule.tracker.metric');
         });

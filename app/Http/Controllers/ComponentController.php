@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Component;
 use App\Models\ComponentTracker;
 use App\Models\ComponentType;
+use App\Models\Expense;
 use App\Models\UsageMetricType;
 use App\Models\User;
 use App\Services\ComponentUsageCalculator;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -76,14 +78,20 @@ class ComponentController extends Controller
             'manufacturer' => ['nullable', 'string', 'max:100'],
             'model' => ['nullable', 'string', 'max:100'],
             'serial_number' => ['nullable', 'string', 'max:120'],
+            'purchase_date' => ['nullable', 'date'],
+            'purchase_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($validated, $workspace): void {
+        DB::transaction(function () use ($validated, $workspace, $user): void {
             $type = ComponentType::query()->firstOrCreate([
                 'workspace_id' => $workspace->getKey(),
                 'name' => trim($validated['type_name']),
             ]);
+
+            $purchaseCostCents = isset($validated['purchase_cost']) && (float) $validated['purchase_cost'] > 0
+                ? (int) round(((float) $validated['purchase_cost']) * 100)
+                : null;
 
             $component = Component::create([
                 'component_type_id' => $type->getKey(),
@@ -91,6 +99,9 @@ class ComponentController extends Controller
                 'manufacturer' => $validated['manufacturer'] ?? null,
                 'model' => $validated['model'] ?? null,
                 'serial_number' => $validated['serial_number'] ?? null,
+                'purchase_date' => $validated['purchase_date'] ?? null,
+                'purchase_cost_cents' => $purchaseCostCents,
+                'currency' => $purchaseCostCents !== null ? 'EUR' : null,
                 'status' => 'active',
                 'notes' => $validated['notes'] ?? null,
             ]);
@@ -102,6 +113,21 @@ class ComponentController extends Controller
                 'usage_metric_type_id' => $metric->getKey(),
                 'is_active' => true,
             ]);
+
+            if ($purchaseCostCents !== null) {
+                Expense::create([
+                    'amount_cents' => $purchaseCostCents,
+                    'currency' => 'EUR',
+                    'category' => 'parts',
+                    'description' => __('Purchase').': '.$component->name,
+                    'occurred_at' => isset($validated['purchase_date'])
+                        ? Carbon::parse($validated['purchase_date'])->startOfDay()
+                        : now(),
+                    'related_type' => 'component',
+                    'related_id' => $component->getKey(),
+                    'created_by' => $user->getKey(),
+                ]);
+            }
         });
 
         return to_route('demo.components')->with('status', __('Component created.'));
