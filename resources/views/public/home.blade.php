@@ -1,13 +1,13 @@
 <x-layouts::public>
-    <section class="relative isolate overflow-hidden border-b border-white/10">
-        <img src="https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=82&w=2200" alt="{{ __('pitmetric.home.hero_image_alt') }}" class="absolute inset-0 -z-20 h-full w-full object-cover object-center">
+    <section data-pm-home-hero class="relative isolate overflow-hidden border-b border-white/10">
+        <img data-pm-hero-image src="https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=82&w=2200" alt="{{ __('pitmetric.home.hero_image_alt') }}" class="absolute inset-0 -z-20 h-full w-full object-cover object-center">
         <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,8,11,.98)_0%,rgba(6,8,11,.93)_44%,rgba(6,8,11,.50)_76%,rgba(6,8,11,.78)_100%)]"></div>
         <div class="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(6,8,11,.10),rgba(6,8,11,.96))]"></div>
 
         <div class="mx-auto grid min-h-[70vh] max-w-7xl items-end gap-12 px-5 pb-16 pt-28 lg:grid-cols-[1.15fr_.85fr] lg:px-8 lg:pb-20">
-            <div class="max-w-4xl">
+            <div data-pm-hero-copy class="max-w-4xl">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-[#ff625e]">{{ __('pitmetric.home.eyebrow') }}</p>
-                <h1 class="mt-5 max-w-4xl text-5xl font-black leading-[.95] tracking-[-0.055em] text-white sm:text-6xl lg:text-8xl">
+                <h1 class="mt-5 max-w-4xl text-5xl font-black leading-[1.03] tracking-[-0.045em] text-white sm:text-6xl lg:text-8xl">
                     {{ __('pitmetric.home.title_1') }}<br>
                     <span class="text-[#E10600]">{{ __('pitmetric.home.title_2') }}</span>
                 </h1>
@@ -23,7 +23,7 @@
             </div>
 
             <div class="hidden self-end lg:block">
-                <div class="ml-auto max-w-sm rounded-xl border border-white/10 bg-black/20 p-5 backdrop-blur-sm">
+                <div data-pm-track-note class="ml-auto max-w-sm rounded-xl border border-white/10 bg-black/20 p-5 backdrop-blur-sm">
                     <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">{{ __('pitmetric.home.track_note_label') }}</p>
                     <p class="mt-2 text-sm leading-6 text-zinc-300">{{ __('pitmetric.home.track_note') }}</p>
                 </div>
@@ -32,6 +32,21 @@
 
         <a href="https://unsplash.com/photos/a-race-car-on-a-track-GCDa5RBWcAw" target="_blank" rel="noopener" class="absolute bottom-4 right-5 text-[10px] text-white/35 transition hover:text-white/70">Photo: Edoardo Giudici Saraval / Unsplash</a>
     </section>
+
+    <div data-pm-cursor-car class="pm-cursor-car" aria-hidden="true">
+        <svg viewBox="0 0 80 40" role="presentation" focusable="false">
+            <rect class="pm-cursor-car__wing" x="5" y="9" width="8" height="22" rx="2" />
+            <rect class="pm-cursor-car__wing" x="66" y="7" width="5" height="26" rx="1.5" />
+            <rect class="pm-cursor-car__tyre" x="19" y="3" width="12" height="7" rx="2" />
+            <rect class="pm-cursor-car__tyre" x="19" y="30" width="12" height="7" rx="2" />
+            <rect class="pm-cursor-car__tyre" x="54" y="2" width="13" height="8" rx="2" />
+            <rect class="pm-cursor-car__tyre" x="54" y="30" width="13" height="8" rx="2" />
+            <path class="pm-cursor-car__body" d="M12 20C17 14 23 12 31 11L42 6L58 8L67 14V26L58 32L42 34L31 29C23 28 17 26 12 20Z" />
+            <path class="pm-cursor-car__cockpit" d="M35 14L44 10L52 13L55 20L52 27L44 30L35 26L31 20Z" />
+            <path class="pm-cursor-car__highlight" d="M16 18H31L41 11L42 14L32 20H16Z" />
+            <circle cx="45" cy="20" r="2.2" fill="#ff625e" />
+        </svg>
+    </div>
 
     <section class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
