@@ -37,8 +37,8 @@ class ExpenseController extends Controller
         return view('expenses.index', [
             'expenses' => $expenses,
             'totalCents' => (int) $expenses->sum('amount_cents'),
-            'monthCents' => (int) $expenses
-                ->filter(fn (Expense $expense) => $expense->occurred_at->betweenIncluded($monthStart, $monthEnd))
+            'monthCents' => (int) Expense::query()
+                ->whereBetween('occurred_at', [$monthStart, $monthEnd])
                 ->sum('amount_cents'),
             'linkedCount' => $expenses->whereNotNull('related_type')->count(),
             'categoryTotals' => $expenses
