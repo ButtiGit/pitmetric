@@ -33,14 +33,14 @@
 
                 <div class="mt-7 rounded-2xl border border-pm-border bg-pm-subtle p-4 sm:p-5">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-pm-muted">Coolify → PitMetric → Terminal</span>
+                        <span class="font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-pm-muted">Coolify / PitMetric / Terminal</span>
                         <button type="button" class="pm-ghost-button !min-h-8 !px-3 !py-1.5 text-xs" onclick="navigator.clipboard.writeText(@js($setupCommand)); this.textContent=@js(__('pitmetric.studio.copied')); setTimeout(() => this.textContent=@js(__('pitmetric.studio.copy_command')), 1400)">{{ __('pitmetric.studio.copy_command') }}</button>
                     </div>
                     <code class="mt-4 block break-all font-mono text-xs leading-6 text-pm-text">{{ $setupCommand }}</code>
                 </div>
 
                 <div class="mt-6 flex items-start gap-3 rounded-2xl border border-pm-info/20 bg-pm-info-subtle p-4 text-sm leading-6 text-pm-info">
-                    <span class="mt-0.5 font-black">→</span>
+                    <span class="mt-0.5 font-mono text-[10px] font-black uppercase tracking-[0.08em]">Info</span>
                     <p>{{ __('pitmetric.studio.setup_after') }}</p>
                 </div>
             </article>
@@ -49,12 +49,12 @@
                 <p class="text-xs font-bold uppercase tracking-[0.14em] text-pm-muted">{{ __('pitmetric.studio.what_you_can_post') }}</p>
                 <div class="mt-6 grid gap-3">
                     @foreach ([
-                        ['Aa', __('pitmetric.studio.type_text'), __('pitmetric.studio.type_text_copy')],
-                        ['▧', __('pitmetric.studio.type_image'), __('pitmetric.studio.type_image_copy')],
-                        ['▶', __('pitmetric.studio.type_video'), __('pitmetric.studio.type_video_copy')],
+                        ['TXT', __('pitmetric.studio.type_text'), __('pitmetric.studio.type_text_copy')],
+                        ['IMG', __('pitmetric.studio.type_image'), __('pitmetric.studio.type_image_copy')],
+                        ['VID', __('pitmetric.studio.type_video'), __('pitmetric.studio.type_video_copy')],
                     ] as [$icon, $title, $copy])
                         <div class="flex items-start gap-4 rounded-2xl border border-pm-border bg-pm-subtle p-4">
-                            <div class="grid size-10 shrink-0 place-items-center rounded-xl border border-pm-border bg-pm-surface font-mono text-sm font-black text-pm-accent">{{ $icon }}</div>
+                            <div class="grid size-10 shrink-0 place-items-center rounded-xl border border-pm-border bg-pm-surface font-mono text-[9px] font-black tracking-[0.06em] text-pm-accent">{{ $icon }}</div>
                             <div><p class="font-bold text-pm-text">{{ $title }}</p><p class="mt-1 text-sm leading-5 text-pm-text-secondary">{{ $copy }}</p></div>
                         </div>
                     @endforeach
