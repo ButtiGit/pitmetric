@@ -28,13 +28,14 @@ class VehicleController extends Controller
             return view('demo.workspace', ['initialSection' => 'garage']);
         }
 
-        Gate::authorize('viewAny', Vehicle::class);
-
         if (! $workspaceContext->isReady()) {
             return view('garage.unavailable');
         }
 
         $workspace = $workspaceContext->personal($user);
+
+        Gate::authorize('viewAny', Vehicle::class);
+
         $vehicles = Vehicle::query()->orderBy('name')->get();
 
         return view('garage.index', compact('workspace', 'vehicles'));
