@@ -165,10 +165,12 @@ class RaceEventOperationsController extends Controller
             return null;
         }
 
-        return EventEntry::query()
+        $entry = EventEntry::query()
             ->whereKey((int) $entryId)
             ->where('event_id', $raceEvent->getKey())
-            ->value('id');
+            ->firstOrFail();
+
+        return (int) $entry->getKey();
     }
 
     private function user(Request $request): User
