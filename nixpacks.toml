@@ -27,6 +27,8 @@ pm.max_spare_servers = 4
 pm.max_requests = 500
 clear_env = no
 catch_workers_output = yes
+php_admin_value[upload_max_filesize] = 50M
+php_admin_value[post_max_size] = 64M
 '''
 
 "nginx.template.conf" = '''
@@ -61,6 +63,7 @@ http {
         server_name localhost;
 
         root ${NIXPACKS_PHP_ROOT_DIR};
+        client_max_body_size 64m;
 
         add_header X-Frame-Options "SAMEORIGIN";
         add_header X-Content-Type-Options "nosniff";
