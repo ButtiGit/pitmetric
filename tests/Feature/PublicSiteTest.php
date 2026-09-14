@@ -3,17 +3,20 @@
 use App\Models\Update;
 use Illuminate\Database\Eloquent\Model;
 
-it('shows the public home page in English by default', function () {
+it('shows the public home page in English with the editorial layout', function () {
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('Know every lap.')
-        ->assertSee('PitMetric is motorsport software');
+        ->assertSee('History must stay true.')
+        ->assertSee('PitMetric is motorsport software')
+        ->assertSee('pm-home-editorial-title', false)
+        ->assertDontSee('Know every lap.');
 });
 
 it('switches the public site to Italian using the locale cookie', function () {
     $this->withCookie('pitmetric_locale', 'it')
         ->get(route('home'))
         ->assertOk()
+        ->assertSee('Lo storico deve restare vero.')
         ->assertSee('PitMetric è un software motorsport')
         ->assertSee('Scopri PitMetric');
 });
