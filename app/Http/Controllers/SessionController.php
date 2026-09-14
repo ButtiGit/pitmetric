@@ -73,7 +73,7 @@ class SessionController extends Controller
             'defaults' => [
                 'configuration_version_id' => $lastSession?->configuration_version_id,
                 'circuit_layout_id' => $lastSession?->circuit_layout_id,
-                'session_type' => $lastSession?->session_type ?? 'practice',
+                'session_type' => $lastSession->session_type ?? 'practice',
                 'started_at' => now()->format('Y-m-d\TH:i'),
             ],
             'maintenanceSummary' => $health['summary'],
