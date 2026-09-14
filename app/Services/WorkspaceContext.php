@@ -51,6 +51,24 @@ class WorkspaceContext
         return true;
     }
 
+    public function isEventsReady(): bool
+    {
+        if (! $this->isCoreReady()) {
+            return false;
+        }
+
+        foreach (['drivers', 'events', 'event_entries', 'event_tasks', 'event_notes'] as $table) {
+            if (! Schema::hasTable($table)) {
+                return false;
+            }
+        }
+
+        return Schema::hasColumn('track_sessions', 'event_id')
+            && Schema::hasColumn('track_sessions', 'event_entry_id')
+            && Schema::hasColumn('expenses', 'event_id')
+            && Schema::hasColumn('maintenance_records', 'event_id');
+    }
+
     public function personal(User $user): Workspace
     {
         if (! $this->isReady()) {

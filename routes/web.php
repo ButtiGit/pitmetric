@@ -8,6 +8,8 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NewsletterPreferencesController;
 use App\Http\Controllers\PublicUpdateController;
+use App\Http\Controllers\RaceEventController;
+use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\UpdateStudioController;
 use App\Http\Controllers\UserStudioController;
@@ -44,6 +46,7 @@ Route::post('/locale', function (Request $request) {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
+    Route::get('/events', [RaceEventController::class, 'index'])->name('events.index');
     Route::get('/garage', [VehicleController::class, 'index'])->name('demo.garage');
     Route::get('/components', [ComponentController::class, 'index'])->name('demo.components');
     Route::get('/configurations', [ConfigurationController::class, 'index'])->name('demo.configurations');
@@ -53,6 +56,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('demo.expenses');
 
     Route::middleware('database.access')->group(function () {
+        Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
+        Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
+        Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
+        Route::post('/drivers', [RaceEventOperationsController::class, 'storeDriver'])->name('drivers.store');
+        Route::post('/events/{raceEvent}/entries', [RaceEventOperationsController::class, 'storeEntry'])->name('events.entries.store');
+        Route::post('/events/{raceEvent}/tasks', [RaceEventOperationsController::class, 'storeTask'])->name('events.tasks.store');
+        Route::patch('/event-tasks/{eventTask}', [RaceEventOperationsController::class, 'updateTask'])->name('events.tasks.update');
+        Route::post('/events/{raceEvent}/notes', [RaceEventOperationsController::class, 'storeNote'])->name('events.notes.store');
+        Route::post('/events/{raceEvent}/expenses', [RaceEventOperationsController::class, 'storeExpense'])->name('events.expenses.store');
+
         Route::post('/garage', [VehicleController::class, 'store'])->name('garage.store');
         Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
         Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');

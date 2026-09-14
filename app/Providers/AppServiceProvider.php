@@ -7,9 +7,14 @@ use App\Models\Component;
 use App\Models\ComponentInstallation;
 use App\Models\ComponentType;
 use App\Models\Configuration;
+use App\Models\Driver;
+use App\Models\EventEntry;
+use App\Models\EventNote;
+use App\Models\EventTask;
 use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
+use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\UsageBatch;
 use App\Models\User;
@@ -38,9 +43,14 @@ class AppServiceProvider extends ServiceProvider
             ComponentInstallation::class,
             ComponentType::class,
             Configuration::class,
+            Driver::class,
+            EventEntry::class,
+            EventNote::class,
+            EventTask::class,
             Expense::class,
             MaintenanceRecord::class,
             MaintenanceSchedule::class,
+            RaceEvent::class,
             Session::class,
             UsageBatch::class,
         ] as $model) {

@@ -9,17 +9,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'event_id',
-    'component_id',
-    'maintenance_schedule_id',
-    'performed_at',
+    'event_entry_id',
+    'title',
     'description',
-    'cost_cents',
+    'priority',
+    'status',
+    'due_at',
+    'completed_at',
     'created_by',
-    'notes',
 ])]
-class MaintenanceRecord extends Model
+class EventTask extends Model
 {
     use BelongsToWorkspace;
+
+    protected $attributes = [
+        'priority' => 'normal',
+        'status' => 'todo',
+    ];
 
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
@@ -27,23 +33,17 @@ class MaintenanceRecord extends Model
         return $this->belongsTo(RaceEvent::class, 'event_id');
     }
 
-    /** @return BelongsTo<Component, $this> */
-    public function component(): BelongsTo
+    /** @return BelongsTo<EventEntry, $this> */
+    public function eventEntry(): BelongsTo
     {
-        return $this->belongsTo(Component::class);
-    }
-
-    /** @return BelongsTo<MaintenanceSchedule, $this> */
-    public function schedule(): BelongsTo
-    {
-        return $this->belongsTo(MaintenanceSchedule::class, 'maintenance_schedule_id');
+        return $this->belongsTo(EventEntry::class);
     }
 
     protected function casts(): array
     {
         return [
-            'performed_at' => 'datetime',
-            'cost_cents' => 'integer',
+            'due_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 }

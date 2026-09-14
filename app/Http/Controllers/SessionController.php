@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\CircuitLayout;
 use App\Models\ConfigurationVersion;
+use App\Models\EventEntry;
 use App\Models\Expense;
 use App\Models\MaintenanceSchedule;
+use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\User;
 use App\Services\FinalizeSessionService;
@@ -16,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SessionController extends Controller
@@ -38,7 +41,7 @@ class SessionController extends Controller
 
         $workspace = $workspaceContext->personal($user);
         $sessions = Session::query()
-            ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric'])
+            ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric', 'raceEvent', 'eventEntry.driver'])
             ->latest('started_at')
             ->latest('id')
             ->limit(50)
@@ -97,9 +100,11 @@ class SessionController extends Controller
         $workspace = $workspaceContext->personal($user);
 
         $validated = $request->validate([
+            'event_id' => ['nullable', 'integer', 'required_with:event_entry_id'],
+            'event_entry_id' => ['nullable', 'integer', 'required_with:event_id'],
             'configuration_version_id' => ['required', 'integer'],
             'circuit_layout_id' => ['nullable', 'integer'],
-            'session_type' => ['required', 'in:practice,qualifying,race,test'],
+            'session_type' => ['required', 'in:practice,qualifying,heat,prefinal,final,race,test'],
             'started_at' => ['required', 'date'],
             'completed_laps' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'duration_minutes' => ['nullable', 'numeric', 'min:0', 'max:1440'],
@@ -109,25 +114,54 @@ class SessionController extends Controller
             'notes' => ['nullable', 'string', 'max:4000'],
         ]);
 
+        $raceEvent = null;
+        $eventEntry = null;
+
+        if (! empty($validated['event_id'])) {
+            $raceEvent = RaceEvent::query()->whereKey((int) $validated['event_id'])->firstOrFail();
+            $eventEntry = EventEntry::query()
+                ->whereKey((int) $validated['event_entry_id'])
+                ->where('event_id', $raceEvent->getKey())
+                ->firstOrFail();
+
+            $startedAt = Carbon::parse($validated['started_at']);
+            $eventStartsAt = Carbon::parse($raceEvent->start_date)->startOfDay();
+            $eventEndsAt = Carbon::parse($raceEvent->end_date)->endOfDay();
+
+            if ($startedAt->lt($eventStartsAt) || $startedAt->gt($eventEndsAt)) {
+                throw ValidationException::withMessages([
+                    'started_at' => __('The session date must be inside the race weekend.'),
+                ]);
+            }
+        }
+
         $version = ConfigurationVersion::query()
-            ->whereKey($validated['configuration_version_id'])
-            ->whereHas('configuration', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+            ->whereKey((int) $validated['configuration_version_id'])
+            ->whereHas('configuration', function ($query) use ($workspace, $eventEntry): void {
+                $query->where('workspace_id', $workspace->getKey());
+
+                if ($eventEntry instanceof EventEntry) {
+                    $query->where('vehicle_id', $eventEntry->vehicle_id);
+                }
+            })
             ->with('configuration.vehicle')
             ->firstOrFail();
 
-        $layoutId = null;
+        $layoutId = $raceEvent?->circuit_layout_id;
 
-        if (! empty($validated['circuit_layout_id'])) {
+        if ($layoutId === null && ! empty($validated['circuit_layout_id'])) {
             $layoutId = CircuitLayout::query()
-                ->whereKey($validated['circuit_layout_id'])
+                ->whereKey((int) $validated['circuit_layout_id'])
                 ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
                 ->value('id');
 
             abort_if($layoutId === null, 404);
         }
 
-        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService): Session {
+        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService, $raceEvent, $eventEntry): Session {
             $session = Session::create([
+                'event_id' => $raceEvent?->getKey(),
+                'event_entry_id' => $eventEntry?->getKey(),
                 'vehicle_id' => $version->configuration->vehicle_id,
                 'configuration_version_id' => $version->getKey(),
                 'circuit_layout_id' => $layoutId,
@@ -152,6 +186,7 @@ class SessionController extends Controller
 
             if ($sessionCostCents !== null) {
                 Expense::create([
+                    'event_id' => $raceEvent?->getKey(),
                     'amount_cents' => $sessionCostCents,
                     'currency' => 'EUR',
                     'category' => 'track',
@@ -172,6 +207,12 @@ class SessionController extends Controller
             ->where('is_active', true)
             ->get();
         $health = $healthService->snapshot($schedules);
+
+        if ($raceEvent instanceof RaceEvent) {
+            return to_route('events.show', ['raceEvent' => $raceEvent, 'recorded' => $session->getKey()])
+                ->with('status', __('Event session recorded, usage updated and costs linked.'))
+                ->with('maintenance_attention', $health['summary']['attention']);
+        }
 
         return to_route('demo.sessions', ['recorded' => $session->getKey()])
             ->with('status', __('Session recorded, component usage updated and session cost linked to expenses.'))

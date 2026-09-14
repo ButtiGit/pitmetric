@@ -6,7 +6,7 @@ return [
     'seed' => 'Carica dati di esempio',
     'reset' => 'Azzera dati',
     'nav' => [
-        'garage' => 'Garage', 'components' => 'Componenti', 'configurations' => 'Configurazioni', 'circuits' => 'Circuiti',
+        'events' => 'Weekend gara', 'garage' => 'Garage', 'components' => 'Componenti', 'configurations' => 'Configurazioni', 'circuits' => 'Circuiti',
         'sessions' => 'Sessioni', 'maintenance' => 'Manutenzione', 'expenses' => 'Spese', 'newsletter' => 'Newsletter',
     ],
     'locked' => 'Funzioni in evoluzione',

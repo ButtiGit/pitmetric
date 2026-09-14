@@ -6,12 +6,11 @@ use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['event_id', 'amount_cents', 'currency', 'category', 'description', 'occurred_at', 'related_type', 'related_id', 'created_by'])]
-class Expense extends Model
+#[Fillable(['event_id', 'event_entry_id', 'body', 'occurred_at', 'created_by'])]
+class EventNote extends Model
 {
-    use BelongsToWorkspace, SoftDeletes;
+    use BelongsToWorkspace;
 
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
@@ -19,12 +18,16 @@ class Expense extends Model
         return $this->belongsTo(RaceEvent::class, 'event_id');
     }
 
+    /** @return BelongsTo<EventEntry, $this> */
+    public function eventEntry(): BelongsTo
+    {
+        return $this->belongsTo(EventEntry::class);
+    }
+
     protected function casts(): array
     {
         return [
-            'amount_cents' => 'integer',
             'occurred_at' => 'datetime',
-            'related_id' => 'integer',
         ];
     }
 }
