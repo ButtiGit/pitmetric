@@ -13,6 +13,7 @@ Route::view('/', 'public.home')->name('home');
 Route::view('/about', 'public.about')->name('about');
 Route::view('/cookies', 'public.cookies')->name('cookies');
 Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
+Route::get('/updates/{update:slug}/media', [PublicUpdateController::class, 'media'])->name('updates.media');
 Route::get('/updates/{update:slug}', [PublicUpdateController::class, 'show'])->name('updates.show');
 Route::get('/newsletter/unsubscribe/{user}', [NewsletterPreferencesController::class, 'unsubscribe'])
     ->middleware('signed')
