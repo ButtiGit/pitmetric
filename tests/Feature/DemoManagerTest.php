@@ -13,7 +13,7 @@ it('opens the manager sections without public preview labels', function () {
 
     $this->get(route('demo.garage'))
         ->assertOk()
-        ->assertSee('WORKSPACE')
+        ->assertSee(__('demo.local_badge'))
         ->assertDontSee('SERVER WORKSPACE')
         ->assertDontSee('DEMO LOCALE')
         ->assertDontSee('browser demo');
