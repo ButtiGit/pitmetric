@@ -9,7 +9,8 @@ NIXPACKS_PHP_FALLBACK_PATH = "/index.php"
 [phases.build]
 cmds = [
     "npm run build",
-    "mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache",
+    "mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache",
+    "rm -rf public/storage && ln -s ../storage/app/public public/storage",
     "chown -R $(id -u nobody):$(id -g nobody) storage bootstrap/cache",
     "chmod -R u+rwX,g+rwX storage bootstrap/cache"
 ]
