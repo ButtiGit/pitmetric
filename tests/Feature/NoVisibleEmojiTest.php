@@ -38,5 +38,9 @@ it('keeps user-facing sources free of emoji glyphs', function () {
         }
     }
 
+    if ($violations !== []) {
+        throw new RuntimeException("Visible emoji glyphs found:\n".implode("\n", $violations));
+    }
+
     expect($violations)->toBeEmpty();
 });
