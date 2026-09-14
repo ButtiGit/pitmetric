@@ -9,7 +9,7 @@ final class DatabaseSchema
 {
     public function ensure(): void
     {
-        if (! Schema::hasTable('users')) {
+        if (! $this->canInspectDatabase() || ! Schema::hasTable('users')) {
             return;
         }
 
@@ -19,7 +19,7 @@ final class DatabaseSchema
 
     public function ensureWorkspaceDomain(): void
     {
-        if (! Schema::hasTable('users')) {
+        if (! $this->canInspectDatabase() || ! Schema::hasTable('users')) {
             return;
         }
 
@@ -63,7 +63,7 @@ final class DatabaseSchema
 
     public function ensureDatabaseAccess(): void
     {
-        if (! Schema::hasTable('users')) {
+        if (! $this->canInspectDatabase() || ! Schema::hasTable('users')) {
             return;
         }
 
@@ -78,5 +78,20 @@ final class DatabaseSchema
                 $table->dropColumn('manager_access_enabled');
             });
         }
+    }
+
+    private function canInspectDatabase(): bool
+    {
+        if (config('database.default') !== 'sqlite') {
+            return true;
+        }
+
+        $database = config('database.connections.sqlite.database');
+
+        if (! is_string($database) || $database === '' || $database === ':memory:') {
+            return true;
+        }
+
+        return is_file($database);
     }
 }
