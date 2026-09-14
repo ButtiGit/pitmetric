@@ -1,0 +1,36 @@
+/* Simplify the public site by removing pointer-following visuals and technical micro-labels. */
+
+/* No visual should follow the pointer. */
+.pm-public-site::before,
+.pm-public-site .pm-cursor-car {
+    display: none !important;
+}
+
+.pm-public-site .pm-race-card {
+    transform: translateY(var(--pm-card-lift, 0px)) !important;
+    transform-style: flat;
+    will-change: auto;
+}
+
+.pm-public-site .pm-race-card::after {
+    background: linear-gradient(115deg, transparent 35%, rgb(225 6 0 / 0.04), transparent 65%) !important;
+}
+
+/* Remove the small red technical labels without hiding real page/section titles. */
+.pm-public-site .pm-home-editorial p.font-mono.uppercase,
+.pm-public-site .pm-editorial-kicker,
+.pm-public-site .pm-editorial-meta[class*="text-[#ff625e]"],
+.pm-public-site [data-partner-notice] .font-mono.uppercase,
+.pm-public-site [data-partner-notice] .pm-partner-notice__pulse {
+    display: none !important;
+}
+
+.pm-public-site .pm-editorial-kicker + *,
+.pm-public-site .pm-home-editorial p.font-mono.uppercase + h1,
+.pm-public-site .pm-home-editorial p.font-mono.uppercase + h2 {
+    margin-top: 0 !important;
+}
+
+.pm-public-site [data-partner-notice] > div:first-child {
+    justify-content: flex-end;
+}
