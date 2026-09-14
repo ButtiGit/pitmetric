@@ -21,7 +21,7 @@ class UserFactory extends Factory
     public function configure(): static
     {
         return $this->afterCreating(function (User $user): void {
-            if ($user->workspaces()->exists()) {
+            if (! $user->hasDatabaseAccess() || $user->workspaces()->exists()) {
                 return;
             }
 

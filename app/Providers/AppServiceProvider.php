@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\DatabaseSchema;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        app(DatabaseSchema::class)->ensure();
 
         Gate::define('manage-updates', function (User $user): bool {
             $editors = config('pitmetric.update_editor_emails', []);

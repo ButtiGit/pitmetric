@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\WorkspaceContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Schema;
 
 class UserStudioController extends Controller
 {
@@ -29,16 +30,12 @@ class UserStudioController extends Controller
         return view('studio.users.index', [
             'users' => $users,
             'search' => $search,
-            'accessControlReady' => Schema::hasColumn('users', 'database_access_enabled'),
+            'accessControlReady' => true,
         ]);
     }
 
-    public function updateAccess(Request $request, User $user): RedirectResponse
+    public function updateAccess(Request $request, User $user, WorkspaceContext $workspaceContext): RedirectResponse
     {
-        if (! Schema::hasColumn('users', 'database_access_enabled')) {
-            return back()->with('studio_setup_error', __('users.setup_required'));
-        }
-
         if (Gate::forUser($user)->allows('manage-updates')) {
             abort(403, 'Editor database access cannot be disabled from the user studio.');
         }
@@ -49,9 +46,15 @@ class UserStudioController extends Controller
 
         $enabled = (bool) $validated['database_access_enabled'];
 
-        $user->forceFill([
-            'database_access_enabled' => $enabled,
-        ])->save();
+        DB::transaction(function () use ($user, $workspaceContext, $enabled): void {
+            $user->forceFill([
+                'database_access_enabled' => $enabled,
+            ])->save();
+
+            if ($enabled) {
+                $workspaceContext->personal($user);
+            }
+        });
 
         return back()->with('status', $enabled
             ? __('users.access_enabled_message', ['name' => $user->name])

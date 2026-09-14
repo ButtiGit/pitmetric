@@ -5,8 +5,6 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
-use App\Models\Workspace;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
@@ -28,24 +26,14 @@ class CreateNewUser implements CreatesNewUsers
 
         $subscribed = filter_var($input['newsletter_opt_in'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        return DB::transaction(function () use ($input, $subscribed): User {
-            $user = User::create([
-                'name' => $input['name'],
-                'email' => $input['email'],
-                'password' => $input['password'],
-                'newsletter_subscribed_at' => $subscribed ? now() : null,
-                'newsletter_locale' => in_array($input['newsletter_locale'] ?? null, ['en', 'it'], true)
-                    ? $input['newsletter_locale']
-                    : 'en',
-            ]);
-
-            $workspace = Workspace::create([
-                'name' => $user->name.' Workspace',
-            ]);
-
-            $user->workspaces()->attach($workspace);
-
-            return $user;
-        });
+        return User::create([
+            'name' => $input['name'],
+            'email' => $input['email'],
+            'password' => $input['password'],
+            'newsletter_subscribed_at' => $subscribed ? now() : null,
+            'newsletter_locale' => in_array($input['newsletter_locale'] ?? null, ['en', 'it'], true)
+                ? $input['newsletter_locale']
+                : 'en',
+        ]);
     }
 }

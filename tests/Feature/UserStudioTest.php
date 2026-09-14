@@ -33,7 +33,8 @@ it('lets an editor see registered users and their database access state', functi
 it('keeps demo access available until an editor enables database access', function () {
     $member = User::factory()->create(['email' => 'driver@example.com']);
 
-    expect($member->hasDatabaseAccess())->toBeFalse();
+    expect($member->hasDatabaseAccess())->toBeFalse()
+        ->and($member->workspaces()->count())->toBe(0);
 
     $this->actingAs($member)
         ->get(route('dashboard'))
@@ -54,12 +55,15 @@ it('lets an editor enable and disable database access', function () {
     $editor = User::factory()->create(['email' => 'editor@example.com']);
     $member = User::factory()->create(['email' => 'driver@example.com']);
 
+    expect($member->workspaces()->count())->toBe(0);
+
     $this->actingAs($editor)
         ->patch(route('studio.users.access', $member), ['database_access_enabled' => true])
         ->assertRedirect();
 
     $member->refresh();
-    expect($member->hasDatabaseAccess())->toBeTrue();
+    expect($member->hasDatabaseAccess())->toBeTrue()
+        ->and($member->workspaces()->count())->toBe(1);
 
     $this->actingAs($member)
         ->get(route('demo.garage'))
@@ -71,7 +75,8 @@ it('lets an editor enable and disable database access', function () {
         ->assertRedirect();
 
     $member->refresh();
-    expect($member->hasDatabaseAccess())->toBeFalse();
+    expect($member->hasDatabaseAccess())->toBeFalse()
+        ->and($member->workspaces()->count())->toBe(1);
 
     $this->actingAs($member)
         ->get(route('demo.garage'))
