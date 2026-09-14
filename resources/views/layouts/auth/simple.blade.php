@@ -16,8 +16,8 @@
 
             <main class="relative flex min-h-svh items-center justify-center px-6 py-12 sm:px-10">
                 <div class="absolute right-5 top-5 flex gap-2">
-                    @foreach (['en' => '🇬🇧 EN', 'it' => '🇮🇹 IT'] as $locale => $label)
-                        <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="rounded-full border px-3 py-1.5 text-xs font-semibold {{ app()->getLocale() === $locale ? 'border-[#E10600] bg-[#E10600] text-white' : 'border-white/10 text-zinc-400 hover:border-white/25 hover:text-white' }}">{{ $label }}</button></form>
+                    @foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)
+                        <form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="rounded-md border px-3 py-1.5 text-xs font-semibold tracking-[0.08em] {{ app()->getLocale() === $locale ? 'border-[#E10600] bg-[#E10600] text-white' : 'border-white/10 text-zinc-400 hover:border-white/25 hover:text-white' }}">{{ $label }}</button></form>
                     @endforeach
                 </div>
                 <div class="w-full max-w-sm">
