@@ -42,6 +42,7 @@ it('keeps database-enabled dashboard and garage reachable while the workspace sc
     $user = User::factory()->withDatabaseAccess()->create(['email_verified_at' => now()]);
     $workspaceContext = Mockery::mock(WorkspaceContext::class);
     $workspaceContext->shouldReceive('isReady')->twice()->andReturnFalse();
+    $workspaceContext->shouldReceive('isCoreReady')->once()->andReturnFalse();
     $this->app->instance(WorkspaceContext::class, $workspaceContext);
 
     $this->actingAs($user)
