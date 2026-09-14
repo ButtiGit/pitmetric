@@ -48,7 +48,14 @@ it('shows the public about page with Simone profile and contacts', function () {
         ->assertSee('Cuneo (CN), Italia')
         ->assertSee('mailto:simonebuttice05@gmail.com', false)
         ->assertSee('tel:+393892625367', false)
-        ->assertSee('media/simone-buttice-profile.webp', false);
+        ->assertSee('media/simone-buttice-profile-hq.webp', false);
+
+    $profilePath = public_path('media/simone-buttice-profile-hq.webp');
+    $dimensions = getimagesize($profilePath);
+
+    expect($dimensions)->not->toBeFalse()
+        ->and($dimensions[0])->toBeGreaterThanOrEqual(900)
+        ->and($dimensions[1])->toBeGreaterThanOrEqual(1000);
 });
 
 it('lists published updates', function () {

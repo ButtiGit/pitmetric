@@ -31,7 +31,7 @@
                     <div class="absolute -inset-3 translate-x-3 translate-y-3 border border-[#E10600]/25"></div>
                     <div class="relative overflow-hidden border border-white/10 bg-[#11151b] shadow-[0_28px_90px_rgba(0,0,0,.42)]">
                         <div class="absolute left-0 top-0 z-10 h-1 w-24 bg-[#E10600]"></div>
-                        <img src="{{ asset('media/simone-buttice-profile.webp') }}" alt="{{ $isItalian ? 'Ritratto di Simone Butticè' : 'Portrait of Simone Butticè' }}" class="aspect-[4/5] w-full object-cover object-[50%_24%]" loading="eager" fetchpriority="high">
+                        <img src="{{ asset('media/simone-buttice-profile-hq.webp') }}" alt="{{ $isItalian ? 'Ritratto di Simone Butticè' : 'Portrait of Simone Butticè' }}" width="938" height="1061" class="aspect-[4/5] w-full object-cover object-[50%_24%]" loading="eager" fetchpriority="high">
                         <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/65 to-transparent px-6 pb-6 pt-20">
                             <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-[#ff5b57]">PitMetric / Creator</p>
                             <p class="mt-2 text-xl font-bold text-white">Simone Butticè</p>
