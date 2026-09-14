@@ -7,6 +7,7 @@ use App\Models\Configuration;
 use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
+use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -32,6 +33,7 @@ class DashboardController extends Controller
         $databaseAccessEnabled = Gate::forUser($user)->allows('manage-updates') || $user->hasDatabaseAccess();
         $baseReady = $databaseAccessEnabled && $workspaceContext->isReady();
         $domainReady = $databaseAccessEnabled && $workspaceContext->isCoreReady();
+        $eventsReady = $domainReady && $workspaceContext->isEventsReady();
 
         if ($baseReady) {
             $workspaceContext->personal($user);
@@ -51,6 +53,8 @@ class DashboardController extends Controller
         ];
         $monthExpenseCents = 0;
         $lastSession = null;
+        $focusEvent = null;
+        $eventCount = 0;
 
         if ($domainReady) {
             $schedules = MaintenanceSchedule::query()
@@ -62,15 +66,34 @@ class DashboardController extends Controller
                 ->whereBetween('occurred_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->sum('amount_cents');
             $lastSession = Session::query()
-                ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric'])
+                ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric', 'raceEvent'])
                 ->latest('started_at')
                 ->latest('id')
+                ->first();
+        }
+
+        if ($eventsReady) {
+            $eventCount = RaceEvent::query()->count();
+            $focusEvent = RaceEvent::query()
+                ->with(['circuitLayout.circuit'])
+                ->withCount(['entries', 'sessions', 'tasks'])
+                ->where('status', 'active')
+                ->orderBy('start_date')
+                ->first();
+
+            $focusEvent ??= RaceEvent::query()
+                ->with(['circuitLayout.circuit'])
+                ->withCount(['entries', 'sessions', 'tasks'])
+                ->where('status', 'planned')
+                ->whereDate('end_date', '>=', today())
+                ->orderBy('start_date')
                 ->first();
         }
 
         return view('dashboard', [
             'databaseAccessEnabled' => $databaseAccessEnabled,
             'domainReady' => $domainReady,
+            'eventsReady' => $eventsReady,
             'vehicleCount' => $vehicleCount,
             'componentCount' => $componentCount,
             'configurationCount' => $configurationCount,
@@ -79,6 +102,8 @@ class DashboardController extends Controller
             'maintenanceSummary' => $maintenanceSummary,
             'monthExpenseCents' => $monthExpenseCents,
             'lastSession' => $lastSession,
+            'focusEvent' => $focusEvent,
+            'eventCount' => $eventCount,
         ]);
     }
 }
