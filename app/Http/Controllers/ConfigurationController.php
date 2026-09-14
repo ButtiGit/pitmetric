@@ -65,11 +65,14 @@ class ConfigurationController extends Controller
             'component_ids.*' => ['integer'],
         ]);
 
+        $vehicleId = (int) $validated['vehicle_id'];
+        $componentIds = array_values(array_map('intval', $validated['component_ids'] ?? []));
+
         $vehicle = Vehicle::query()
             ->where('workspace_id', $workspace->getKey())
-            ->findOrFail($validated['vehicle_id']);
+            ->findOrFail($vehicleId);
 
-        DB::transaction(function () use ($validated, $vehicle, $user, $versionService): void {
+        DB::transaction(function () use ($validated, $vehicle, $user, $versionService, $componentIds): void {
             $configuration = Configuration::create([
                 'vehicle_id' => $vehicle->getKey(),
                 'name' => $validated['name'],
@@ -80,7 +83,7 @@ class ConfigurationController extends Controller
             $versionService->create(
                 $configuration,
                 $user,
-                array_map('intval', $validated['component_ids'] ?? []),
+                $componentIds,
                 __('Initial configuration'),
             );
         });
@@ -104,10 +107,12 @@ class ConfigurationController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $componentIds = array_values(array_map('intval', $validated['component_ids'] ?? []));
+
         $versionService->create(
             $configuration,
             $user,
-            array_map('intval', $validated['component_ids'] ?? []),
+            $componentIds,
             $validated['notes'] ?? null,
         );
 
