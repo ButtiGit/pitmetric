@@ -182,10 +182,15 @@ const initPublicSite = () => {
             angle += normalizeAngleDelta(angle, targetAngle) * 0.18;
             speed += (0 - speed) * 0.055;
 
+            const normalizedSpeed = Math.max(speed, 0);
+
             cursorCar.style.setProperty('--pm-car-x', `${currentX.toFixed(2)}px`);
             cursorCar.style.setProperty('--pm-car-y', `${currentY.toFixed(2)}px`);
             cursorCar.style.setProperty('--pm-car-rotation', `${angle.toFixed(2)}deg`);
-            cursorCar.style.setProperty('--pm-car-speed', Math.max(speed, 0).toFixed(3));
+            cursorCar.style.setProperty('--pm-car-speed', normalizedSpeed.toFixed(3));
+            cursorCar.style.setProperty('--pm-car-glow', `${(4 + normalizedSpeed * 10).toFixed(2)}px`);
+            cursorCar.style.setProperty('--pm-car-trail-scale', (0.25 + normalizedSpeed).toFixed(3));
+            cursorCar.style.setProperty('--pm-car-highlight', (0.35 + normalizedSpeed * 0.45).toFixed(3));
 
             if (active && time - lastMoveAt > 1700) {
                 cursorCar.dataset.active = 'false';
