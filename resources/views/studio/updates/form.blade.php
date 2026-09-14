@@ -11,6 +11,20 @@
         $translationExcerpt = old('translation_excerpt', $isItalian ? ($update->excerpt_it ? $update->excerpt : '') : $update->excerpt_it);
         $translationContent = old('translation_content', $isItalian ? ($update->content_it ? $update->content : '') : $update->content_it);
         $translationLabel = $isItalian ? 'English' : 'Italiano';
+
+        $currentMediaSource = $editing ? $update->mediaSource() : null;
+        $currentMediaStored = $editing && filled($update->media_path);
+        $currentMediaHost = $editing && filled($update->media_url) ? strtolower((string) parse_url($update->media_url, PHP_URL_HOST)) : null;
+        $currentMediaProvider = match (true) {
+            in_array($currentMediaHost, ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'], true) => 'YouTube',
+            in_array($currentMediaHost, ['vimeo.com', 'www.vimeo.com'], true) => 'Vimeo',
+            $currentMediaStored => __('pitmetric.studio.media_source_uploaded'),
+            filled($currentMediaHost) => __('pitmetric.studio.media_source_external'),
+            default => null,
+        };
+        $currentMediaLabel = $currentMediaStored ? $update->media_path : $update->media_url;
+        $initialMediaUrl = (string) old('media_url', $update->media_url ?? '');
+        $oldMediaUrlWasEntered = ! $editing && old('media_url') !== null && trim((string) old('media_url')) !== '';
     @endphp
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -61,34 +75,113 @@
                         </div>
                     </section>
 
-                    <section class="pm-panel p-5 sm:p-7">
+                    <section
+                        class="pm-panel p-5 sm:p-7"
+                        x-data="{ fileName: '', fileKind: '', mediaUrl: @js($initialMediaUrl), mediaUrlChanged: @js($oldMediaUrlWasEntered), removeMedia: false }"
+                    >
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.14em] text-pm-muted">Media</p>
                                 <h2 class="mt-2 text-xl font-black text-pm-text">{{ __('pitmetric.studio.add_media') }}</h2>
-                                <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ __('pitmetric.studio.media_help_simple') }}</p>
+                                <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ __('pitmetric.studio.media_help_clear') }}</p>
                             </div>
                             <span class="rounded-full border border-pm-border px-3 py-1 text-xs font-semibold text-pm-muted">{{ __('pitmetric.studio.optional') }}</span>
                         </div>
 
-                        @if ($editing && $update->mediaSource())
-                            <div class="mt-5 flex items-center justify-between gap-4 rounded-xl border border-pm-border bg-pm-subtle p-4">
-                                <div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ __('pitmetric.studio.current_media') }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary">{{ $update->media_path ?? $update->media_url }}</p></div>
-                                <label class="shrink-0 text-sm font-semibold text-pm-danger"><input type="checkbox" name="remove_media" value="1" class="mr-1 size-4 align-middle"> {{ __('pitmetric.studio.remove_media') }}</label>
+                        <div class="mt-5 rounded-xl border border-pm-border bg-pm-subtle p-4" aria-live="polite">
+                            <div x-show="removeMedia" x-cloak class="flex items-start gap-3">
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-danger-subtle text-pm-danger">×</span>
+                                <div><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_remove') }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.media_status_remove_help') }}</p></div>
+                            </div>
+                            <div x-show="!removeMedia && fileName" x-cloak class="flex items-start gap-3">
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10 text-pm-accent">✓</span>
+                                <div class="min-w-0"><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_file_ready') }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="fileName"></p><p class="mt-1 text-xs text-pm-muted">{{ __('pitmetric.studio.media_status_file_help') }}</p></div>
+                            </div>
+                            <div x-show="!removeMedia && !fileName && mediaUrlChanged && mediaUrl" x-cloak class="flex items-start gap-3">
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-pm-accent/10 text-pm-accent">↗</span>
+                                <div class="min-w-0"><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_link_ready') }}</p><p class="mt-1 truncate text-sm text-pm-text-secondary" x-text="mediaUrl"></p><p class="mt-1 text-xs text-pm-muted">{{ __('pitmetric.studio.media_status_link_help') }}</p></div>
+                            </div>
+
+                            @if ($currentMediaSource)
+                                <div x-show="!removeMedia && !fileName && !(mediaUrlChanged && mediaUrl)" class="flex items-start gap-3">
+                                    <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">✓</span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_current') }}</p>
+                                            <span class="rounded-full border border-pm-border bg-pm-surface px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-pm-muted">{{ $currentMediaProvider }}</span>
+                                            <span class="rounded-full border border-pm-border bg-pm-surface px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-pm-muted">{{ $update->media_type === 'video' ? __('pitmetric.studio.media_video') : __('pitmetric.studio.media_image') }}</span>
+                                        </div>
+                                        <p class="mt-1 truncate text-sm text-pm-text-secondary">{{ $currentMediaLabel }}</p>
+                                        <p class="mt-1 text-xs text-pm-muted">{{ $currentMediaStored ? __('pitmetric.studio.media_current_uploaded_help') : __('pitmetric.studio.media_current_external_help') }}</p>
+                                    </div>
+                                </div>
+                            @else
+                                <div x-show="!removeMedia && !fileName && !(mediaUrlChanged && mediaUrl)" class="flex items-start gap-3">
+                                    <span class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-surface text-pm-muted">—</span>
+                                    <div><p class="font-bold text-pm-text">{{ __('pitmetric.studio.media_status_empty') }}</p><p class="mt-1 text-sm text-pm-text-secondary">{{ __('pitmetric.studio.media_status_empty_help') }}</p></div>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if ($currentMediaSource)
+                            <div class="mt-4 overflow-hidden rounded-xl border border-pm-border bg-black/20">
+                                @if ($update->media_type === 'image')
+                                    <img src="{{ $currentMediaSource }}" alt="{{ $update->mediaAltForLocale() }}" class="max-h-72 w-full object-cover">
+                                @elseif ($update->videoEmbedUrl())
+                                    <div class="aspect-video"><iframe src="{{ $update->videoEmbedUrl() }}" title="{{ $update->mediaAltForLocale() }}" class="size-full" loading="lazy" allowfullscreen></iframe></div>
+                                @else
+                                    <video src="{{ $currentMediaSource }}" controls class="max-h-72 w-full bg-black"></video>
+                                @endif
                             </div>
                         @endif
 
                         <div class="mt-5 grid gap-4 md:grid-cols-2">
-                            <label class="pm-upload-zone grid min-h-32 cursor-pointer place-items-center rounded-xl p-5 text-center">
-                                <div><div class="mx-auto grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-xl text-pm-accent">＋</div><p class="mt-3 font-bold text-pm-text">{{ __('pitmetric.studio.choose_file') }}</p><p class="mt-1 text-xs text-pm-muted">JPG · PNG · WEBP · GIF · MP4 · WEBM · MOV</p></div>
-                                <input type="file" name="media" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" class="sr-only">
+                            <label class="pm-upload-zone grid min-h-40 cursor-pointer content-center rounded-xl p-5 text-center transition" :class="fileName ? 'border-pm-accent bg-pm-accent/5' : ''">
+                                <div>
+                                    <div class="mx-auto grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-xl text-pm-accent">↑</div>
+                                    <p class="mt-3 font-bold text-pm-text">{{ __('pitmetric.studio.upload_from_device') }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-pm-muted">{{ __('pitmetric.studio.upload_from_device_help') }}</p>
+                                    <p x-show="fileName" x-cloak class="mt-3 truncate rounded-lg bg-pm-accent/10 px-3 py-2 text-xs font-bold text-pm-accent" x-text="fileName"></p>
+                                </div>
+                                <input
+                                    x-ref="mediaFile"
+                                    type="file"
+                                    name="media"
+                                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                                    class="sr-only"
+                                    @change="fileName = $event.target.files[0]?.name || ''; fileKind = $event.target.files[0]?.type || ''; if (fileName) { mediaUrl = ''; mediaUrlChanged = true; $refs.mediaUrl.value = ''; removeMedia = false; if ($refs.removeMedia) $refs.removeMedia.checked = false; }"
+                                >
                             </label>
-                            <label class="grid content-start gap-2 rounded-xl border border-pm-border bg-pm-subtle p-5">
-                                <span class="pm-label">{{ __('pitmetric.studio.or_paste_link') }}</span>
-                                <input type="url" name="media_url" value="{{ old('media_url', $update->media_url) }}" class="pm-input" placeholder="https://youtube.com/...">
+
+                            <div class="grid content-start gap-3 rounded-xl border border-pm-border bg-pm-subtle p-5 transition" :class="mediaUrlChanged && mediaUrl ? 'border-pm-accent bg-pm-accent/5' : ''">
+                                <div>
+                                    <div class="grid size-10 place-items-center rounded-lg border border-pm-border bg-pm-surface text-lg text-pm-accent">↗</div>
+                                    <p class="mt-3 font-bold text-pm-text">{{ __('pitmetric.studio.use_external_link') }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-pm-muted">{{ __('pitmetric.studio.use_external_link_help') }}</p>
+                                </div>
+                                <input
+                                    x-ref="mediaUrl"
+                                    x-model="mediaUrl"
+                                    type="url"
+                                    name="media_url"
+                                    value="{{ $initialMediaUrl }}"
+                                    class="pm-input"
+                                    placeholder="https://youtube.com/..."
+                                    @input="mediaUrlChanged = true; if (mediaUrl) { fileName = ''; $refs.mediaFile.value = ''; removeMedia = false; if ($refs.removeMedia) $refs.removeMedia.checked = false; }"
+                                >
                                 <span class="pm-help">{{ __('pitmetric.studio.link_detect') }}</span>
-                            </label>
+                            </div>
                         </div>
+
+                        @if ($currentMediaSource)
+                            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-pm-border pt-4">
+                                <p class="text-xs text-pm-muted">{{ __('pitmetric.studio.media_replace_help') }}</p>
+                                <label class="text-sm font-semibold text-pm-danger">
+                                    <input x-ref="removeMedia" x-model="removeMedia" type="checkbox" name="remove_media" value="1" class="mr-1 size-4 align-middle">
+                                    {{ __('pitmetric.studio.remove_media') }}
+                                </label>
+                            </div>
+                        @endif
                     </section>
 
                     <details class="pm-panel" @if($errors->has('translation_title') || $errors->has('translation_content')) open @endif>
