@@ -1,7 +1,9 @@
 import '../css/form-controls.css';
 import '../css/form-control-popovers.css';
 import '../css/form-control-guard.css';
+import '../css/form-controls-composite.css';
 import '../css/mobile.css';
 import './form-controls';
+import './form-controls-composite';
 import './form-control-guard';
 import './pitmetric-demo';
