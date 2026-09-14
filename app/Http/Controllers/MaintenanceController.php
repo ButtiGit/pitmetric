@@ -7,7 +7,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\User;
 use App\Services\CompleteMaintenanceService;
-use App\Services\ComponentUsageCalculator;
+use App\Services\MaintenanceHealthService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ use Illuminate\View\View;
 
 class MaintenanceController extends Controller
 {
-    public function index(Request $request, WorkspaceContext $workspaceContext, ComponentUsageCalculator $usageCalculator): View
+    public function index(Request $request, WorkspaceContext $workspaceContext, MaintenanceHealthService $healthService): View
     {
         $user = $request->user();
 
@@ -47,20 +47,13 @@ class MaintenanceController extends Controller
             ->orderBy('name')
             ->get();
 
-        $states = [];
-
-        foreach ($schedules as $schedule) {
-            $states[$schedule->id] = [
-                'used' => $usageCalculator->sinceLastService($schedule->tracker),
-                'lifetime' => $usageCalculator->lifetime($schedule->tracker),
-                'status' => $usageCalculator->status($schedule->tracker, $schedule->interval_value, $schedule->warning_value),
-            ];
-        }
+        $health = $healthService->snapshot($schedules);
 
         return view('maintenance.index', [
             'trackers' => $trackers,
             'schedules' => $schedules,
-            'states' => $states,
+            'states' => $health['states'],
+            'summary' => $health['summary'],
             'records' => MaintenanceRecord::query()
                 ->with(['component', 'schedule.tracker.metric'])
                 ->latest('performed_at')
@@ -133,7 +126,7 @@ class MaintenanceController extends Controller
             $validated['notes'] ?? null,
         );
 
-        return to_route('demo.maintenance')->with('status', __('Maintenance completed and interval reset.'));
+        return to_route('demo.maintenance')->with('status', __('Maintenance completed, interval reset and cost linked to expenses.'));
     }
 
     private function toStorageValue(ComponentTracker $tracker, float $value): int
