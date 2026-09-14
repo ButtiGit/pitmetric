@@ -66,6 +66,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return (bool) $this->getAttribute('database_access_enabled');
     }
 
+    /**
+     * Backwards-compatible alias for views that still use the previous manager-access name.
+     */
+    public function hasManagerAccess(): bool
+    {
+        return $this->hasDatabaseAccess();
+    }
+
     public function initials(): string
     {
         $initials = Str::initials($this->name, true);
