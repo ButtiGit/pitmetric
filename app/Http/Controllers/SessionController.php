@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\CircuitLayout;
 use App\Models\ConfigurationVersion;
+use App\Models\Expense;
+use App\Models\MaintenanceSchedule;
 use App\Models\Session;
 use App\Models\User;
 use App\Services\FinalizeSessionService;
+use App\Services\MaintenanceHealthService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +20,7 @@ use Illuminate\View\View;
 
 class SessionController extends Controller
 {
-    public function index(Request $request, WorkspaceContext $workspaceContext): View
+    public function index(Request $request, WorkspaceContext $workspaceContext, MaintenanceHealthService $healthService): View
     {
         $user = $request->user();
 
@@ -34,6 +37,25 @@ class SessionController extends Controller
         }
 
         $workspace = $workspaceContext->personal($user);
+        $sessions = Session::query()
+            ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric'])
+            ->latest('started_at')
+            ->latest('id')
+            ->limit(50)
+            ->get();
+
+        $schedules = MaintenanceSchedule::query()
+            ->with(['tracker.component', 'tracker.metric'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        $health = $healthService->snapshot($schedules);
+        $attentionSchedules = $schedules->filter(function (MaintenanceSchedule $schedule) use ($health): bool {
+            $status = $health['states'][$schedule->getKey()]['status'] ?? 'untracked';
+
+            return in_array($status, ['due_soon', 'overdue'], true);
+        });
+        $lastSession = $sessions->first();
 
         return view('sessions.index', [
             'versions' => ConfigurationVersion::query()
@@ -47,16 +69,25 @@ class SessionController extends Controller
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(),
-            'sessions' => Session::query()
-                ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric'])
-                ->latest('started_at')
-                ->latest('id')
-                ->get(),
+            'sessions' => $sessions,
+            'defaults' => [
+                'configuration_version_id' => $lastSession?->configuration_version_id,
+                'circuit_layout_id' => $lastSession?->circuit_layout_id,
+                'session_type' => $lastSession?->session_type ?? 'practice',
+                'started_at' => now()->format('Y-m-d\TH:i'),
+            ],
+            'maintenanceSummary' => $health['summary'],
+            'maintenanceStates' => $health['states'],
+            'attentionSchedules' => $attentionSchedules,
         ]);
     }
 
-    public function store(Request $request, WorkspaceContext $workspaceContext, FinalizeSessionService $finalizeSessionService): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        WorkspaceContext $workspaceContext,
+        FinalizeSessionService $finalizeSessionService,
+        MaintenanceHealthService $healthService,
+    ): RedirectResponse {
         $user = $request->user();
 
         if (! $user instanceof User) {
@@ -73,13 +104,15 @@ class SessionController extends Controller
             'completed_laps' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'duration_minutes' => ['nullable', 'numeric', 'min:0', 'max:1440'],
             'distance_override_km' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            'session_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'cost_description' => ['nullable', 'string', 'max:180'],
             'notes' => ['nullable', 'string', 'max:4000'],
         ]);
 
         $version = ConfigurationVersion::query()
             ->whereKey($validated['configuration_version_id'])
             ->whereHas('configuration', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
-            ->with('configuration')
+            ->with('configuration.vehicle')
             ->firstOrFail();
 
         $layoutId = null;
@@ -93,7 +126,7 @@ class SessionController extends Controller
             abort_if($layoutId === null, 404);
         }
 
-        DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService): void {
+        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService): Session {
             $session = Session::create([
                 'vehicle_id' => $version->configuration->vehicle_id,
                 'configuration_version_id' => $version->getKey(),
@@ -112,10 +145,37 @@ class SessionController extends Controller
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            $finalizeSessionService->finalize($session);
+            $finalizedSession = $finalizeSessionService->finalize($session);
+            $sessionCostCents = isset($validated['session_cost']) && (float) $validated['session_cost'] > 0
+                ? (int) round(((float) $validated['session_cost']) * 100)
+                : null;
+
+            if ($sessionCostCents !== null) {
+                Expense::create([
+                    'amount_cents' => $sessionCostCents,
+                    'currency' => 'EUR',
+                    'category' => 'track',
+                    'description' => $validated['cost_description']
+                        ?? __('Track session').': '.$version->configuration->vehicle->name.' · '.ucfirst($validated['session_type']),
+                    'occurred_at' => Carbon::parse($validated['started_at']),
+                    'related_type' => 'session',
+                    'related_id' => $finalizedSession->getKey(),
+                    'created_by' => $user->getKey(),
+                ]);
+            }
+
+            return $finalizedSession;
         });
 
-        return to_route('demo.sessions')->with('status', __('Session recorded and usage updated.'));
+        $schedules = MaintenanceSchedule::query()
+            ->with(['tracker.component', 'tracker.metric'])
+            ->where('is_active', true)
+            ->get();
+        $health = $healthService->snapshot($schedules);
+
+        return to_route('demo.sessions', ['recorded' => $session->getKey()])
+            ->with('status', __('Session recorded, component usage updated and session cost linked to expenses.'))
+            ->with('maintenance_attention', $health['summary']['attention']);
     }
 
     private function hasDatabaseAccess(User $user): bool
