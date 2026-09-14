@@ -1,0 +1,424 @@
+/* PitMetric public-site visual system. Keep every rule scoped away from the manager UI. */
+
+.pm-public-site {
+    --pm-public-red: #e10600;
+    --pm-public-red-bright: #ff332d;
+    --pm-public-line: rgb(255 255 255 / 0.10);
+    --pm-public-copy: #a8a8ad;
+    --pm-public-display-leading: 1.035;
+    --pm-public-heading-leading: 1.12;
+    --pm-pointer-x: 50vw;
+    --pm-pointer-y: 40vh;
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+}
+
+.pm-public-site::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    pointer-events: none;
+    background: radial-gradient(480px circle at var(--pm-pointer-x) var(--pm-pointer-y), rgb(225 6 0 / 0.035), transparent 67%);
+    opacity: .9;
+}
+
+.pm-public-site main h1,
+.pm-public-site main h2,
+.pm-public-site main h3 {
+    font-kerning: normal;
+    text-wrap: balance;
+}
+
+.pm-public-site main h1 {
+    line-height: var(--pm-public-display-leading) !important;
+    letter-spacing: -.042em !important;
+}
+
+.pm-public-site main h2 {
+    line-height: var(--pm-public-heading-leading) !important;
+    letter-spacing: -.028em !important;
+}
+
+.pm-public-site main h3 {
+    line-height: 1.22 !important;
+    letter-spacing: -.014em;
+}
+
+.pm-public-site main p,
+.pm-public-site main li {
+    letter-spacing: -.006em;
+    text-wrap: pretty;
+}
+
+.pm-public-site main p {
+    line-height: 1.7;
+}
+
+.pm-public-site main .font-mono,
+.pm-public-site main [class*='uppercase'] {
+    letter-spacing: .14em;
+}
+
+.pm-public-site header,
+.pm-public-site footer,
+.pm-public-site nav,
+.pm-public-site button,
+.pm-public-site a {
+    font-kerning: normal;
+}
+
+.pm-public-site [data-pm-public-header] {
+    transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.pm-public-site [data-pm-public-header].pm-public-header--scrolled {
+    border-color: rgb(255 255 255 / 0.14);
+    background: rgb(7 9 12 / 0.96);
+    box-shadow: 0 16px 44px rgb(0 0 0 / 0.20);
+}
+
+.pm-public-site [data-pm-public-header] img {
+    transition: transform 260ms cubic-bezier(.2, .8, .2, 1), filter 260ms ease;
+}
+
+.pm-public-site [data-pm-public-header] a:hover img {
+    transform: translate3d(3px, 0, 0) skewX(-2deg);
+    filter: drop-shadow(-9px 0 9px rgb(225 6 0 / 0.18));
+}
+
+.pm-public-site [data-pm-public-header] nav a {
+    position: relative;
+    line-height: 1.25;
+    letter-spacing: -.01em;
+}
+
+.pm-public-site [data-pm-public-header] nav a::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -.15rem;
+    left: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--pm-public-red), transparent);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.pm-public-site [data-pm-public-header] nav a:hover::after,
+.pm-public-site [data-pm-public-header] nav a:focus-visible::after {
+    transform: scaleX(1);
+}
+
+.pm-scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    width: 100%;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(90deg, #e10600, #ff5a55 55%, #fff 100%);
+    box-shadow: 0 0 14px rgb(225 6 0 / 0.55);
+    transform: scaleX(var(--pm-scroll-progress, 0));
+    transform-origin: left center;
+    will-change: transform;
+}
+
+.pm-public-site .pm-race-button,
+.pm-public-site .pm-ghost-button {
+    isolation: isolate;
+    overflow: hidden;
+    letter-spacing: -.01em;
+}
+
+.pm-public-site .pm-race-button::before,
+.pm-public-site .pm-ghost-button::before {
+    content: '';
+    position: absolute;
+    inset: -1px auto -1px -45%;
+    z-index: -1;
+    width: 36%;
+    transform: skewX(-22deg);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.23), transparent);
+    transition: left 520ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.pm-public-site .pm-race-button:hover::before,
+.pm-public-site .pm-race-button:focus-visible::before,
+.pm-public-site .pm-ghost-button:hover::before,
+.pm-public-site .pm-ghost-button:focus-visible::before {
+    left: 118%;
+}
+
+.pm-public-site .pm-race-button::after {
+    content: '';
+    position: absolute;
+    inset: auto .7rem .42rem .7rem;
+    height: 1px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.42);
+    opacity: 0;
+    transform: scaleX(.5);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.pm-public-site .pm-race-button:hover::after,
+.pm-public-site .pm-race-button:focus-visible::after {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+.pm-public-site .pm-race-card {
+    --pm-card-rx: 0deg;
+    --pm-card-ry: 0deg;
+    --pm-card-lift: 0px;
+    overflow: hidden;
+    transform: perspective(1000px) rotateX(var(--pm-card-rx)) rotateY(var(--pm-card-ry)) translateY(var(--pm-card-lift));
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 240ms cubic-bezier(.2, .8, .2, 1), border-color 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.pm-public-site .pm-race-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(360px circle at var(--pm-card-x, 50%) var(--pm-card-y, 50%), rgb(255 255 255 / 0.055), transparent 60%),
+        linear-gradient(115deg, transparent 35%, rgb(225 6 0 / 0.04), transparent 65%);
+    opacity: 0;
+    transition: opacity 220ms ease;
+}
+
+.pm-public-site .pm-race-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.pm-public-site .pm-race-card:hover {
+    --pm-card-lift: -4px;
+    border-color: rgb(225 6 0 / 0.30);
+    box-shadow: 0 20px 50px rgb(0 0 0 / 0.24), 0 0 0 1px rgb(225 6 0 / 0.04);
+}
+
+.pm-public-site .pm-race-card:hover::after {
+    opacity: 1;
+}
+
+.pm-public-site main img {
+    backface-visibility: hidden;
+}
+
+.pm-public-site [data-pm-home-hero] {
+    min-height: min(820px, calc(100svh - 60px));
+}
+
+.pm-public-site [data-pm-home-hero] [data-pm-hero-image] {
+    scale: 1.035;
+    transform: translate3d(0, var(--pm-hero-shift, 0px), 0);
+    will-change: transform;
+}
+
+.pm-public-site [data-pm-home-hero]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -5;
+    pointer-events: none;
+    background:
+        linear-gradient(115deg, transparent 0 62%, rgb(225 6 0 / 0.04) 62% 62.15%, transparent 62.15% 100%),
+        linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px);
+    background-size: auto, 96px 100%;
+    mix-blend-mode: screen;
+}
+
+.pm-public-site [data-pm-hero-copy] > * {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+    animation: pm-hero-enter 720ms cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.pm-public-site [data-pm-hero-copy] > :nth-child(1) { animation-delay: 70ms; }
+.pm-public-site [data-pm-hero-copy] > :nth-child(2) { animation-delay: 130ms; }
+.pm-public-site [data-pm-hero-copy] > :nth-child(3) { animation-delay: 210ms; }
+.pm-public-site [data-pm-hero-copy] > :nth-child(4) { animation-delay: 290ms; }
+
+@keyframes pm-hero-enter {
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.pm-public-site.pm-motion-ready [data-pm-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(.992);
+    transition:
+        opacity 700ms cubic-bezier(.16, 1, .3, 1),
+        transform 700ms cubic-bezier(.16, 1, .3, 1);
+    transition-delay: var(--pm-reveal-delay, 0ms);
+}
+
+.pm-public-site.pm-motion-ready [data-pm-reveal].pm-reveal--visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.pm-public-site .pm-media-frame {
+    transition: transform 320ms cubic-bezier(.2, .8, .2, 1), border-color 220ms ease, box-shadow 320ms ease;
+}
+
+.pm-public-site .pm-media-frame:hover {
+    transform: translateY(-3px);
+    border-color: rgb(225 6 0 / 0.25);
+    box-shadow: 0 30px 76px rgb(0 0 0 / 0.34);
+}
+
+.pm-cursor-car {
+    --pm-car-x: -120px;
+    --pm-car-y: -120px;
+    --pm-car-rotation: 0deg;
+    --pm-car-speed: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 75;
+    width: 64px;
+    height: 34px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(var(--pm-car-x), var(--pm-car-y), 0) rotate(var(--pm-car-rotation));
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.45)) drop-shadow(0 0 calc(4px + var(--pm-car-speed) * 10px) rgb(225 6 0 / 0.35));
+    transition: opacity 220ms ease;
+    will-change: transform;
+}
+
+.pm-cursor-car[data-active='true'] {
+    opacity: .96;
+}
+
+.pm-cursor-car::before,
+.pm-cursor-car::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 76%;
+    z-index: -1;
+    height: 2px;
+    border-radius: 999px;
+    transform: translateY(-50%) scaleX(calc(.25 + var(--pm-car-speed)));
+    transform-origin: right center;
+    background: linear-gradient(90deg, transparent, rgb(225 6 0 / 0.72));
+}
+
+.pm-cursor-car::before {
+    width: 74px;
+    margin-top: -5px;
+}
+
+.pm-cursor-car::after {
+    width: 98px;
+    margin-top: 5px;
+    opacity: .55;
+}
+
+.pm-cursor-car svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.pm-cursor-car .pm-cursor-car__body {
+    fill: #e10600;
+    stroke: rgb(255 255 255 / .75);
+    stroke-width: .75;
+}
+
+.pm-cursor-car .pm-cursor-car__wing,
+.pm-cursor-car .pm-cursor-car__tyre {
+    fill: #080a0d;
+    stroke: rgb(255 255 255 / .45);
+    stroke-width: .65;
+}
+
+.pm-cursor-car .pm-cursor-car__cockpit {
+    fill: #12171d;
+    stroke: #ff7773;
+    stroke-width: .7;
+}
+
+.pm-cursor-car .pm-cursor-car__highlight {
+    fill: #fff;
+    opacity: calc(.35 + var(--pm-car-speed) * .45);
+}
+
+.pm-public-site [data-pm-track-note] {
+    position: relative;
+    overflow: hidden;
+    transition: border-color 220ms ease, background-color 220ms ease, transform 220ms ease;
+}
+
+.pm-public-site [data-pm-track-note]::after {
+    content: '';
+    position: absolute;
+    inset: auto -20% 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e10600, transparent);
+    transform: translateX(-55%);
+    transition: transform 620ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.pm-public-site [data-pm-track-note]:hover {
+    transform: translateY(-3px);
+    border-color: rgb(225 6 0 / .25);
+    background: rgb(0 0 0 / .30);
+}
+
+.pm-public-site [data-pm-track-note]:hover::after {
+    transform: translateX(55%);
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+    .pm-public-site::before,
+    .pm-cursor-car {
+        display: none;
+    }
+
+    .pm-public-site main h1 {
+        letter-spacing: -.035em !important;
+        line-height: 1.045 !important;
+    }
+
+    .pm-public-site .pm-race-card {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pm-public-site *,
+    .pm-public-site *::before,
+    .pm-public-site *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+
+    .pm-public-site.pm-motion-ready [data-pm-reveal],
+    .pm-public-site [data-pm-hero-copy] > * {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .pm-cursor-car,
+    .pm-public-site::before {
+        display: none !important;
+    }
+}
