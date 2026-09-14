@@ -93,7 +93,7 @@ it('serves uploaded update media without relying on the public storage symlink',
         ->assertHeader('cache-control', 'immutable, max-age=31536000, public');
 });
 
-it('falls back to the bundled artwork for the first devlog when its uploaded file is missing', function () {
+it('falls back to valid bundled artwork for the first devlog when its uploaded file is missing', function () {
     Storage::fake('public');
 
     $update = Update::factory()->create([
@@ -103,5 +103,11 @@ it('falls back to the bundled artwork for the first devlog when its uploaded fil
         'media_url' => null,
     ]);
 
-    expect($update->mediaSource())->toBe(asset('media/devlog-001.webp'));
+    expect($update->mediaSource())->toBe('/media/devlog-001.webp');
+
+    $artwork = file_get_contents(public_path('media/devlog-001.webp'));
+
+    expect($artwork)->not->toBeFalse()
+        ->and(substr((string) $artwork, 0, 4))->toBe('RIFF')
+        ->and(substr((string) $artwork, 8, 4))->toBe('WEBP');
 });
