@@ -2,8 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\Circuit;
+use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
+use App\Models\Configuration;
+use App\Models\Expense;
+use App\Models\MaintenanceRecord;
+use App\Models\MaintenanceSchedule;
+use App\Models\Session;
+use App\Models\UsageBatch;
 use App\Models\User;
-use App\Services\DatabaseSchema;
+use App\Policies\WorkspaceOwnedPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -13,21 +23,29 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         $this->configureDefaults();
-        app(DatabaseSchema::class)->ensure();
+
+        foreach ([
+            Circuit::class,
+            Component::class,
+            ComponentInstallation::class,
+            ComponentType::class,
+            Configuration::class,
+            Expense::class,
+            MaintenanceRecord::class,
+            MaintenanceSchedule::class,
+            Session::class,
+            UsageBatch::class,
+        ] as $model) {
+            Gate::policy($model, WorkspaceOwnedPolicy::class);
+        }
 
         Gate::define('manage-updates', function (User $user): bool {
             $editors = config('pitmetric.update_editor_emails', []);
@@ -37,9 +55,6 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Configure default behaviors for production-ready applications.
-     */
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
