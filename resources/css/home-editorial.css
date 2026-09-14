@@ -53,7 +53,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: .55rem;
+    gap: .65rem;
     padding: .35rem 0;
     color: #fff;
     font-size: .82rem;
@@ -63,9 +63,12 @@
 }
 
 .pm-home-text-link::after {
-    content: '↗';
-    color: #ff433d;
-    font-size: 1rem;
+    content: '';
+    width: .52rem;
+    height: .52rem;
+    border-top: 1.5px solid #ff433d;
+    border-right: 1.5px solid #ff433d;
+    transform: rotate(45deg);
     transition: transform 180ms ease;
 }
 
@@ -84,7 +87,7 @@
 
 .pm-home-text-link:hover::after,
 .pm-home-text-link:focus-visible::after {
-    transform: translate3d(3px, -2px, 0);
+    transform: translate3d(3px, 0, 0) rotate(45deg);
 }
 
 .pm-home-text-link:hover::before,
