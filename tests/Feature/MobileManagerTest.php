@@ -28,7 +28,11 @@ it('lets an iPhone browser sign in and open the manager in demo-only mode', func
     $this->withHeader('User-Agent', IPHONE_USER_AGENT)
         ->get(route('demo.garage'))
         ->assertOk()
-        ->assertSee(__('demo.local_badge'));
+        ->assertSee('id="pitmetric-demo"', false)
+        ->assertDontSee(__('demo.local_badge'))
+        ->assertDontSee(__('demo.local_copy'))
+        ->assertDontSee(__('demo.seed'))
+        ->assertDontSee(__('demo.reset'));
 
     expect($user->hasDatabaseAccess())->toBeFalse()
         ->and($user->workspaces()->count())->toBe(0);
