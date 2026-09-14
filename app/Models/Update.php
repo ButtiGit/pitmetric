@@ -118,7 +118,9 @@ class Update extends Model
             return $mediaUrl;
         }
 
-        if (in_array($this->getAttribute('slug'), [
+        $slug = $this->getAttributes()['slug'] ?? null;
+
+        if (is_string($slug) && in_array($slug, [
             'pitmetric-sta-prendendo-forma',
             'pitmetric-is-taking-shape',
         ], true)) {
