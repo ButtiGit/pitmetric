@@ -107,12 +107,19 @@ class Update extends Model
         $mediaPath = $this->stringAttribute('media_path');
         $mediaUrl = $this->stringAttribute('media_url');
 
-        if ($mediaPath !== null && $mediaPath !== '') {
-            return Storage::disk('public')->url($mediaPath);
+        if ($mediaPath !== null && $mediaPath !== '' && Storage::disk('public')->exists($mediaPath)) {
+            return route('updates.media', [
+                'update' => $this,
+                'v' => $this->updated_at?->timestamp,
+            ]);
         }
 
         if ($mediaUrl !== null && $mediaUrl !== '') {
             return $mediaUrl;
+        }
+
+        if ($this->getAttribute('slug') === 'pitmetric-sta-prendendo-forma') {
+            return asset('media/devlog-001.webp');
         }
 
         return null;
