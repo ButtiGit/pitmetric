@@ -6,6 +6,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 it('repairs the managed PitMetric schema idempotently', function () {
+    Schema::disableForeignKeyConstraints();
     Schema::dropIfExists('vehicles');
     Schema::dropIfExists('workspace_user');
     Schema::dropIfExists('workspaces');
@@ -25,6 +26,7 @@ it('repairs the managed PitMetric schema idempotently', function () {
     $schema = app(DatabaseSchema::class);
     $schema->ensure();
     $schema->ensure();
+    Schema::enableForeignKeyConstraints();
 
     expect(Schema::hasTable('workspaces'))->toBeTrue()
         ->and(Schema::hasTable('workspace_user'))->toBeTrue()
@@ -34,6 +36,7 @@ it('repairs the managed PitMetric schema idempotently', function () {
 });
 
 it('repairs workspace tables that already exist with an incomplete schema', function () {
+    Schema::disableForeignKeyConstraints();
     Schema::dropIfExists('vehicles');
     Schema::dropIfExists('workspace_user');
     Schema::dropIfExists('workspaces');
@@ -53,6 +56,7 @@ it('repairs workspace tables that already exist with an incomplete schema', func
     $schema = app(DatabaseSchema::class);
     $schema->ensureWorkspaceDomain();
     $schema->ensureWorkspaceDomain();
+    Schema::enableForeignKeyConstraints();
 
     expect(Schema::hasColumn('workspaces', 'name'))->toBeTrue()
         ->and(Schema::hasColumn('workspaces', 'created_at'))->toBeTrue()

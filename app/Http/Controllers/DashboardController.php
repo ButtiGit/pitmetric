@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Configuration;
+use App\Models\MaintenanceRecord;
+use App\Models\Session;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\WorkspaceContext;
@@ -20,16 +23,20 @@ class DashboardController extends Controller
         }
 
         $databaseAccessEnabled = Gate::forUser($user)->allows('manage-updates') || $user->hasDatabaseAccess();
-        $domainReady = $databaseAccessEnabled && $workspaceContext->isReady();
+        $baseReady = $databaseAccessEnabled && $workspaceContext->isReady();
+        $domainReady = $databaseAccessEnabled && $workspaceContext->isCoreReady();
 
-        if ($domainReady) {
+        if ($baseReady) {
             $workspaceContext->personal($user);
         }
 
         return view('dashboard', [
             'databaseAccessEnabled' => $databaseAccessEnabled,
             'domainReady' => $domainReady,
-            'vehicleCount' => $domainReady ? Vehicle::query()->count() : 0,
+            'vehicleCount' => $baseReady ? Vehicle::query()->count() : 0,
+            'configurationCount' => $domainReady ? Configuration::query()->count() : 0,
+            'sessionCount' => $domainReady ? Session::query()->count() : 0,
+            'maintenanceCount' => $domainReady ? MaintenanceRecord::query()->count() : 0,
         ]);
     }
 }

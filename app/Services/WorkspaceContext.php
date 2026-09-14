@@ -17,6 +17,39 @@ class WorkspaceContext
             && Schema::hasTable('vehicles');
     }
 
+    public function isCoreReady(): bool
+    {
+        if (! $this->isReady()) {
+            return false;
+        }
+
+        foreach ([
+            'component_types',
+            'components',
+            'usage_metric_types',
+            'component_trackers',
+            'configurations',
+            'configuration_versions',
+            'configuration_version_components',
+            'circuits',
+            'circuit_layouts',
+            'sessions',
+            'session_usage_values',
+            'usage_batches',
+            'component_usage_entries',
+            'maintenance_schedules',
+            'maintenance_records',
+            'tracker_reset_events',
+            'expenses',
+        ] as $table) {
+            if (! Schema::hasTable($table)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function personal(User $user): Workspace
     {
         if (! $this->isReady()) {
@@ -30,11 +63,7 @@ class WorkspaceContext
         }
 
         return DB::transaction(function () use ($user): Workspace {
-            $lockedUser = User::query()
-                ->whereKey($user->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
-
+            $lockedUser = User::query()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
             $workspace = $lockedUser->workspaces()->orderBy('workspaces.id')->first();
 
             if ($workspace instanceof Workspace) {
@@ -42,10 +71,7 @@ class WorkspaceContext
             }
 
             $name = trim($lockedUser->name);
-            $workspace = Workspace::create([
-                'name' => ($name !== '' ? $name : 'Personal').' Workspace',
-            ]);
-
+            $workspace = Workspace::create(['name' => ($name !== '' ? $name : 'Personal').' Workspace']);
             $lockedUser->workspaces()->attach($workspace);
 
             return $workspace;
