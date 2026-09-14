@@ -23,7 +23,7 @@ it('lets an iPhone browser sign in and open the manager in demo-only mode', func
         ->assertOk()
         ->assertSee('data-pm-mobile-header', false)
         ->assertSee('data-pm-mobile-dashboard', false)
-        ->assertDontSee('Update in progress');
+        ->assertDontSee('Database update required');
 
     $this->withHeader('User-Agent', IPHONE_USER_AGENT)
         ->get(route('demo.garage'))
@@ -48,7 +48,7 @@ it('keeps database-enabled dashboard and garage reachable while the workspace sc
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Update in progress');
+        ->assertSee('Database update required');
 
     $this->get(route('demo.garage'))
         ->assertOk()
