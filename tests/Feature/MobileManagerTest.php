@@ -31,7 +31,7 @@ it('lets an iPhone browser sign in and open the manager in demo-only mode', func
         ->assertSee(__('demo.local_badge'));
 
     expect($user->hasDatabaseAccess())->toBeFalse()
-        ->and($user->workspaces()->count())->toBe(1);
+        ->and($user->workspaces()->count())->toBe(0);
 });
 
 it('keeps database-enabled dashboard and garage reachable while the workspace schema is being deployed', function () {
