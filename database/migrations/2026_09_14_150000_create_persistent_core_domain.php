@@ -135,7 +135,7 @@ return new class extends Migration
             $table->unique(['circuit_id', 'name']);
         });
 
-        Schema::create('sessions', function (Blueprint $table): void {
+        Schema::create('track_sessions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();
             $table->foreignId('vehicle_id')->constrained()->restrictOnDelete();
@@ -157,7 +157,7 @@ return new class extends Migration
 
         Schema::create('session_usage_values', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('session_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('session_id')->constrained('track_sessions')->cascadeOnDelete();
             $table->foreignId('usage_metric_type_id')->constrained()->restrictOnDelete();
             $table->unsignedBigInteger('value');
             $table->string('source', 30)->default('calculated');
@@ -255,7 +255,7 @@ return new class extends Migration
         Schema::dropIfExists('component_usage_entries');
         Schema::dropIfExists('usage_batches');
         Schema::dropIfExists('session_usage_values');
-        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('track_sessions');
         Schema::dropIfExists('circuit_layouts');
         Schema::dropIfExists('circuits');
         Schema::dropIfExists('configuration_version_components');
