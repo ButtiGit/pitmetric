@@ -91,7 +91,7 @@
                 </section>
 
                 <section class="pm-panel p-5 sm:p-6">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-accent">WORKFLOW</p><h2 class="mt-2 text-xl font-black text-pm-text">{{ $it ? 'Prontezza operativa' : 'Operational readiness' }}</h2></div><p class="text-sm text-pm-text-secondary">{{ $it ? 'Completa la catena una volta, poi il lavoro quotidiano diventa sessione → alert → service → costi.' : 'Complete the chain once, then daily work becomes session → alerts → service → costs.' }}</p></div>
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-accent">WORKFLOW</p><h2 class="mt-2 text-xl font-black text-pm-text">{{ $it ? 'Prontezza operativa' : 'Operational readiness' }}</h2></div><p class="text-sm text-pm-text-secondary">{{ $it ? 'Completa la catena una volta. Poi il lavoro quotidiano collega sessioni, alert, service e costi.' : 'Complete the chain once. Then daily work links sessions, alerts, service and costs.' }}</p></div>
                     <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         @foreach ([
                             [$vehicleCount > 0, 'demo.garage', $it ? '1. Mezzo' : '1. Vehicle', $it ? 'Base del programma' : 'Program base'],
