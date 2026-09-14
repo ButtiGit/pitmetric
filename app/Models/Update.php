@@ -124,7 +124,7 @@ class Update extends Model
             'pitmetric-sta-prendendo-forma',
             'pitmetric-is-taking-shape',
         ], true)) {
-            return asset('media/devlog-001.webp');
+            return '/media/devlog-001.webp';
         }
 
         return null;
