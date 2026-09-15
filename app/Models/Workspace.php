@@ -22,10 +22,19 @@ class Workspace extends Model
     /** @use HasFactory<WorkspaceFactory> */
     use HasFactory;
 
-    /** @return BelongsToMany<User, $this> */
+    /** @return BelongsToMany<User, $this, WorkspaceMembership, 'pivot'> */
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'workspace_user')->withTimestamps();
+        return $this->belongsToMany(User::class, 'workspace_user')
+            ->using(WorkspaceMembership::class)
+            ->withPivot(['role', 'status', 'joined_at'])
+            ->withTimestamps();
+    }
+
+    /** @return HasMany<TeamInvitation, $this> */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(TeamInvitation::class);
     }
 
     /** @return HasMany<Vehicle, $this> */

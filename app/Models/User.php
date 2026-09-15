@@ -38,10 +38,13 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /** @return BelongsToMany<Workspace, $this> */
+    /** @return BelongsToMany<Workspace, $this, WorkspaceMembership, 'pivot'> */
     public function workspaces(): BelongsToMany
     {
-        return $this->belongsToMany(Workspace::class, 'workspace_user')->withTimestamps();
+        return $this->belongsToMany(Workspace::class, 'workspace_user')
+            ->using(WorkspaceMembership::class)
+            ->withPivot(['role', 'status', 'joined_at'])
+            ->withTimestamps();
     }
 
     /**

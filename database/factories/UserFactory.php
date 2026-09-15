@@ -26,10 +26,14 @@ class UserFactory extends Factory
             }
 
             $workspace = Workspace::factory()->create([
-                'name' => $user->name.' Workspace',
+                'name' => $user->name.' Team',
             ]);
 
-            $user->workspaces()->attach($workspace);
+            $user->workspaces()->attach($workspace, [
+                'role' => 'owner',
+                'status' => 'active',
+                'joined_at' => now(),
+            ]);
         });
     }
 

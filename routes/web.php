@@ -12,6 +12,7 @@ use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UpdateStudioController;
 use App\Http\Controllers\UserStudioController;
 use App\Http\Controllers\VehicleController;
@@ -66,43 +67,58 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/demo/maintenance', [MaintenanceController::class, 'index'])->name('demo.maintenance');
     Route::get('/demo/expenses', [ExpenseController::class, 'index'])->name('demo.expenses');
 
+    Route::get('/team/invitations/{teamInvitation}/accept', [TeamController::class, 'accept'])
+        ->middleware('signed')
+        ->name('team.invitations.accept');
+
     Route::middleware('database.access')->group(function () {
+        Route::get('/team', [TeamController::class, 'index'])->name('team.index');
+        Route::post('/team', [TeamController::class, 'store'])->name('team.store');
+        Route::post('/team/switch/{workspace}', [TeamController::class, 'switch'])->name('team.switch');
+        Route::post('/team/invitations', [TeamController::class, 'invite'])->name('team.invitations.store');
+        Route::delete('/team/invitations/{teamInvitation}', [TeamController::class, 'revokeInvitation'])
+            ->name('team.invitations.destroy');
+        Route::patch('/team/members/{member}', [TeamController::class, 'updateMember'])->name('team.members.update');
+
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
-        Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
-        Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
-        Route::post('/drivers', [RaceEventOperationsController::class, 'storeDriver'])->name('drivers.store');
-        Route::post('/events/{raceEvent}/entries', [RaceEventOperationsController::class, 'storeEntry'])->name('events.entries.store');
-        Route::post('/events/{raceEvent}/tasks', [RaceEventOperationsController::class, 'storeTask'])->name('events.tasks.store');
-        Route::patch('/event-tasks/{eventTask}', [RaceEventOperationsController::class, 'updateTask'])->name('events.tasks.update');
-        Route::post('/events/{raceEvent}/notes', [RaceEventOperationsController::class, 'storeNote'])->name('events.notes.store');
-        Route::post('/events/{raceEvent}/expenses', [RaceEventOperationsController::class, 'storeExpense'])->name('events.expenses.store');
 
-        Route::post('/garage', [VehicleController::class, 'store'])->name('garage.store');
-        Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
-        Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');
+        Route::middleware('can:team-write')->group(function () {
+            Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
+            Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
+            Route::post('/drivers', [RaceEventOperationsController::class, 'storeDriver'])->name('drivers.store');
+            Route::post('/events/{raceEvent}/entries', [RaceEventOperationsController::class, 'storeEntry'])->name('events.entries.store');
+            Route::post('/events/{raceEvent}/tasks', [RaceEventOperationsController::class, 'storeTask'])->name('events.tasks.store');
+            Route::patch('/event-tasks/{eventTask}', [RaceEventOperationsController::class, 'updateTask'])->name('events.tasks.update');
+            Route::post('/events/{raceEvent}/notes', [RaceEventOperationsController::class, 'storeNote'])->name('events.notes.store');
+            Route::post('/events/{raceEvent}/expenses', [RaceEventOperationsController::class, 'storeExpense'])->name('events.expenses.store');
 
-        Route::post('/components', [ComponentController::class, 'store'])->name('components.store');
-        Route::delete('/components/{component}', [ComponentController::class, 'destroy'])->name('components.destroy');
-        Route::post('/component-installations', [ComponentInstallationController::class, 'store'])
-            ->name('component-installations.store');
-        Route::patch('/component-installations/{componentInstallation}/remove', [ComponentInstallationController::class, 'remove'])
-            ->name('component-installations.remove');
+            Route::post('/garage', [VehicleController::class, 'store'])->name('garage.store');
+            Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
+            Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');
 
-        Route::post('/configurations', [ConfigurationController::class, 'store'])->name('configurations.store');
-        Route::post('/configurations/{configuration}/versions', [ConfigurationController::class, 'storeVersion'])
-            ->name('configurations.versions.store');
-        Route::delete('/configurations/{configuration}', [ConfigurationController::class, 'destroy'])
-            ->name('configurations.destroy');
+            Route::post('/components', [ComponentController::class, 'store'])->name('components.store');
+            Route::delete('/components/{component}', [ComponentController::class, 'destroy'])->name('components.destroy');
+            Route::post('/component-installations', [ComponentInstallationController::class, 'store'])
+                ->name('component-installations.store');
+            Route::patch('/component-installations/{componentInstallation}/remove', [ComponentInstallationController::class, 'remove'])
+                ->name('component-installations.remove');
 
-        Route::post('/circuits', [CircuitController::class, 'store'])->name('circuits.store');
-        Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
+            Route::post('/configurations', [ConfigurationController::class, 'store'])->name('configurations.store');
+            Route::post('/configurations/{configuration}/versions', [ConfigurationController::class, 'storeVersion'])
+                ->name('configurations.versions.store');
+            Route::delete('/configurations/{configuration}', [ConfigurationController::class, 'destroy'])
+                ->name('configurations.destroy');
 
-        Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
-        Route::post('/maintenance/{maintenanceSchedule}/complete', [MaintenanceController::class, 'complete'])
-            ->name('maintenance.complete');
+            Route::post('/circuits', [CircuitController::class, 'store'])->name('circuits.store');
+            Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
 
-        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
-        Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+            Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
+            Route::post('/maintenance/{maintenanceSchedule}/complete', [MaintenanceController::class, 'complete'])
+                ->name('maintenance.complete');
+
+            Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+            Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        });
     });
 
     Route::get('/newsletter', [NewsletterPreferencesController::class, 'edit'])->name('newsletter.edit');
