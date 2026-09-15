@@ -7,6 +7,7 @@ use App\Models\Configuration;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\CreateConfigurationVersionService;
+use App\Services\OperationCostService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,8 +48,12 @@ class ConfigurationController extends Controller
         ]);
     }
 
-    public function store(Request $request, WorkspaceContext $workspaceContext, CreateConfigurationVersionService $versionService): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        WorkspaceContext $workspaceContext,
+        CreateConfigurationVersionService $versionService,
+        OperationCostService $costService,
+    ): RedirectResponse {
         $user = $request->user();
 
         if (! $user instanceof User) {
@@ -63,6 +68,7 @@ class ConfigurationController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'component_ids' => ['nullable', 'array'],
             'component_ids.*' => ['integer'],
+            'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ]);
 
         $vehicleId = (int) $validated['vehicle_id'];
@@ -72,7 +78,7 @@ class ConfigurationController extends Controller
             ->where('workspace_id', $workspace->getKey())
             ->findOrFail($vehicleId);
 
-        DB::transaction(function () use ($validated, $vehicle, $user, $versionService, $componentIds): void {
+        DB::transaction(function () use ($validated, $vehicle, $user, $versionService, $componentIds, $costService): void {
             $configuration = Configuration::create([
                 'vehicle_id' => $vehicle->getKey(),
                 'name' => $validated['name'],
@@ -80,19 +86,33 @@ class ConfigurationController extends Controller
                 'status' => 'active',
             ]);
 
-            $versionService->create(
+            $version = $versionService->create(
                 $configuration,
                 $user,
                 $componentIds,
                 __('Initial configuration'),
             );
+
+            $costService->record(
+                $user,
+                isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+                'setup',
+                __('Configuration setup').': '.$configuration->name.' · v'.$version->version_number,
+                'configuration_version',
+                (int) $version->getKey(),
+                now(),
+            );
         });
 
-        return to_route('demo.configurations')->with('status', __('Configuration created.'));
+        return to_route('configurations.index')->with('status', __('Configuration created.'));
     }
 
-    public function storeVersion(Request $request, Configuration $configuration, CreateConfigurationVersionService $versionService): RedirectResponse
-    {
+    public function storeVersion(
+        Request $request,
+        Configuration $configuration,
+        CreateConfigurationVersionService $versionService,
+        OperationCostService $costService,
+    ): RedirectResponse {
         Gate::authorize('update', $configuration);
 
         $user = $request->user();
@@ -105,18 +125,29 @@ class ConfigurationController extends Controller
             'component_ids' => ['nullable', 'array'],
             'component_ids.*' => ['integer'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ]);
 
         $componentIds = array_values(array_map('intval', $validated['component_ids'] ?? []));
 
-        $versionService->create(
+        $version = $versionService->create(
             $configuration,
             $user,
             $componentIds,
             $validated['notes'] ?? null,
         );
 
-        return to_route('demo.configurations')->with('status', __('New configuration version created.'));
+        $costService->record(
+            $user,
+            isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+            'setup',
+            __('Configuration update').': '.$configuration->name.' · v'.$version->version_number,
+            'configuration_version',
+            (int) $version->getKey(),
+            now(),
+        );
+
+        return to_route('configurations.index')->with('status', __('New configuration version created.'));
     }
 
     public function destroy(Configuration $configuration): RedirectResponse
@@ -124,7 +155,7 @@ class ConfigurationController extends Controller
         Gate::authorize('delete', $configuration);
         $configuration->delete();
 
-        return to_route('demo.configurations')->with('status', __('Configuration archived.'));
+        return to_route('configurations.index')->with('status', __('Configuration archived.'));
     }
 
     private function hasDatabaseAccess(User $user): bool
