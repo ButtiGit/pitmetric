@@ -103,7 +103,7 @@ class SessionController extends Controller
         $validated = $request->validate([
             'event_id' => ['nullable', 'integer', 'required_with:event_entry_id'],
             'event_entry_id' => ['nullable', 'integer', 'required_with:event_id'],
-            'schedule_item_id' => ['nullable', 'integer', 'required_with:event_id'],
+            'schedule_item_id' => ['nullable', 'integer'],
             'configuration_version_id' => ['required', 'integer'],
             'circuit_layout_id' => ['nullable', 'integer'],
             'session_type' => ['required', 'in:practice,qualifying,heat,prefinal,final,race,test'],
