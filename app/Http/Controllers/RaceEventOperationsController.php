@@ -11,6 +11,7 @@ use App\Models\Expense;
 use App\Models\RaceEvent;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\OperationCostService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,15 +39,21 @@ class RaceEventOperationsController extends Controller
         return to_route('events.index')->with('status', __('Driver added.'));
     }
 
-    public function storeEntry(Request $request, RaceEvent $raceEvent, WorkspaceContext $workspaceContext): RedirectResponse
-    {
+    public function storeEntry(
+        Request $request,
+        RaceEvent $raceEvent,
+        WorkspaceContext $workspaceContext,
+        OperationCostService $costService,
+    ): RedirectResponse {
         Gate::authorize('update', $raceEvent);
-        $workspace = $workspaceContext->personal($this->user($request));
+        $user = $this->user($request);
+        $workspace = $workspaceContext->personal($user);
         $validated = $request->validate([
             'driver_id' => ['required', 'integer'],
             'vehicle_id' => ['required', 'integer'],
             'configuration_version_id' => ['required', 'integer'],
             'entry_number' => ['nullable', 'string', 'max:20'],
+            'entry_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -59,7 +66,7 @@ class RaceEventOperationsController extends Controller
                 ->where('vehicle_id', $vehicle->getKey()))
             ->firstOrFail();
 
-        EventEntry::create([
+        $entry = EventEntry::create([
             'event_id' => $raceEvent->getKey(),
             'driver_id' => $driver->getKey(),
             'vehicle_id' => $vehicle->getKey(),
@@ -67,6 +74,17 @@ class RaceEventOperationsController extends Controller
             'entry_number' => $validated['entry_number'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
+
+        $costService->record(
+            $user,
+            isset($validated['entry_cost']) ? (float) $validated['entry_cost'] : null,
+            'event_entry',
+            __('Event entry').': '.$raceEvent->name.' · '.$driver->display_name,
+            'event_entry',
+            (int) $entry->getKey(),
+            Carbon::parse($raceEvent->start_date)->startOfDay(),
+            (int) $raceEvent->getKey(),
+        );
 
         return to_route('events.show', $raceEvent)->with('status', __('Event entry added.'));
     }
@@ -98,17 +116,37 @@ class RaceEventOperationsController extends Controller
         return to_route('events.show', $raceEvent)->with('status', __('Event task added.'));
     }
 
-    public function updateTask(Request $request, EventTask $eventTask): RedirectResponse
-    {
+    public function updateTask(
+        Request $request,
+        EventTask $eventTask,
+        OperationCostService $costService,
+    ): RedirectResponse {
         Gate::authorize('update', $eventTask);
+        $user = $this->user($request);
         $validated = $request->validate([
             'status' => ['required', 'in:todo,in_progress,done'],
+            'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'cost_description' => ['nullable', 'string', 'max:180'],
         ]);
 
+        $completedAt = $validated['status'] === 'done' ? now() : null;
         $eventTask->update([
             'status' => $validated['status'],
-            'completed_at' => $validated['status'] === 'done' ? now() : null,
+            'completed_at' => $completedAt,
         ]);
+
+        if ($completedAt !== null) {
+            $costService->record(
+                $user,
+                isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+                'event_operations',
+                $validated['cost_description'] ?? __('Event task').': '.$eventTask->title,
+                'event_task',
+                (int) $eventTask->getKey(),
+                $completedAt,
+                (int) $eventTask->event_id,
+            );
+        }
 
         return to_route('events.show', $eventTask->event_id)->with('status', __('Task status updated.'));
     }

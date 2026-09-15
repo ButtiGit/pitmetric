@@ -30,7 +30,7 @@ it('persists components for manually activated accounts', function () {
             'metric_key' => 'runtime',
             'serial_number' => 'ENG-001',
         ])
-        ->assertRedirect(route('demo.components'));
+        ->assertRedirect(route('components.index'));
 
     $component = Component::query()->with('trackers.metric')->firstOrFail();
 

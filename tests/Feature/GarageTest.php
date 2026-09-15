@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Expense;
 use App\Models\User;
 use App\Models\Vehicle;
 
@@ -23,7 +24,7 @@ it('shows only vehicles from the authenticated workspace', function () {
 
     expect(Vehicle::query()->pluck('id')->all())->toBe([$ownVehicle->id]);
 
-    $this->get(route('demo.garage'))
+    $this->get(route('garage.index'))
         ->assertOk()
         ->assertSee('My Kart')
         ->assertDontSee('Secret Kart');
@@ -31,7 +32,7 @@ it('shows only vehicles from the authenticated workspace', function () {
     expect($otherVehicle->id)->not->toBe($ownVehicle->id);
 });
 
-it('creates vehicles inside the authenticated workspace automatically', function () {
+it('creates vehicles inside the authenticated workspace and links acquisition cost', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspaceId = (int) $user->workspaces()->value('workspaces.id');
 
@@ -44,17 +45,31 @@ it('creates vehicles inside the authenticated workspace automatically', function
             'year' => 2026,
             'identifier' => 'CHASSIS-27',
             'status' => 'active',
+            'purchase_cost' => 4250.50,
             'notes' => 'Race kart',
         ])
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('demo.garage'));
+        ->assertRedirect(route('garage.index'));
+
+    $vehicle = Vehicle::query()->where('name', 'Kart #27')->firstOrFail();
 
     $this->assertDatabaseHas('vehicles', [
+        'id' => $vehicle->id,
         'workspace_id' => $workspaceId,
         'name' => 'Kart #27',
         'category' => 'kart',
         'identifier' => 'CHASSIS-27',
     ]);
+
+    $this->assertDatabaseHas('expenses', [
+        'workspace_id' => $workspaceId,
+        'amount_cents' => 425050,
+        'category' => 'vehicle',
+        'related_type' => 'vehicle',
+        'related_id' => $vehicle->id,
+    ]);
+
+    expect(Expense::query()->count())->toBe(1);
 });
 
 it('validates vehicle data before storing it', function () {
@@ -92,7 +107,7 @@ it('updates a vehicle from the current workspace', function () {
             'notes' => 'Stored after the season',
         ])
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('demo.garage'));
+        ->assertRedirect(route('garage.index'));
 
     $this->assertDatabaseHas('vehicles', [
         'id' => $vehicle->id,
@@ -109,7 +124,7 @@ it('soft deletes vehicles instead of destroying their history', function () {
 
     $this->actingAs($user)
         ->delete(route('garage.destroy', $vehicle))
-        ->assertRedirect(route('demo.garage'));
+        ->assertRedirect(route('garage.index'));
 
     $this->assertSoftDeleted('vehicles', ['id' => $vehicle->id]);
 });

@@ -97,7 +97,7 @@ class MaintenanceController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        return to_route('demo.maintenance')->with('status', __('Maintenance schedule created.'));
+        return to_route('maintenance.index')->with('status', __('Maintenance schedule created.'));
     }
 
     public function complete(Request $request, MaintenanceSchedule $maintenanceSchedule, CompleteMaintenanceService $maintenanceService): RedirectResponse
@@ -126,7 +126,7 @@ class MaintenanceController extends Controller
             $validated['notes'] ?? null,
         );
 
-        return to_route('demo.maintenance')->with('status', __('Maintenance completed, interval reset and cost linked to expenses.'));
+        return to_route('maintenance.index')->with('status', __('Maintenance completed, interval reset and cost linked to expenses.'));
     }
 
     private function toStorageValue(ComponentTracker $tracker, float $value): int

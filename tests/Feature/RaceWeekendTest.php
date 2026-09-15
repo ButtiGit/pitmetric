@@ -34,7 +34,7 @@ it('keeps race weekends local for non activated accounts', function () {
     expect(RaceEvent::query()->count())->toBe(0);
 });
 
-it('runs a race weekend from entry through session tasks notes and costs', function () {
+it('runs a race weekend from entry through session tasks notes and linked operation costs', function () {
     $user = User::factory()->withDatabaseAccess()->create(['email_verified_at' => now()]);
     $workspace = $user->workspaces()->firstOrFail();
     $this->actingAs($user);
@@ -68,6 +68,7 @@ it('runs a race weekend from entry through session tasks notes and costs', funct
         'vehicle_id' => $vehicle->id,
         'configuration_version_id' => $version->id,
         'entry_number' => '27',
+        'entry_cost' => '120.00',
     ])->assertRedirect(route('events.show', $event));
     $entry = EventEntry::query()->firstOrFail();
 
@@ -76,6 +77,13 @@ it('runs a race weekend from entry through session tasks notes and costs', funct
         'title' => 'Controllo catena dopo manche',
         'priority' => 'high',
         'due_at' => '2026-09-13 14:00:00',
+    ])->assertRedirect(route('events.show', $event));
+    $task = EventTask::query()->firstOrFail();
+
+    $this->patch(route('events.tasks.update', $task), [
+        'status' => 'done',
+        'operation_cost' => '48.00',
+        'cost_description' => 'Catena e manodopera',
     ])->assertRedirect(route('events.show', $event));
 
     $this->post(route('events.notes.store', $event), [
@@ -87,7 +95,7 @@ it('runs a race weekend from entry through session tasks notes and costs', funct
     $this->post(route('events.expenses.store', $event), [
         'amount' => '210.00',
         'category' => 'entry',
-        'description' => 'Entry fee',
+        'description' => 'Fuel and travel',
         'occurred_at' => '2026-09-12 08:00:00',
     ])->assertRedirect(route('events.show', $event));
 
@@ -111,7 +119,9 @@ it('runs a race weekend from entry through session tasks notes and costs', funct
         ->and($session->session_type)->toBe('heat')
         ->and(EventTask::query()->where('event_id', $event->id)->count())->toBe(1)
         ->and(EventNote::query()->where('event_id', $event->id)->count())->toBe(1)
-        ->and(Expense::query()->where('event_id', $event->id)->sum('amount_cents'))->toBe(24550)
+        ->and(Expense::query()->where('event_id', $event->id)->sum('amount_cents'))->toBe(41350)
+        ->and(Expense::query()->where('event_id', $event->id)->where('related_type', 'event_entry')->exists())->toBeTrue()
+        ->and(Expense::query()->where('event_id', $event->id)->where('related_type', 'event_task')->exists())->toBeTrue()
         ->and(Expense::query()->where('event_id', $event->id)->where('related_type', 'session')->exists())->toBeTrue();
 
     $this->get(route('events.show', $event))
@@ -120,7 +130,7 @@ it('runs a race weekend from entry through session tasks notes and costs', funct
         ->assertSee('Kart 27')
         ->assertSee('Controllo catena dopo manche')
         ->assertSee('Posteriore scivola in uscita T3.')
-        ->assertSee('245,50');
+        ->assertSee('413,50');
 });
 
 it('rejects event sessions outside the weekend and entries with mismatched setups', function () {

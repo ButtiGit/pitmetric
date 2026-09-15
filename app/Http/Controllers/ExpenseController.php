@@ -74,7 +74,7 @@ class ExpenseController extends Controller
             'created_by' => $user->getKey(),
         ]);
 
-        return to_route('demo.expenses')->with('status', __('Expense recorded.'));
+        return to_route('expenses.index')->with('status', __('Expense recorded.'));
     }
 
     public function destroy(Expense $expense): RedirectResponse
@@ -82,12 +82,12 @@ class ExpenseController extends Controller
         Gate::authorize('delete', $expense);
 
         if ($expense->related_type !== null) {
-            return to_route('demo.expenses')->with('error', __('Linked operational costs cannot be deleted independently from their source record.'));
+            return to_route('expenses.index')->with('error', __('Linked operational costs cannot be deleted independently from their source record.'));
         }
 
         $expense->delete();
 
-        return to_route('demo.expenses')->with('status', __('Expense deleted.'));
+        return to_route('expenses.index')->with('status', __('Expense deleted.'));
     }
 
     private function hasDatabaseAccess(User $user): bool

@@ -133,7 +133,7 @@ class ComponentController extends Controller
             }
         });
 
-        return to_route('demo.components')->with('status', __('Component created.'));
+        return to_route('components.index')->with('status', __('Component created.'));
     }
 
     public function destroy(Component $component): RedirectResponse
@@ -148,7 +148,7 @@ class ComponentController extends Controller
 
         $component->delete();
 
-        return to_route('demo.components')->with('status', __('Component archived.'));
+        return to_route('components.index')->with('status', __('Component archived.'));
     }
 
     private function hasDatabaseAccess(User $user): bool

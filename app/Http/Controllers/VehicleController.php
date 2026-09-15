@@ -6,6 +6,7 @@ use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\OperationCostService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,10 +42,13 @@ class VehicleController extends Controller
         return view('garage.index', compact('workspace', 'vehicles'));
     }
 
-    public function store(StoreVehicleRequest $request, WorkspaceContext $workspaceContext): RedirectResponse
-    {
+    public function store(
+        StoreVehicleRequest $request,
+        WorkspaceContext $workspaceContext,
+        OperationCostService $costService,
+    ): RedirectResponse {
         if (! $workspaceContext->isReady()) {
-            return to_route('demo.garage')->with('error', __('garage.messages.unavailable'));
+            return to_route('garage.index')->with('error', __('garage.messages.unavailable'));
         }
 
         $user = $request->user();
@@ -54,16 +58,30 @@ class VehicleController extends Controller
         }
 
         $workspaceContext->personal($user);
-        Vehicle::create($request->validated());
+        $validated = $request->validated();
+        $purchaseCost = isset($validated['purchase_cost']) ? (float) $validated['purchase_cost'] : null;
+        unset($validated['purchase_cost']);
 
-        return to_route('demo.garage')->with('status', __('garage.messages.created'));
+        $vehicle = Vehicle::create($validated);
+
+        $costService->record(
+            $user,
+            $purchaseCost,
+            'vehicle',
+            __('Vehicle acquisition').': '.$vehicle->name,
+            'vehicle',
+            (int) $vehicle->getKey(),
+            now(),
+        );
+
+        return to_route('garage.index')->with('status', __('garage.messages.created'));
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle): RedirectResponse
     {
         $vehicle->update($request->validated());
 
-        return to_route('demo.garage')->with('status', __('garage.messages.updated'));
+        return to_route('garage.index')->with('status', __('garage.messages.updated'));
     }
 
     public function destroy(Vehicle $vehicle): RedirectResponse
@@ -71,6 +89,6 @@ class VehicleController extends Controller
         Gate::authorize('delete', $vehicle);
         $vehicle->delete();
 
-        return to_route('demo.garage')->with('status', __('garage.messages.deleted'));
+        return to_route('garage.index')->with('status', __('garage.messages.deleted'));
     }
 }

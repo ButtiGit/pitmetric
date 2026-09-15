@@ -3,10 +3,11 @@
 use App\Models\Component;
 use App\Models\ComponentInstallation;
 use App\Models\ComponentType;
+use App\Models\Expense;
 use App\Models\User;
 use App\Models\Vehicle;
 
-it('tracks physical component installation removal and reinstalllation history', function () {
+it('tracks physical component installation removal and reinstalllation history with linked costs', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspaceId = (int) $user->workspaces()->value('workspaces.id');
     $this->actingAs($user);
@@ -25,6 +26,7 @@ it('tracks physical component installation removal and reinstalllation history',
         'vehicle_id' => $kart27->id,
         'position_or_role' => 'Engine',
         'installed_at' => '2026-09-15 09:00:00',
+        'operation_cost' => 35.50,
         'notes' => 'Race weekend install',
     ])->assertRedirect(route('components.index'));
 
@@ -33,6 +35,14 @@ it('tracks physical component installation removal and reinstalllation history',
     expect($installation->vehicle_id)->toBe($kart27->id)
         ->and($installation->component_id)->toBe($component->id)
         ->and($installation->removed_at)->toBeNull();
+
+    $this->assertDatabaseHas('expenses', [
+        'workspace_id' => $workspaceId,
+        'amount_cents' => 3550,
+        'category' => 'workshop',
+        'related_type' => 'component_installation_install',
+        'related_id' => $installation->id,
+    ]);
 
     $this->post(route('component-installations.store'), [
         'component_id' => $component->id,
@@ -44,9 +54,18 @@ it('tracks physical component installation removal and reinstalllation history',
 
     $this->patch(route('component-installations.remove', $installation), [
         'removed_at' => '2026-09-15 12:00:00',
+        'operation_cost' => 12.75,
     ])->assertRedirect(route('components.index'));
 
     expect($installation->fresh()->removed_at)->not->toBeNull();
+
+    $this->assertDatabaseHas('expenses', [
+        'workspace_id' => $workspaceId,
+        'amount_cents' => 1275,
+        'category' => 'workshop',
+        'related_type' => 'component_installation_remove',
+        'related_id' => $installation->id,
+    ]);
 
     $this->post(route('component-installations.store'), [
         'component_id' => $component->id,
@@ -56,7 +75,8 @@ it('tracks physical component installation removal and reinstalllation history',
     ])->assertRedirect(route('components.index'));
 
     expect(ComponentInstallation::query()->count())->toBe(2)
-        ->and(ComponentInstallation::query()->whereNull('removed_at')->value('vehicle_id'))->toBe($kart12->id);
+        ->and(ComponentInstallation::query()->whereNull('removed_at')->value('vehicle_id'))->toBe($kart12->id)
+        ->and(Expense::query()->count())->toBe(2);
 });
 
 it('rejects removal timestamps earlier than installation', function () {

@@ -68,7 +68,7 @@ class CircuitController extends Controller
             ]);
         });
 
-        return to_route('demo.circuits')->with('status', __('Circuit created.'));
+        return to_route('circuits.index')->with('status', __('Circuit created.'));
     }
 
     private function hasDatabaseAccess(User $user): bool
