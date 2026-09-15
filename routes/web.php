@@ -87,6 +87,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
             Route::post('/drivers', [RaceEventOperationsController::class, 'storeDriver'])->name('drivers.store');
             Route::post('/events/{raceEvent}/entries', [RaceEventOperationsController::class, 'storeEntry'])->name('events.entries.store');
+            Route::post('/events/{raceEvent}/schedule', [RaceEventOperationsController::class, 'storeScheduleItem'])->name('events.schedule.store');
+            Route::patch('/event-schedule/{eventScheduleItem}', [RaceEventOperationsController::class, 'updateScheduleItem'])->name('events.schedule.update');
+            Route::delete('/event-schedule/{eventScheduleItem}', [RaceEventOperationsController::class, 'destroyScheduleItem'])->name('events.schedule.destroy');
             Route::post('/events/{raceEvent}/tasks', [RaceEventOperationsController::class, 'storeTask'])->name('events.tasks.store');
             Route::patch('/event-tasks/{eventTask}', [RaceEventOperationsController::class, 'updateTask'])->name('events.tasks.update');
             Route::post('/events/{raceEvent}/notes', [RaceEventOperationsController::class, 'storeNote'])->name('events.notes.store');
@@ -129,8 +132,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
         });
 });
 
