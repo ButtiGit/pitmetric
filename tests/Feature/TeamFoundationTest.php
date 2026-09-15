@@ -55,7 +55,7 @@ it('switches the current team and isolates operational data', function () {
         ->assertDontSee('Kart Team A');
 
     $this->post(route('team.switch', $firstTeam))
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('garage.index'));
 
     $this->get(route('garage.index'))
         ->assertOk()
