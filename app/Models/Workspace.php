@@ -22,7 +22,7 @@ class Workspace extends Model
     /** @use HasFactory<WorkspaceFactory> */
     use HasFactory;
 
-    /** @return BelongsToMany<User, $this> */
+    /** @return BelongsToMany<User, $this, WorkspaceMembership, 'pivot'> */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'workspace_user')
