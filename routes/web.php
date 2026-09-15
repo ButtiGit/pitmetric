@@ -132,8 +132,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
         });
 });
 
