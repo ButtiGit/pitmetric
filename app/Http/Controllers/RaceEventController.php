@@ -163,7 +163,7 @@ class RaceEventController extends Controller
                     default => 2,
                 };
 
-                return $rank.'-'.$item->starts_at->format('YmdHis');
+                return $rank.'-'.Carbon::parse($item->starts_at)->format('YmdHis');
             })
             ->first();
 
