@@ -29,7 +29,7 @@
                 <figure class="pm-editorial-portrait mx-auto w-full max-w-[390px] lg:mx-0 lg:justify-self-end">
                     <div class="relative overflow-hidden border border-white/12 bg-[#0d1014]">
                         <div class="absolute left-0 top-0 z-10 h-[3px] w-24 bg-[#E10600]"></div>
-                        <img src="{{ asset('media/simone-buttice-profile.webp') }}" alt="{{ $isItalian ? 'Ritratto di Simone Butticè' : 'Portrait of Simone Butticè' }}" class="aspect-[4/5] w-full object-cover object-[50%_24%]" loading="eager" fetchpriority="high">
+                        <img src="{{ asset('media/simone-buttice-profile-original.jpeg') }}" width="938" height="1061" alt="{{ $isItalian ? 'Ritratto di Simone Butticè' : 'Portrait of Simone Butticè' }}" class="aspect-[4/5] w-full object-cover object-[50%_24%]" loading="eager" fetchpriority="high" decoding="async">
                         <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/58 to-transparent px-5 pb-5 pt-20">
                             <p class="pm-editorial-meta text-[#ff625e]">PitMetric / Creator</p>
                             <p class="mt-2 text-lg font-semibold text-white">Simone Butticè</p>
