@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['event_id', 'event_entry_id', 'body', 'occurred_at', 'created_by'])]
+#[Fillable(['event_id', 'event_entry_id', 'kind', 'body', 'occurred_at', 'created_by'])]
 class EventNote extends Model
 {
     use BelongsToWorkspace;
+
+    protected $attributes = [
+        'kind' => 'technical',
+    ];
 
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
