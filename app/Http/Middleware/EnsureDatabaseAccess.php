@@ -11,9 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureDatabaseAccess
 {
-    public function __construct(private readonly WorkspaceContext $workspaceContext)
-    {
-    }
+    public function __construct(private readonly WorkspaceContext $workspaceContext) {}
 
     public function handle(Request $request, Closure $next): Response
     {
