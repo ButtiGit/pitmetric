@@ -106,12 +106,12 @@ return new class extends Migration
 
         Schema::create('configuration_version_components', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('configuration_version_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('configuration_version_id')->constrained(indexName: 'cfg_ver_comp_version_fk')->cascadeOnDelete();
             $table->foreignId('component_id')->constrained()->restrictOnDelete();
             $table->string('position_or_role', 100)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-            $table->unique(['configuration_version_id', 'component_id']);
+            $table->unique(['configuration_version_id', 'component_id'], 'cfg_version_component_unique');
         });
 
         Schema::create('circuits', function (Blueprint $table): void {
