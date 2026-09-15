@@ -6,6 +6,7 @@ it('creates the managed PitMetric schema through deterministic migrations', func
     foreach ([
         'workspaces',
         'workspace_user',
+        'team_invitations',
         'vehicles',
         'component_types',
         'components',
@@ -37,7 +38,8 @@ it('creates the managed PitMetric schema through deterministic migrations', func
     expect(Schema::hasColumn('track_sessions', 'event_id'))->toBeTrue()
         ->and(Schema::hasColumn('track_sessions', 'event_entry_id'))->toBeTrue()
         ->and(Schema::hasColumn('expenses', 'event_id'))->toBeTrue()
-        ->and(Schema::hasColumn('maintenance_records', 'event_id'))->toBeTrue();
+        ->and(Schema::hasColumn('maintenance_records', 'event_id'))->toBeTrue()
+        ->and(Schema::hasColumns('workspace_user', ['role', 'status', 'joined_at']))->toBeTrue();
 });
 
 it('keeps database activation in the migrated user schema', function () {
