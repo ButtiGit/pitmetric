@@ -7,13 +7,24 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['event_id', 'event_entry_id', 'kind', 'body', 'occurred_at', 'created_by'])]
-class EventNote extends Model
+#[Fillable([
+    'event_id',
+    'event_entry_id',
+    'session_id',
+    'label',
+    'session_type',
+    'starts_at',
+    'duration_minutes',
+    'status',
+    'notes',
+    'created_by',
+])]
+class EventScheduleItem extends Model
 {
     use BelongsToWorkspace;
 
     protected $attributes = [
-        'kind' => 'technical',
+        'status' => 'planned',
     ];
 
     /** @return BelongsTo<RaceEvent, $this> */
@@ -28,10 +39,16 @@ class EventNote extends Model
         return $this->belongsTo(EventEntry::class);
     }
 
+    /** @return BelongsTo<Session, $this> */
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(Session::class);
+    }
+
     protected function casts(): array
     {
         return [
-            'occurred_at' => 'datetime',
+            'starts_at' => 'datetime',
         ];
     }
 }

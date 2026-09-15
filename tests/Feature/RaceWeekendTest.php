@@ -7,6 +7,7 @@ use App\Models\Configuration;
 use App\Models\Driver;
 use App\Models\EventEntry;
 use App\Models\EventNote;
+use App\Models\EventScheduleItem;
 use App\Models\EventTask;
 use App\Models\Expense;
 use App\Models\RaceEvent;
@@ -34,7 +35,7 @@ it('keeps race weekends local for non activated accounts', function () {
     expect(RaceEvent::query()->count())->toBe(0);
 });
 
-it('runs a race weekend from entry through session tasks notes and linked operation costs', function () {
+it('runs a race weekend through Trackside schedule sessions work notes and linked costs', function () {
     $user = User::factory()->withDatabaseAccess()->create(['email_verified_at' => now()]);
     $workspace = $user->workspaces()->firstOrFail();
     $this->actingAs($user);
@@ -72,6 +73,26 @@ it('runs a race weekend from entry through session tasks notes and linked operat
     ])->assertRedirect(route('events.show', $event));
     $entry = EventEntry::query()->firstOrFail();
 
+    $this->post(route('events.schedule.store', $event), [
+        'event_entry_id' => $entry->id,
+        'label' => 'Heat 1 gruppo A',
+        'session_type' => 'heat',
+        'starts_at' => '2026-09-13 11:30:00',
+        'duration_minutes' => 14,
+        'notes' => 'Pre-grid 10 minuti prima.',
+    ])->assertRedirect(route('events.show', $event));
+    $scheduleItem = EventScheduleItem::query()->firstOrFail();
+
+    $this->patch(route('events.schedule.update', $scheduleItem), [
+        'event_entry_id' => $entry->id,
+        'label' => 'Heat 1 gruppo A',
+        'session_type' => 'heat',
+        'starts_at' => '2026-09-13 11:30:00',
+        'duration_minutes' => 14,
+        'status' => 'ready',
+        'notes' => 'Pre-grid 10 minuti prima.',
+    ])->assertRedirect(route('events.show', $event));
+
     $this->post(route('events.tasks.store', $event), [
         'event_entry_id' => $entry->id,
         'title' => 'Controllo catena dopo manche',
@@ -88,6 +109,7 @@ it('runs a race weekend from entry through session tasks notes and linked operat
 
     $this->post(route('events.notes.store', $event), [
         'event_entry_id' => $entry->id,
+        'kind' => 'driver_feedback',
         'body' => 'Posteriore scivola in uscita T3.',
         'occurred_at' => '2026-09-12 16:10:00',
     ])->assertRedirect(route('events.show', $event));
@@ -102,9 +124,10 @@ it('runs a race weekend from entry through session tasks notes and linked operat
     $response = $this->post(route('sessions.store'), [
         'event_id' => $event->id,
         'event_entry_id' => $entry->id,
+        'schedule_item_id' => $scheduleItem->id,
         'configuration_version_id' => $version->id,
         'session_type' => 'heat',
-        'started_at' => '2026-09-13 11:30:00',
+        'started_at' => '2026-09-13 11:32:00',
         'completed_laps' => 12,
         'duration_minutes' => 14,
         'session_cost' => '35.50',
@@ -117,8 +140,11 @@ it('runs a race weekend from entry through session tasks notes and linked operat
         ->and($session->event_entry_id)->toBe($entry->id)
         ->and($session->circuit_layout_id)->toBe($layout->id)
         ->and($session->session_type)->toBe('heat')
+        ->and($scheduleItem->fresh()?->status)->toBe('completed')
+        ->and($scheduleItem->fresh()?->session_id)->toBe($session->id)
+        ->and($event->fresh()?->status)->toBe('active')
         ->and(EventTask::query()->where('event_id', $event->id)->count())->toBe(1)
-        ->and(EventNote::query()->where('event_id', $event->id)->count())->toBe(1)
+        ->and(EventNote::query()->where('event_id', $event->id)->where('kind', 'driver_feedback')->count())->toBe(1)
         ->and(Expense::query()->where('event_id', $event->id)->sum('amount_cents'))->toBe(41350)
         ->and(Expense::query()->where('event_id', $event->id)->where('related_type', 'event_entry')->exists())->toBeTrue()
         ->and(Expense::query()->where('event_id', $event->id)->where('related_type', 'event_task')->exists())->toBeTrue()
@@ -126,6 +152,8 @@ it('runs a race weekend from entry through session tasks notes and linked operat
 
     $this->get(route('events.show', $event))
         ->assertOk()
+        ->assertSee('TRACKSIDE MODE')
+        ->assertSee('Heat 1 gruppo A')
         ->assertSee('Pilota A')
         ->assertSee('Kart 27')
         ->assertSee('Controllo catena dopo manche')
@@ -133,7 +161,7 @@ it('runs a race weekend from entry through session tasks notes and linked operat
         ->assertSee('413,50');
 });
 
-it('rejects event sessions outside the weekend and entries with mismatched setups', function () {
+it('rejects sessions and scheduled activities outside the weekend and entries with mismatched setups', function () {
     $user = User::factory()->withDatabaseAccess()->create(['email_verified_at' => now()]);
     $workspace = $user->workspaces()->firstOrFail();
     $this->actingAs($user);
@@ -169,6 +197,12 @@ it('rejects event sessions outside the weekend and entries with mismatched setup
         'configuration_version_id' => $versionA->id,
     ]);
 
+    $this->post(route('events.schedule.store', $event), [
+        'event_entry_id' => $entry->id,
+        'session_type' => 'final',
+        'starts_at' => '2026-09-14 10:00:00',
+    ])->assertSessionHasErrors('starts_at');
+
     $this->post(route('sessions.store'), [
         'event_id' => $event->id,
         'event_entry_id' => $entry->id,
@@ -179,5 +213,6 @@ it('rejects event sessions outside the weekend and entries with mismatched setup
     ])->assertSessionHasErrors('started_at');
 
     expect(Session::query()->count())->toBe(0)
+        ->and(EventScheduleItem::query()->count())->toBe(0)
         ->and(Schema::hasColumn('track_sessions', 'event_id'))->toBeTrue();
 });

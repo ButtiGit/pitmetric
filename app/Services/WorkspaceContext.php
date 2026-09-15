@@ -76,13 +76,14 @@ class WorkspaceContext
             return false;
         }
 
-        foreach (['drivers', 'events', 'event_entries', 'event_tasks', 'event_notes'] as $table) {
+        foreach (['drivers', 'events', 'event_entries', 'event_tasks', 'event_notes', 'event_schedule_items'] as $table) {
             if (! Schema::hasTable($table)) {
                 return false;
             }
         }
 
-        return Schema::hasColumn('track_sessions', 'event_id')
+        return Schema::hasColumn('event_notes', 'kind')
+            && Schema::hasColumn('track_sessions', 'event_id')
             && Schema::hasColumn('track_sessions', 'event_entry_id')
             && Schema::hasColumn('expenses', 'event_id')
             && Schema::hasColumn('maintenance_records', 'event_id');

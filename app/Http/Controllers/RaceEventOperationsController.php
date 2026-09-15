@@ -6,6 +6,7 @@ use App\Models\ConfigurationVersion;
 use App\Models\Driver;
 use App\Models\EventEntry;
 use App\Models\EventNote;
+use App\Models\EventScheduleItem;
 use App\Models\EventTask;
 use App\Models\Expense;
 use App\Models\RaceEvent;
@@ -17,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class RaceEventOperationsController extends Controller
 {
@@ -89,6 +91,97 @@ class RaceEventOperationsController extends Controller
         return to_route('events.show', $raceEvent)->with('status', __('Event entry added.'));
     }
 
+    public function storeScheduleItem(Request $request, RaceEvent $raceEvent): RedirectResponse
+    {
+        Gate::authorize('update', $raceEvent);
+        $user = $this->user($request);
+        $validated = $request->validate([
+            'event_entry_id' => ['nullable', 'integer'],
+            'label' => ['nullable', 'string', 'max:120'],
+            'session_type' => ['required', 'in:practice,qualifying,heat,prefinal,final,race,test'],
+            'starts_at' => ['required', 'date'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $startsAt = Carbon::parse($validated['starts_at']);
+        $this->ensureInsideWeekend($raceEvent, $startsAt);
+        $entryId = $this->entryIdForEvent($raceEvent, $validated['event_entry_id'] ?? null);
+
+        EventScheduleItem::create([
+            'event_id' => $raceEvent->getKey(),
+            'event_entry_id' => $entryId,
+            'label' => $validated['label'] ?? null,
+            'session_type' => $validated['session_type'],
+            'starts_at' => $startsAt,
+            'duration_minutes' => $validated['duration_minutes'] ?? null,
+            'status' => 'planned',
+            'notes' => $validated['notes'] ?? null,
+            'created_by' => $user->getKey(),
+        ]);
+
+        return to_route('events.show', $raceEvent)->with('status', __('Trackside schedule updated.'));
+    }
+
+    public function updateScheduleItem(Request $request, EventScheduleItem $eventScheduleItem): RedirectResponse
+    {
+        $eventScheduleItem->loadMissing('raceEvent');
+        $raceEvent = $eventScheduleItem->raceEvent;
+        Gate::authorize('update', $raceEvent);
+
+        $validated = $request->validate([
+            'event_entry_id' => ['nullable', 'integer'],
+            'label' => ['nullable', 'string', 'max:120'],
+            'session_type' => ['required', 'in:practice,qualifying,heat,prefinal,final,race,test'],
+            'starts_at' => ['required', 'date'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'status' => ['required', 'in:planned,ready,live,completed,cancelled'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if ($eventScheduleItem->session_id !== null && $validated['status'] !== 'completed') {
+            throw ValidationException::withMessages([
+                'status' => __('A schedule item linked to a recorded session must stay completed.'),
+            ]);
+        }
+
+        $startsAt = Carbon::parse($validated['starts_at']);
+        $this->ensureInsideWeekend($raceEvent, $startsAt);
+        $entryId = $this->entryIdForEvent($raceEvent, $validated['event_entry_id'] ?? null);
+
+        $eventScheduleItem->update([
+            'event_entry_id' => $entryId,
+            'label' => $validated['label'] ?? null,
+            'session_type' => $validated['session_type'],
+            'starts_at' => $startsAt,
+            'duration_minutes' => $validated['duration_minutes'] ?? null,
+            'status' => $validated['status'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        if ($validated['status'] === 'live' && $raceEvent->status === 'planned') {
+            $raceEvent->update(['status' => 'active']);
+        }
+
+        return to_route('events.show', $raceEvent)->with('status', __('Trackside schedule updated.'));
+    }
+
+    public function destroyScheduleItem(EventScheduleItem $eventScheduleItem): RedirectResponse
+    {
+        $eventScheduleItem->loadMissing('raceEvent');
+        $raceEvent = $eventScheduleItem->raceEvent;
+        Gate::authorize('update', $raceEvent);
+
+        if ($eventScheduleItem->session_id !== null) {
+            return to_route('events.show', $raceEvent)
+                ->with('error', __('A schedule item linked to a recorded session cannot be deleted.'));
+        }
+
+        $eventScheduleItem->delete();
+
+        return to_route('events.show', $raceEvent)->with('status', __('Trackside schedule item removed.'));
+    }
+
     public function storeTask(Request $request, RaceEvent $raceEvent): RedirectResponse
     {
         Gate::authorize('update', $raceEvent);
@@ -157,6 +250,7 @@ class RaceEventOperationsController extends Controller
         $user = $this->user($request);
         $validated = $request->validate([
             'event_entry_id' => ['nullable', 'integer'],
+            'kind' => ['required', 'in:technical,driver_feedback,incident,operations'],
             'body' => ['required', 'string', 'max:5000'],
             'occurred_at' => ['required', 'date'],
         ]);
@@ -165,6 +259,7 @@ class RaceEventOperationsController extends Controller
         EventNote::create([
             'event_id' => $raceEvent->getKey(),
             'event_entry_id' => $entryId,
+            'kind' => $validated['kind'],
             'body' => $validated['body'],
             'occurred_at' => Carbon::parse($validated['occurred_at']),
             'created_by' => $user->getKey(),
@@ -209,6 +304,18 @@ class RaceEventOperationsController extends Controller
             ->firstOrFail();
 
         return (int) $entry->getKey();
+    }
+
+    private function ensureInsideWeekend(RaceEvent $raceEvent, Carbon $moment): void
+    {
+        $startsAt = Carbon::parse($raceEvent->start_date)->startOfDay();
+        $endsAt = Carbon::parse($raceEvent->end_date)->endOfDay();
+
+        if ($moment->lt($startsAt) || $moment->gt($endsAt)) {
+            throw ValidationException::withMessages([
+                'starts_at' => __('The scheduled session must be inside the race weekend.'),
+            ]);
+        }
     }
 
     private function user(Request $request): User

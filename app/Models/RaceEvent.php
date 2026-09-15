@@ -48,6 +48,12 @@ class RaceEvent extends Model
         return $this->hasMany(Session::class, 'event_id');
     }
 
+    /** @return HasMany<EventScheduleItem, $this> */
+    public function scheduleItems(): HasMany
+    {
+        return $this->hasMany(EventScheduleItem::class, 'event_id');
+    }
+
     /** @return HasMany<EventTask, $this> */
     public function tasks(): HasMany
     {
