@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\CircuitLayout;
 use App\Models\ConfigurationVersion;
 use App\Models\Driver;
+use App\Models\MaintenanceSchedule;
 use App\Models\RaceEvent;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\MaintenanceHealthService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -91,8 +93,12 @@ class RaceEventController extends Controller
         return to_route('events.show', $event)->with('status', __('Race weekend created.'));
     }
 
-    public function show(Request $request, RaceEvent $raceEvent, WorkspaceContext $workspaceContext): View
-    {
+    public function show(
+        Request $request,
+        RaceEvent $raceEvent,
+        WorkspaceContext $workspaceContext,
+        MaintenanceHealthService $healthService,
+    ): View {
         $user = $request->user();
 
         if (! $user instanceof User) {
@@ -109,16 +115,57 @@ class RaceEventController extends Controller
             'entries.driver',
             'entries.vehicle',
             'entries.configurationVersion.configuration',
+            'entries.configurationVersion.components',
             'sessions.vehicle',
             'sessions.configurationVersion.configuration',
+            'sessions.configurationVersion.components',
             'sessions.eventEntry.driver',
             'sessions.usageValues.metric',
+            'scheduleItems.eventEntry.driver',
+            'scheduleItems.eventEntry.vehicle',
+            'scheduleItems.session',
             'tasks.eventEntry.driver',
             'tasks.eventEntry.vehicle',
             'eventNotes.eventEntry.driver',
             'expenses',
             'maintenanceRecords.component',
         ]);
+
+        $componentIds = $raceEvent->entries
+            ->flatMap(fn ($entry) => $entry->configurationVersion->components->pluck('id'))
+            ->merge($raceEvent->sessions->flatMap(fn ($session) => $session->configurationVersion->components->pluck('id')))
+            ->unique()
+            ->values();
+
+        $maintenanceSchedules = MaintenanceSchedule::query()
+            ->with(['tracker.component', 'tracker.metric'])
+            ->where('is_active', true)
+            ->when(
+                $componentIds->isNotEmpty(),
+                fn ($query) => $query->whereHas('tracker', fn ($tracker) => $tracker->whereIn('component_id', $componentIds)),
+                fn ($query) => $query->whereRaw('1 = 0'),
+            )
+            ->orderBy('name')
+            ->get();
+        $maintenanceHealth = $healthService->snapshot($maintenanceSchedules);
+        $attentionMaintenance = $maintenanceSchedules->filter(function (MaintenanceSchedule $schedule) use ($maintenanceHealth): bool {
+            $status = $maintenanceHealth['states'][$schedule->getKey()]['status'] ?? 'untracked';
+
+            return in_array($status, ['due_soon', 'overdue'], true);
+        });
+
+        $nextScheduleItem = $raceEvent->scheduleItems
+            ->reject(fn ($item) => in_array($item->status, ['completed', 'cancelled'], true))
+            ->sortBy(function ($item): string {
+                $rank = match ($item->status) {
+                    'live' => 0,
+                    'ready' => 1,
+                    default => 2,
+                };
+
+                return $rank.'-'.$item->starts_at->format('YmdHis');
+            })
+            ->first();
 
         return view('events.show', [
             'event' => $raceEvent,
@@ -129,6 +176,11 @@ class RaceEventController extends Controller
                 ->with(['configuration.vehicle', 'components'])
                 ->orderByDesc('id')
                 ->get(),
+            'maintenanceSchedules' => $maintenanceSchedules,
+            'maintenanceStates' => $maintenanceHealth['states'],
+            'maintenanceSummary' => $maintenanceHealth['summary'],
+            'attentionMaintenance' => $attentionMaintenance,
+            'nextScheduleItem' => $nextScheduleItem,
         ]);
     }
 
