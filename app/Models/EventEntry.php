@@ -50,6 +50,12 @@ class EventEntry extends Model
         return $this->hasMany(Session::class, 'event_entry_id');
     }
 
+    /** @return HasMany<EventScheduleItem, $this> */
+    public function scheduleItems(): HasMany
+    {
+        return $this->hasMany(EventScheduleItem::class);
+    }
+
     /** @return HasMany<EventTask, $this> */
     public function tasks(): HasMany
     {
