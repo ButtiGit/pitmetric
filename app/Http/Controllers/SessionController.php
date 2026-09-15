@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CircuitLayout;
 use App\Models\ConfigurationVersion;
 use App\Models\EventEntry;
+use App\Models\EventScheduleItem;
 use App\Models\Expense;
 use App\Models\MaintenanceSchedule;
 use App\Models\RaceEvent;
@@ -102,6 +103,7 @@ class SessionController extends Controller
         $validated = $request->validate([
             'event_id' => ['nullable', 'integer', 'required_with:event_entry_id'],
             'event_entry_id' => ['nullable', 'integer', 'required_with:event_id'],
+            'schedule_item_id' => ['nullable', 'integer', 'required_with:event_id'],
             'configuration_version_id' => ['required', 'integer'],
             'circuit_layout_id' => ['nullable', 'integer'],
             'session_type' => ['required', 'in:practice,qualifying,heat,prefinal,final,race,test'],
@@ -116,6 +118,7 @@ class SessionController extends Controller
 
         $raceEvent = null;
         $eventEntry = null;
+        $scheduleItem = null;
 
         if (! empty($validated['event_id'])) {
             $raceEvent = RaceEvent::query()->whereKey((int) $validated['event_id'])->firstOrFail();
@@ -132,6 +135,31 @@ class SessionController extends Controller
                 throw ValidationException::withMessages([
                     'started_at' => __('The session date must be inside the race weekend.'),
                 ]);
+            }
+
+            if (! empty($validated['schedule_item_id'])) {
+                $scheduleItem = EventScheduleItem::query()
+                    ->whereKey((int) $validated['schedule_item_id'])
+                    ->where('event_id', $raceEvent->getKey())
+                    ->firstOrFail();
+
+                if ($scheduleItem->session_id !== null) {
+                    throw ValidationException::withMessages([
+                        'schedule_item_id' => __('This scheduled session has already been recorded.'),
+                    ]);
+                }
+
+                if ($scheduleItem->event_entry_id !== null && (int) $scheduleItem->event_entry_id !== (int) $eventEntry->getKey()) {
+                    throw ValidationException::withMessages([
+                        'event_entry_id' => __('The scheduled session belongs to a different event entry.'),
+                    ]);
+                }
+
+                if ($scheduleItem->session_type !== $validated['session_type']) {
+                    throw ValidationException::withMessages([
+                        'session_type' => __('The recorded session type must match the Trackside schedule item.'),
+                    ]);
+                }
             }
         }
 
@@ -158,7 +186,7 @@ class SessionController extends Controller
             abort_if($layoutId === null, 404);
         }
 
-        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService, $raceEvent, $eventEntry): Session {
+        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService, $raceEvent, $eventEntry, $scheduleItem): Session {
             $session = Session::create([
                 'event_id' => $raceEvent?->getKey(),
                 'event_entry_id' => $eventEntry?->getKey(),
@@ -199,6 +227,17 @@ class SessionController extends Controller
                 ]);
             }
 
+            if ($scheduleItem instanceof EventScheduleItem) {
+                $scheduleItem->update([
+                    'session_id' => $finalizedSession->getKey(),
+                    'status' => 'completed',
+                ]);
+            }
+
+            if ($raceEvent instanceof RaceEvent && $raceEvent->status === 'planned') {
+                $raceEvent->update(['status' => 'active']);
+            }
+
             return $finalizedSession;
         });
 
@@ -210,7 +249,7 @@ class SessionController extends Controller
 
         if ($raceEvent instanceof RaceEvent) {
             return to_route('events.show', ['raceEvent' => $raceEvent, 'recorded' => $session->getKey()])
-                ->with('status', __('Event session recorded, usage updated and costs linked.'))
+                ->with('status', __('Event session recorded, usage updated and Trackside schedule synchronized.'))
                 ->with('maintenance_attention', $health['summary']['attention']);
         }
 
