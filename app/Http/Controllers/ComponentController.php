@@ -8,6 +8,7 @@ use App\Models\ComponentType;
 use App\Models\Expense;
 use App\Models\UsageMetricType;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Services\ComponentUsageCalculator;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ComponentController extends Controller
@@ -38,7 +40,7 @@ class ComponentController extends Controller
         $workspaceContext->personal($user);
 
         $components = Component::query()
-            ->with(['type', 'trackers.metric', 'trackers.resetEvents'])
+            ->with(['type', 'trackers.metric', 'trackers.resetEvents', 'activeInstallation.vehicle'])
             ->orderBy('name')
             ->get();
 
@@ -56,6 +58,7 @@ class ComponentController extends Controller
 
         return view('components.index', [
             'components' => $components,
+            'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
             'metrics' => UsageMetricType::query()->orderBy('name')->get(),
             'usage' => $usage,
         ]);
@@ -136,6 +139,13 @@ class ComponentController extends Controller
     public function destroy(Component $component): RedirectResponse
     {
         Gate::authorize('delete', $component);
+
+        if ($component->installations()->whereNull('removed_at')->exists()) {
+            throw ValidationException::withMessages([
+                'component' => __('Remove this component from its vehicle before archiving it.'),
+            ]);
+        }
+
         $component->delete();
 
         return to_route('demo.components')->with('status', __('Component archived.'));

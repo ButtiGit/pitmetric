@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -47,6 +48,14 @@ class Component extends Model
     public function installations(): HasMany
     {
         return $this->hasMany(ComponentInstallation::class);
+    }
+
+    /** @return HasOne<ComponentInstallation, $this> */
+    public function activeInstallation(): HasOne
+    {
+        return $this->hasOne(ComponentInstallation::class)
+            ->whereNull('removed_at')
+            ->latestOfMany('installed_at');
     }
 
     protected function casts(): array

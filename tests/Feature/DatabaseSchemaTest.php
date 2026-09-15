@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Schema;
 
-it('creates the managed PitMetric schema through migrations', function () {
+it('creates the managed PitMetric schema through deterministic migrations', function () {
     foreach ([
         'workspaces',
         'workspace_user',
@@ -43,4 +43,16 @@ it('creates the managed PitMetric schema through migrations', function () {
 it('keeps database activation in the migrated user schema', function () {
     expect(Schema::hasColumn('users', 'database_access_enabled'))->toBeTrue()
         ->and(Schema::hasColumn('users', 'manager_access_enabled'))->toBeFalse();
+});
+
+it('does not keep a runtime schema repair service', function () {
+    expect(file_exists(app_path('Services/DatabaseSchema.php')))->toBeFalse();
+
+    foreach ([
+        '2026_09_12_130000_create_workspaces_and_vehicles_tables.php',
+        '2026_09_13_190000_add_manager_access_to_users_table.php',
+        '2026_09_13_200000_replace_manager_access_with_database_access.php',
+    ] as $migration) {
+        expect(file_get_contents(database_path('migrations/'.$migration)))->not->toContain('DatabaseSchema');
+    }
 });

@@ -10,13 +10,13 @@
                     <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
                         <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="calendar-days" :href="route('events.index')" :current="request()->routeIs('events.*')">{{ __('demo.nav.events') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="truck" :href="route('demo.garage')" :current="request()->routeIs('demo.garage')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="wrench-screwdriver" :href="route('demo.components')" :current="request()->routeIs('demo.components')">{{ __('demo.nav.components') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="squares-2x2" :href="route('demo.configurations')" :current="request()->routeIs('demo.configurations')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="map" :href="route('demo.circuits')" :current="request()->routeIs('demo.circuits')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="flag" :href="route('demo.sessions')" :current="request()->routeIs('demo.sessions')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="clipboard-document-check" :href="route('demo.maintenance')" :current="request()->routeIs('demo.maintenance')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="banknotes" :href="route('demo.expenses')" :current="request()->routeIs('demo.expenses')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="truck" :href="route('garage.index')" :current="request()->routeIs('garage.*')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="wrench-screwdriver" :href="route('components.index')" :current="request()->routeIs('components.*') || request()->routeIs('component-installations.*')">{{ __('demo.nav.components') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="squares-2x2" :href="route('configurations.index')" :current="request()->routeIs('configurations.*')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="map" :href="route('circuits.index')" :current="request()->routeIs('circuits.*')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CircuitController;
 use App\Http\Controllers\ComponentController;
+use App\Http\Controllers\ComponentInstallationController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
@@ -47,13 +48,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('/events', [RaceEventController::class, 'index'])->name('events.index');
-    Route::get('/garage', [VehicleController::class, 'index'])->name('demo.garage');
-    Route::get('/components', [ComponentController::class, 'index'])->name('demo.components');
-    Route::get('/configurations', [ConfigurationController::class, 'index'])->name('demo.configurations');
-    Route::get('/circuits', [CircuitController::class, 'index'])->name('demo.circuits');
-    Route::get('/sessions', [SessionController::class, 'index'])->name('demo.sessions');
-    Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('demo.maintenance');
-    Route::get('/expenses', [ExpenseController::class, 'index'])->name('demo.expenses');
+    Route::get('/garage', [VehicleController::class, 'index'])->name('garage.index');
+    Route::get('/components', [ComponentController::class, 'index'])->name('components.index');
+    Route::get('/configurations', [ConfigurationController::class, 'index'])->name('configurations.index');
+    Route::get('/circuits', [CircuitController::class, 'index'])->name('circuits.index');
+    Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
+    Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+
+    // Backwards-compatible beta aliases. The manager navigation now uses the canonical
+    // *.index names; older links remain functional until all beta clients have rolled forward.
+    Route::get('/demo/garage', [VehicleController::class, 'index'])->name('demo.garage');
+    Route::get('/demo/components', [ComponentController::class, 'index'])->name('demo.components');
+    Route::get('/demo/configurations', [ConfigurationController::class, 'index'])->name('demo.configurations');
+    Route::get('/demo/circuits', [CircuitController::class, 'index'])->name('demo.circuits');
+    Route::get('/demo/sessions', [SessionController::class, 'index'])->name('demo.sessions');
+    Route::get('/demo/maintenance', [MaintenanceController::class, 'index'])->name('demo.maintenance');
+    Route::get('/demo/expenses', [ExpenseController::class, 'index'])->name('demo.expenses');
 
     Route::middleware('database.access')->group(function () {
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
@@ -72,6 +83,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post('/components', [ComponentController::class, 'store'])->name('components.store');
         Route::delete('/components/{component}', [ComponentController::class, 'destroy'])->name('components.destroy');
+        Route::post('/component-installations', [ComponentInstallationController::class, 'store'])
+            ->name('component-installations.store');
+        Route::patch('/component-installations/{componentInstallation}/remove', [ComponentInstallationController::class, 'remove'])
+            ->name('component-installations.remove');
 
         Route::post('/configurations', [ConfigurationController::class, 'store'])->name('configurations.store');
         Route::post('/configurations/{configuration}/versions', [ConfigurationController::class, 'storeVersion'])
