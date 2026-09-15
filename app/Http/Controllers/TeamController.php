@@ -98,7 +98,7 @@ class TeamController extends Controller
 
         $workspaceContext->select($user, $workspace);
 
-        return to_route('dashboard')->with('status', __('Team switched.'));
+        return back()->with('status', __('Team switched.'));
     }
 
     public function invite(Request $request, WorkspaceContext $workspaceContext): RedirectResponse
