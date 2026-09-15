@@ -214,7 +214,7 @@ class SessionController extends Controller
                 ->with('maintenance_attention', $health['summary']['attention']);
         }
 
-        return to_route('demo.sessions', ['recorded' => $session->getKey()])
+        return to_route('sessions.index', ['recorded' => $session->getKey()])
             ->with('status', __('Session recorded, component usage updated and session cost linked to expenses.'))
             ->with('maintenance_attention', $health['summary']['attention']);
     }
