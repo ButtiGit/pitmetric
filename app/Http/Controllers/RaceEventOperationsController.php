@@ -82,7 +82,7 @@ class RaceEventOperationsController extends Controller
             __('Event entry').': '.$raceEvent->name.' · '.$driver->display_name,
             'event_entry',
             (int) $entry->getKey(),
-            $raceEvent->start_date->startOfDay(),
+            Carbon::parse($raceEvent->start_date)->startOfDay(),
             (int) $raceEvent->getKey(),
         );
 
