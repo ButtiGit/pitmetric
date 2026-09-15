@@ -8,7 +8,7 @@
 ])
 
 @if ($trigger)
-    <button type="button" class="{{ $triggerClass }}" onclick="document.getElementById(@js($id)).showModal()">
+    <button type="button" class="{{ $triggerClass }}" onclick="document.getElementById('{{ $id }}').showModal()">
         {{ $trigger }}
     </button>
 @endif
@@ -22,7 +22,7 @@
                     <p class="mt-1 text-sm leading-6 text-pm-text-secondary">{{ $description }}</p>
                 @endif
             </div>
-            <button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-subtle text-lg text-pm-muted transition hover:text-pm-text" onclick="document.getElementById(@js($id)).close()" aria-label="{{ __('Close') }}">×</button>
+            <button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg border border-pm-border bg-pm-subtle text-lg text-pm-muted transition hover:text-pm-text" onclick="document.getElementById('{{ $id }}').close()" aria-label="{{ __('Close') }}">×</button>
         </div>
 
         {{ $slot }}
