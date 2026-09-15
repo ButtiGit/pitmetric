@@ -2,10 +2,11 @@
 
 namespace App\Models\Concerns;
 
+use App\Models\User;
+use App\Services\WorkspaceContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use LogicException;
 
 trait BelongsToWorkspace
@@ -13,18 +14,21 @@ trait BelongsToWorkspace
     protected static function bootBelongsToWorkspace(): void
     {
         static::addGlobalScope('workspace', function (Builder $builder): void {
-            $userId = Auth::id();
+            $user = Auth::user();
 
-            if ($userId === null) {
+            if (! $user instanceof User) {
                 return;
             }
 
-            $builder->whereIn(
-                $builder->getModel()->qualifyColumn('workspace_id'),
-                DB::table('workspace_user')
-                    ->select('workspace_id')
-                    ->where('user_id', $userId),
-            );
+            $workspaceId = app(WorkspaceContext::class)->currentId($user);
+
+            if ($workspaceId === null) {
+                $builder->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $builder->where($builder->getModel()->qualifyColumn('workspace_id'), $workspaceId);
         });
 
         static::creating(function (Model $model): void {
@@ -32,19 +36,16 @@ trait BelongsToWorkspace
                 return;
             }
 
-            $userId = Auth::id();
+            $user = Auth::user();
 
-            if ($userId === null) {
+            if (! $user instanceof User) {
                 throw new LogicException('A workspace-owned model requires an authenticated user or an explicit workspace_id.');
             }
 
-            $workspaceId = DB::table('workspace_user')
-                ->where('user_id', $userId)
-                ->orderBy('workspace_id')
-                ->value('workspace_id');
+            $workspaceId = app(WorkspaceContext::class)->currentId($user);
 
             if ($workspaceId === null) {
-                throw new LogicException('The authenticated user does not belong to a workspace.');
+                throw new LogicException('The authenticated user does not have an active team selected.');
             }
 
             $model->setAttribute('workspace_id', $workspaceId);
