@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMembership;
+use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -227,7 +228,7 @@ class WorkspaceContext
         return $this->role($user) === 'owner';
     }
 
-    /** @return array{role: string, status: string, joined_at: \Carbon\CarbonInterface} */
+    /** @return array{role: string, status: string, joined_at: CarbonInterface} */
     public function ownerPivot(): array
     {
         return [
