@@ -7,6 +7,7 @@
         '/game_assets/game_sim_3.js?v=1',
         '/game_assets/game_sim_4.js?v=1',
         '/game_assets/game_sim_5.js?v=1',
+        '/game_assets/game_sim_7.js?v=1',
         '/game_assets/game_sim_6.js?v=1',
     ];
 
