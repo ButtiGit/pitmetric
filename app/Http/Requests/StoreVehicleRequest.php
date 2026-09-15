@@ -25,6 +25,7 @@ class StoreVehicleRequest extends FormRequest
             'year' => ['nullable', 'integer', 'min:1900', 'max:'.((int) date('Y') + 1)],
             'identifier' => ['nullable', 'string', 'max:100'],
             'status' => ['required', Rule::in(Vehicle::STATUSES)],
+            'purchase_cost' => ['nullable', 'numeric', 'min:0', 'max:10000000'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
