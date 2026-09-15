@@ -31,6 +31,7 @@ it('creates the managed PitMetric schema through deterministic migrations', func
         'event_entries',
         'event_tasks',
         'event_notes',
+        'event_schedule_items',
     ] as $table) {
         expect(Schema::hasTable($table))->toBeTrue();
     }
@@ -39,6 +40,8 @@ it('creates the managed PitMetric schema through deterministic migrations', func
         ->and(Schema::hasColumn('track_sessions', 'event_entry_id'))->toBeTrue()
         ->and(Schema::hasColumn('expenses', 'event_id'))->toBeTrue()
         ->and(Schema::hasColumn('maintenance_records', 'event_id'))->toBeTrue()
+        ->and(Schema::hasColumn('event_notes', 'kind'))->toBeTrue()
+        ->and(Schema::hasColumns('event_schedule_items', ['event_id', 'event_entry_id', 'session_id', 'starts_at', 'status']))->toBeTrue()
         ->and(Schema::hasColumns('workspace_user', ['role', 'status', 'joined_at']))->toBeTrue();
 });
 
