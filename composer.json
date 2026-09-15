@@ -78,6 +78,7 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php scripts/build-public-media.php",
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
