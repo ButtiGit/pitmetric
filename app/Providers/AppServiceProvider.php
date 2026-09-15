@@ -19,6 +19,7 @@ use App\Models\Session;
 use App\Models\UsageBatch;
 use App\Models\User;
 use App\Policies\WorkspaceOwnedPolicy;
+use App\Services\WorkspaceContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->scoped(WorkspaceContext::class, fn (): WorkspaceContext => new WorkspaceContext);
     }
 
     public function boot(): void
@@ -57,11 +58,26 @@ class AppServiceProvider extends ServiceProvider
             Gate::policy($model, WorkspaceOwnedPolicy::class);
         }
 
-        Gate::define('manage-updates', function (User $user): bool {
-            $editors = config('pitmetric.update_editor_emails', []);
+        Gate::define('manage-updates', fn (User $user): bool => $this->isUpdateEditor($user));
 
-            return is_array($editors)
-                && in_array(strtolower($user->email), $editors, true);
+        Gate::define('team-view', function (User $user): bool {
+            return $this->isUpdateEditor($user)
+                || app(WorkspaceContext::class)->role($user) !== null;
+        });
+
+        Gate::define('team-write', function (User $user): bool {
+            return $this->isUpdateEditor($user)
+                || app(WorkspaceContext::class)->canWrite($user);
+        });
+
+        Gate::define('team-manage', function (User $user): bool {
+            return $this->isUpdateEditor($user)
+                || app(WorkspaceContext::class)->canManage($user);
+        });
+
+        Gate::define('team-own', function (User $user): bool {
+            return $this->isUpdateEditor($user)
+                || app(WorkspaceContext::class)->isOwner($user);
         });
     }
 
@@ -82,5 +98,13 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    private function isUpdateEditor(User $user): bool
+    {
+        $editors = config('pitmetric.update_editor_emails', []);
+
+        return is_array($editors)
+            && in_array(strtolower($user->email), $editors, true);
     }
 }
