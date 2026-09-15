@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 class WorkspaceOwnedPolicy
 {
-    public function __construct(private readonly WorkspaceContext $workspaceContext)
-    {
-    }
+    public function __construct(private readonly WorkspaceContext $workspaceContext) {}
 
     public function viewAny(User $user): bool
     {
