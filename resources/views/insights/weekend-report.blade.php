@@ -23,7 +23,7 @@
                     {{ $it ? 'Torna a Intelligence' : 'Back to Intelligence' }}
                 </a>
                 <div class="flex flex-wrap gap-2">
-                    <a class="pm-ghost-button" href="{{ route('events.report.csv', $event) }}">
+                    <a class="pm-ghost-button" href="{{ route('insights.events.report.csv', $event) }}">
                         {{ $it ? 'Esporta CSV' : 'Export CSV' }}
                     </a>
                     <button class="pm-race-button" type="button" onclick="window.print()">
