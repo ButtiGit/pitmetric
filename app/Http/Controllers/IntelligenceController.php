@@ -64,7 +64,8 @@ class IntelligenceController extends Controller
         Gate::authorize('view', $raceEvent);
 
         $report = $intelligence->weekend($raceEvent);
-        $filename = 'pitmetric-weekend-'.Str::slug($raceEvent->name).'-'.$raceEvent->start_date->format('Y-m-d').'.csv';
+        $eventDate = Carbon::parse($raceEvent->start_date)->format('Y-m-d');
+        $filename = 'pitmetric-weekend-'.Str::slug($raceEvent->name).'-'.$eventDate.'.csv';
 
         return response()->streamDownload(function () use ($report): void {
             $stream = fopen('php://output', 'w');
@@ -110,13 +111,13 @@ class IntelligenceController extends Controller
                 fputcsv($stream, [
                     $session->started_at->format('Y-m-d H:i'),
                     $session->session_type,
-                    $session->eventEntry?->driver?->display_name ?? '',
-                    $session->vehicle?->name ?? '',
+                    $session->eventEntry->driver->display_name ?? '',
+                    $session->vehicle->name ?? '',
                     $session->completed_laps ?? '',
                     number_format($row['distance_meters'] / 1000, 3, '.', ''),
                     $session->duration_seconds !== null ? number_format($session->duration_seconds / 60, 1, '.', '') : '',
                     number_format($row['cost_cents'] / 100, 2, '.', ''),
-                    $session->setupSnapshot?->name ?? $session->setupSnapshot?->technicalSetup?->name ?? '',
+                    $session->setupSnapshot->name ?? $session->setupSnapshot->technicalSetup->name ?? '',
                 ]);
             }
 

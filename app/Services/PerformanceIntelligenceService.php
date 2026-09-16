@@ -212,7 +212,7 @@ class PerformanceIntelligenceService
         }
 
         $laps = max(0, (int) ($session->completed_laps ?? 0));
-        $layoutMeters = max(0, (int) ($session->circuitLayout?->length_meters ?? 0));
+        $layoutMeters = max(0, (int) ($session->circuitLayout->length_meters ?? 0));
 
         return $laps * $layoutMeters;
     }
