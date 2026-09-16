@@ -19,6 +19,8 @@ class WorkspaceContext
 
     private ?bool $teamReady = null;
 
+    private ?bool $technicalSetupReady = null;
+
     /** @var array<int, int|null> */
     private array $currentIds = [];
 
@@ -70,9 +72,16 @@ class WorkspaceContext
         return true;
     }
 
+    public function isTechnicalSetupReady(): bool
+    {
+        return $this->technicalSetupReady ??= $this->isCoreReady()
+            && Schema::hasTable('technical_setups')
+            && Schema::hasTable('setup_snapshots');
+    }
+
     public function isEventsReady(): bool
     {
-        if (! $this->isCoreReady()) {
+        if (! $this->isTechnicalSetupReady()) {
             return false;
         }
 
