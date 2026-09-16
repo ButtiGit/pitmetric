@@ -40,7 +40,17 @@ test('base users see read only platform navigation without database only tools',
         ->assertSee(route('sessions.index'), false)
         ->assertSee(route('maintenance.index'), false)
         ->assertSee(route('expenses.index'), false)
+        ->assertSee('data-pitmetric-context-help', false)
         ->assertDontSee(route('team.index'), false)
         ->assertDontSee(route('insights.index'), false)
         ->assertDontSee(route('control-center.index'), false);
+});
+
+test('database enabled workspace owners see the Control Center navigation', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee(route('control-center.index'), false);
 });

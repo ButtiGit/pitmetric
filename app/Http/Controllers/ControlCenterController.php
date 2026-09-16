@@ -47,6 +47,7 @@ class ControlCenterController extends Controller
         ReadinessService $readiness,
     ): View {
         $user = $this->user($request);
+        Gate::forUser($user)->authorize('team-manage');
         $workspace = $workspaceContext->personal($user);
         $notifications->generate($workspace);
 

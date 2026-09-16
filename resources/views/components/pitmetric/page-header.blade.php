@@ -1,6 +1,8 @@
 @props([
     'title',
     'description' => null,
+    'eyebrow' => null,
+    'help' => null,
     'headingLevel' => 1,
 ])
 
@@ -21,13 +23,23 @@
             </div>
         @endisset
 
-        @if ($headingLevel === 1)
-            <h1 class="{{ $headingClasses }}">{{ $title }}</h1>
-        @elseif ($headingLevel === 2)
-            <h2 class="{{ $headingClasses }}">{{ $title }}</h2>
-        @else
-            <h3 class="{{ $headingClasses }}">{{ $title }}</h3>
+        @if (filled($eyebrow))
+            <p class="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-pm-accent">{{ $eyebrow }}</p>
         @endif
+
+        <div class="flex min-w-0 items-center gap-2">
+            @if ($headingLevel === 1)
+                <h1 class="{{ $headingClasses }}">{{ $title }}</h1>
+            @elseif ($headingLevel === 2)
+                <h2 class="{{ $headingClasses }}">{{ $title }}</h2>
+            @else
+                <h3 class="{{ $headingClasses }}">{{ $title }}</h3>
+            @endif
+
+            @if (filled($help))
+                <x-pitmetric.help-tooltip :text="$help" />
+            @endif
+        </div>
 
         @if (filled($description))
             <p class="mt-2 max-w-3xl break-words text-sm leading-6 text-pm-text-secondary sm:text-base">{{ $description }}</p>

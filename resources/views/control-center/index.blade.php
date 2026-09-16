@@ -22,7 +22,14 @@
                 :description="$it
                     ? 'Audit, backup, documenti privati, alert operativi e readiness del team in un unico punto.'
                     : 'Audit, portable backup, private documents, operational alerts and team readiness in one place.'"
-            />
+                :help="__('help.control_center.page')"
+            >
+                <x-slot:actions>
+                    <span class="inline-flex items-center rounded-full border border-pm-accent/25 bg-pm-accent/10 px-3 py-1.5 text-xs font-semibold text-pm-accent">
+                        {{ $it ? 'Solo owner e manager' : 'Owners and managers only' }}
+                    </span>
+                </x-slot:actions>
+            </x-pitmetric.page-header>
 
             @if (session('status'))
                 <div class="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200">{{ session('status') }}</div>
@@ -39,7 +46,10 @@
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">READINESS</p>
-                        <h2 class="mt-1 text-xl font-bold text-zinc-950 dark:text-white">{{ $it ? 'Pronto per un team esterno' : 'External-team readiness' }}</h2>
+                        <div class="mt-1 flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-zinc-950 dark:text-white">{{ $it ? 'Pronto per un team esterno' : 'External-team readiness' }}</h2>
+                            <x-pitmetric.help-tooltip :text="__('help.control_center.readiness')" position="right" />
+                        </div>
                         <p class="mt-2 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">{{ $it ? 'Controlli minimi prima di mettere il workspace in mano a un team reale.' : 'Minimum checks before handing the workspace to a real external team.' }}</p>
                     </div>
                     <div class="text-right">
@@ -63,7 +73,10 @@
             <div class="grid gap-6 xl:grid-cols-2">
                 <section class="pm-panel p-5">
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">DATA HUB</p>
-                    <h2 class="mt-1 text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Backup portabile' : 'Portable workspace backup' }}</h2>
+                    <div class="mt-1 flex items-center gap-2">
+                        <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Backup portabile' : 'Portable workspace backup' }}</h2>
+                        <x-pitmetric.help-tooltip :text="__('help.control_center.data_hub')" position="right" />
+                    </div>
                     <p class="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">{{ $it ? 'Esporta i dati operativi e le relazioni in JSON. I file privati restano separati. Il restore è accettato solo su un workspace vuoto.' : 'Export operational data and relationships to JSON. Private files stay separate. Restore is accepted only into an empty workspace.' }}</p>
                     @can('team-manage')
                         <a href="{{ route('control-center.export') }}" class="pm-race-button mt-5 inline-flex">{{ $it ? 'Esporta backup' : 'Export backup' }}</a>
@@ -72,7 +85,10 @@
                         <form method="POST" action="{{ route('control-center.import') }}" enctype="multipart/form-data" class="mt-5 space-y-3 border-t border-white/10 pt-5">
                             @csrf
                             <label class="block space-y-1.5"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ $it ? 'File backup' : 'Backup file' }}</span><input class="pm-input block w-full" type="file" name="backup" accept="application/json,.json" required></label>
-                            <p class="text-xs text-amber-300">{{ $it ? 'Gli ID vengono rimappati e le assegnazioni personali dei work order vengono azzerate.' : 'IDs are remapped and personal work-order assignments are reset.' }}</p>
+                            <div class="flex items-start gap-2">
+                                <p class="text-xs leading-5 text-amber-300">{{ $it ? 'Gli ID vengono rimappati e le assegnazioni personali dei work order vengono azzerate.' : 'IDs are remapped and personal work-order assignments are reset.' }}</p>
+                                <x-pitmetric.help-tooltip :text="__('help.control_center.restore')" position="right" />
+                            </div>
                             <button class="pm-ghost-button" type="submit" onclick="return confirm('{{ $it ? 'Importare il backup nel workspace corrente?' : 'Import this backup into the current workspace?' }}')">{{ $it ? 'Importa backup' : 'Import backup' }}</button>
                         </form>
                     @endcan
@@ -80,7 +96,13 @@
 
                 <section class="pm-panel p-5">
                     <div class="flex items-start justify-between gap-3">
-                        <div><p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">OPERATIONAL ALERTS</p><h2 class="mt-1 text-lg font-bold text-zinc-950 dark:text-white">{{ $unreadNotificationCount }} {{ $it ? 'non letti' : 'unread' }}</h2></div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">OPERATIONAL ALERTS</p>
+                            <div class="mt-1 flex items-center gap-2">
+                                <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ $unreadNotificationCount }} {{ $it ? 'non letti' : 'unread' }}</h2>
+                                <x-pitmetric.help-tooltip :text="__('help.control_center.alerts')" position="right" />
+                            </div>
+                        </div>
                         @if ($unreadNotificationCount > 0)<form method="POST" action="{{ route('control-center.notifications.read-all') }}">@csrf<button class="pm-ghost-button" type="submit">{{ $it ? 'Segna letti' : 'Mark read' }}</button></form>@endif
                     </div>
                     <div class="mt-5 space-y-2">
@@ -100,7 +122,10 @@
 
             <section class="pm-panel p-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">PRIVATE DOCUMENTS</p>
-                <h2 class="mt-1 text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Archivio privato del team' : 'Private team archive' }}</h2>
+                <div class="mt-1 flex items-center gap-2">
+                    <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Archivio privato del team' : 'Private team archive' }}</h2>
+                    <x-pitmetric.help-tooltip :text="__('help.control_center.documents')" position="right" />
+                </div>
                 <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{{ $it ? 'I file sono serviti solo attraverso rotte autenticate e restano sul disco privato.' : 'Files are served only through authenticated routes and remain on private storage.' }}</p>
 
                 <div class="mt-5 grid gap-6 xl:grid-cols-[minmax(0,360px)_1fr]">
@@ -109,7 +134,13 @@
                             @csrf
                             <label class="block space-y-1.5"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ $it ? 'Documento' : 'Document' }}</span><input class="pm-input block w-full" type="file" name="document" required></label>
                             <label class="block space-y-1.5"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ $it ? 'Nome' : 'Name' }}</span><input class="pm-input w-full" type="text" name="name" maxlength="180"></label>
-                            <label class="block space-y-1.5"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ $it ? 'Collega a' : 'Attach to' }}</span><select class="pm-input w-full" name="attachable"><option value="">{{ $it ? 'Nessun record specifico' : 'No specific record' }}</option>@foreach ($vehicles as $vehicle)<option value="vehicle:{{ $vehicle->id }}">Vehicle · {{ $vehicle->name }}</option>@endforeach @foreach ($components as $component)<option value="component:{{ $component->id }}">Component · {{ $component->name }}</option>@endforeach @foreach ($events as $event)<option value="event:{{ $event->id }}">Event · {{ $event->name }}</option>@endforeach @foreach ($maintenanceRecords as $record)<option value="maintenance_record:{{ $record->id }}">Maintenance · {{ $record->description }}</option>@endforeach @foreach ($sessions as $session)<option value="session:{{ $session->id }}">Session #{{ $session->id }} · {{ $session->session_type }}</option>@endforeach</select></label>
+                            <label class="block space-y-1.5">
+                                <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                    {{ $it ? 'Collega a' : 'Attach to' }}
+                                    <x-pitmetric.help-tooltip :text="__('help.control_center.attach_to')" position="right" />
+                                </span>
+                                <select class="pm-input w-full" name="attachable"><option value="">{{ $it ? 'Nessun record specifico' : 'No specific record' }}</option>@foreach ($vehicles as $vehicle)<option value="vehicle:{{ $vehicle->id }}">Vehicle · {{ $vehicle->name }}</option>@endforeach @foreach ($components as $component)<option value="component:{{ $component->id }}">Component · {{ $component->name }}</option>@endforeach @foreach ($events as $event)<option value="event:{{ $event->id }}">Event · {{ $event->name }}</option>@endforeach @foreach ($maintenanceRecords as $record)<option value="maintenance_record:{{ $record->id }}">Maintenance · {{ $record->description }}</option>@endforeach @foreach ($sessions as $session)<option value="session:{{ $session->id }}">Session #{{ $session->id }} · {{ $session->session_type }}</option>@endforeach</select>
+                            </label>
                             <label class="block space-y-1.5"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Note</span><textarea class="pm-input min-h-20 w-full" name="notes" maxlength="2000"></textarea></label>
                             <button class="pm-race-button" type="submit">{{ $it ? 'Carica in privato' : 'Upload privately' }}</button>
                         </form>
@@ -131,7 +162,10 @@
             <section class="pm-panel overflow-hidden">
                 <div class="border-b border-white/10 p-5">
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">AUDIT TRAIL</p>
-                    <h2 class="mt-1 text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Chi ha cambiato cosa e quando' : 'Who changed what and when' }}</h2>
+                    <div class="mt-1 flex items-center gap-2">
+                        <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Chi ha cambiato cosa e quando' : 'Who changed what and when' }}</h2>
+                        <x-pitmetric.help-tooltip :text="__('help.control_center.audit')" position="right" />
+                    </div>
                     <form method="GET" action="{{ route('control-center.index') }}" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <input class="pm-input xl:col-span-2" type="search" name="q" value="{{ $activityFilters['q'] ?? '' }}" placeholder="{{ $it ? 'Record, tipo o azione' : 'Record, type or action' }}">
                         <select class="pm-input" name="action"><option value="">{{ $it ? 'Tutte le azioni' : 'All actions' }}</option>@foreach (['created','updated','archived','deleted','restored','data_exported','data_imported'] as $action)<option value="{{ $action }}" @selected(($activityFilters['action'] ?? '') === $action)>{{ $action }}</option>@endforeach</select>
