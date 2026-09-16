@@ -239,8 +239,11 @@ class ControlCenterController extends Controller
         return Storage::disk($document->disk)->download($document->path, $document->original_name);
     }
 
-    public function destroyDocument(Request $request, Document $document, WorkspaceContext $workspaceContext): RedirectResponse
-    {
+    public function destroyDocument(
+        Request $request,
+        Document $document,
+        WorkspaceContext $workspaceContext,
+    ): RedirectResponse {
         $user = $this->user($request);
         $workspaceContext->personal($user);
         Gate::forUser($user)->authorize('team-write');
@@ -248,17 +251,20 @@ class ControlCenterController extends Controller
         Storage::disk($document->disk)->delete($document->path);
         $document->delete();
 
-        return to_route('control-center.index')->with('status', 'Private document deleted.');
+        return to_route('control-center.index')->with('status', 'Private document removed.');
     }
 
-    public function readNotification(Request $request, string $notification, WorkspaceContext $workspaceContext): RedirectResponse
-    {
+    public function readNotification(
+        Request $request,
+        string $notification,
+        WorkspaceContext $workspaceContext,
+    ): RedirectResponse {
         $user = $this->user($request);
         $workspace = $workspaceContext->personal($user);
-        $databaseNotification = $user->notifications()->whereKey($notification)->firstOrFail();
+        $record = $user->notifications()->findOrFail($notification);
 
-        abort_unless((int) ($databaseNotification->data['workspace_id'] ?? 0) === (int) $workspace->getKey(), 404);
-        $databaseNotification->markAsRead();
+        abort_unless((int) ($record->data['workspace_id'] ?? 0) === (int) $workspace->getKey(), 404);
+        $record->markAsRead();
 
         return to_route('control-center.index');
     }
@@ -273,16 +279,16 @@ class ControlCenterController extends Controller
             ->filter(fn (DatabaseNotification $notification): bool => (int) ($notification->data['workspace_id'] ?? 0) === (int) $workspace->getKey())
             ->each(fn (DatabaseNotification $notification) => $notification->markAsRead());
 
-        return to_route('control-center.index');
+        return to_route('control-center.index')->with('status', 'Operational alerts marked as read.');
     }
 
     private function assertAttachableExists(string $type, int $id): void
     {
-        $model = self::ATTACHABLE_TYPES[$type] ?? null;
+        $modelClass = self::ATTACHABLE_TYPES[$type] ?? null;
 
-        if ($model === null || ! $model::query()->whereKey($id)->exists()) {
+        if ($modelClass === null || ! $modelClass::query()->whereKey($id)->exists()) {
             throw ValidationException::withMessages([
-                'attachable' => 'The selected record is not available in this workspace.',
+                'attachable_id' => 'The selected PitMetric record is not available in this workspace.',
             ]);
         }
     }
