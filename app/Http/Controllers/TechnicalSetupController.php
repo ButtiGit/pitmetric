@@ -158,8 +158,9 @@ class TechnicalSetupController extends Controller
         return $rules;
     }
 
-    /** @param array<string, mixed> $validated
-     *  @return array<string, int|float|string>
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, int|float|string>
      */
     private function valuesFrom(array $validated): array
     {
