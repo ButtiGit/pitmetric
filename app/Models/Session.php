@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'event_id',
@@ -64,6 +65,12 @@ class Session extends Model
     public function usageValues(): HasMany
     {
         return $this->hasMany(SessionUsageValue::class);
+    }
+
+    /** @return HasOne<SetupSnapshot, $this> */
+    public function setupSnapshot(): HasOne
+    {
+        return $this->hasOne(SetupSnapshot::class);
     }
 
     protected function casts(): array
