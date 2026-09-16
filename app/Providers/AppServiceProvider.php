@@ -14,6 +14,7 @@ use App\Models\EventTask;
 use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
+use App\Models\MaintenanceWorkOrder;
 use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
@@ -52,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
             Expense::class,
             MaintenanceRecord::class,
             MaintenanceSchedule::class,
+            MaintenanceWorkOrder::class,
             RaceEvent::class,
             Session::class,
             TechnicalSetup::class,

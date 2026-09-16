@@ -122,6 +122,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
 
             Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
+            Route::post('/maintenance/work-orders', [MaintenanceController::class, 'storeWorkOrder'])
+                ->name('maintenance.work-orders.store');
+            Route::patch('/maintenance/work-orders/{maintenanceWorkOrder}', [MaintenanceController::class, 'updateWorkOrder'])
+                ->name('maintenance.work-orders.update');
+            Route::post('/maintenance/work-orders/{maintenanceWorkOrder}/complete', [MaintenanceController::class, 'completeWorkOrder'])
+                ->name('maintenance.work-orders.complete');
             Route::post('/maintenance/{maintenanceSchedule}/complete', [MaintenanceController::class, 'complete'])
                 ->name('maintenance.complete');
 

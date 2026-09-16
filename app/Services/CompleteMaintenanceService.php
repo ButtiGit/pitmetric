@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
+use App\Models\MaintenanceWorkOrder;
 use App\Models\TrackerResetEvent;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -45,6 +46,16 @@ class CompleteMaintenanceService
                 'reason' => $description,
                 'created_by' => $user->getKey(),
             ]);
+
+            MaintenanceWorkOrder::withoutGlobalScope('workspace')
+                ->where('workspace_id', $lockedSchedule->workspace_id)
+                ->where('maintenance_schedule_id', $lockedSchedule->getKey())
+                ->whereIn('status', MaintenanceWorkOrder::OPEN_STATUSES)
+                ->update([
+                    'status' => 'completed',
+                    'completed_at' => $performedAt,
+                    'maintenance_record_id' => $record->getKey(),
+                ]);
 
             if ($costCents !== null && $costCents > 0) {
                 Expense::create([
