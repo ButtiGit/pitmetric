@@ -120,7 +120,12 @@ class DataHubController extends Controller
         ];
 
         return response()->streamDownload(
-            static fn () => print(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)),
+            static function () use ($payload): void {
+                echo json_encode(
+                    $payload,
+                    JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+                );
+            },
             'pitmetric-workspace-backup-'.$workspaceId.'-'.now()->format('Y-m-d-His').'.json',
             ['Content-Type' => 'application/json; charset=UTF-8'],
         );
