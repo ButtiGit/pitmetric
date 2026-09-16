@@ -43,6 +43,7 @@ it('keeps database-enabled dashboard and garage reachable while the workspace sc
     $workspaceContext = Mockery::mock(WorkspaceContext::class);
     $workspaceContext->shouldReceive('isReady')->twice()->andReturnFalse();
     $workspaceContext->shouldReceive('isCoreReady')->once()->andReturnFalse();
+    $workspaceContext->shouldReceive('canManage')->andReturnTrue()->byDefault();
     $this->app->instance(WorkspaceContext::class, $workspaceContext);
 
     $this->actingAs($user)
