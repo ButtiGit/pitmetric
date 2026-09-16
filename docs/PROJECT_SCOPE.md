@@ -2,116 +2,200 @@
 
 ## Document authority
 
-- `AGENTS.md` contains binding development rules.
+- `AGENTS.md` contains binding development and quality rules.
 - `PRODUCT_STRATEGY.md` defines product direction.
-- `PROJECT_SCOPE.md` defines MVP boundaries.
-- `FUNCTIONAL_SPECIFICATION.md` defines expected functional behaviour.
-- `CORE_USER_FLOW.md` defines the critical end-to-end workflow.
+- `PROJECT_SCOPE.md` defines the current Pilot Release boundary.
+- `FUNCTIONAL_SPECIFICATION.md` and `CORE_USER_FLOW.md` contain detailed historical specifications. Where they still describe the original single-user MVP, this document and the implemented multi-workspace product model take precedence until those documents are refreshed.
+
+## Current milestone
+
+**PitMetric Pilot 0.1 — Security, Reliability & First Team**
+
+The objective of this milestone is to make PitMetric safe, stable and useful enough for one real motorsport team to use with real operational data.
+
+The first team will be contacted and onboarded manually. PitMetric does **not** need automated sales, automated billing or a fully self-service commercial funnel before this pilot starts.
 
 ## Product
 
-PitMetric is a web application for amateur owner-drivers who personally manage one or two karts.
+PitMetric is technical operations software for small motorsport teams and serious owner-drivers. Karting is the first pilot market because it provides a realistic environment in which component usage, maintenance, setup, event preparation and costs matter while a small team can still adopt the product without enterprise procurement.
 
-The MVP gives each user one personal workspace. Every PitMetric domain record belongs to that workspace; team collaboration, invitations, and multiple roles are not part of the product.
+PitMetric's job is to connect operational facts that are otherwise split between memory, paper, spreadsheets, messaging apps and disconnected files.
 
 ## Main problem
 
-An owner-driver needs a reliable answer to four connected questions:
+A team needs reliable answers to connected questions such as:
 
-- How much has each component been used?
-- Which maintenance schedule is approaching or overdue?
-- What maintenance record has already been completed?
-- What does every hour of track use really cost?
+- What vehicle and configuration are we running?
+- Which components are installed and how much have they been used?
+- What maintenance is due, approaching or already completed?
+- What happened in each session and event?
+- Which technical setup was used and what changed?
+- What did the activity cost?
+- Which tasks, documents or issues need attention before the next track activity?
 
-Those facts are commonly split between memory, notes, spreadsheets, and messages. PitMetric turns track-session data into timely maintenance information and cost analysis.
+PitMetric should provide those answers from one auditable operational history rather than behave like a collection of unrelated CRUD screens.
 
 ## Value proposition
 
-> PitMetric helps amateur kart owners know what to service, when to service it, and how much every hour on track really costs.
+> PitMetric gives a small motorsport team one trustworthy technical history for its vehicle, components, configurations, sessions, maintenance, events, setups and costs so the team knows what happened, what is due and what needs attention next.
 
-The core product flow is:
+The pilot's core operational loop is:
 
-`track session → component usage → maintenance status → maintenance record → cost analysis`.
+`team/workspace → vehicle → components/installations → configuration → event/session/setup → usage → maintenance → costs/documents → operational insight`
 
-## MVP modules
+## Pilot users and access model
 
-- authentication;
-- email verification;
-- one personal workspace per user;
-- onboarding;
-- garage and kart management;
-- component management;
-- component installation history;
-- maintenance schedules;
-- track sessions;
-- component usage attribution;
-- maintenance records;
-- expenses; and
-- dashboard.
+The Pilot Release supports a real team workflow rather than the former single-user-only MVP assumption.
 
-## Explicit exclusions
+In scope are:
 
-The following are outside the MVP. They are future possibilities only if an approved specification explicitly changes this scope:
+- workspaces/teams as data-isolation boundaries;
+- multiple users in a workspace;
+- invitations;
+- workspace switching where supported;
+- role-based access and read-only roles already implemented; and
+- an owner/manager operating model for sensitive team actions.
 
-- team collaboration, invitations, multiple roles, and multiple workspaces per user;
-- telemetry and MyChron or Alfano integrations;
-- artificial intelligence features, race strategy, and setup recommendations;
-- subscriptions, payments, and public APIs;
-- native mobile applications;
-- social features and marketplaces;
-- inventory management;
-- championships and sponsor management;
-- Formula Student-specific workflows; and
-- sim-racing-specific workflows.
+Every user must only see and act on data permitted by their current workspace membership and role.
 
-## Technical direction
+## In-scope Pilot capabilities
 
-- Laravel 13 with PHP 8.3-compatible code;
-- Livewire 4 single-file components, preserving the existing `⚡` naming convention and `pages::` aliases;
-- Flux 2 and the installed Flux overrides;
-- Tailwind CSS 4 with CSS-first configuration, without introducing a Tailwind configuration file unless technically necessary;
-- Pest using the existing `test()` style;
-- SQLite for local development; and
-- a production schema compatible with MySQL.
+The current Pilot Release may refine and stabilize the capabilities already present in the repository:
 
-The application remains Laravel, Livewire, Blade, and Flux. It does not introduce another frontend framework.
+### Identity, team and security
+
+- registration, login, logout, password reset and email verification;
+- security/profile settings and supported two-factor authentication;
+- workspace/team creation and selection;
+- team membership, invitations and roles;
+- application-level authorization and tenant isolation.
+
+### Technical asset history
+
+- garage/vehicles;
+- drivers;
+- component types and components;
+- component installation/removal history;
+- usage metrics and usage tracking;
+- vehicle configurations and immutable/versioned configuration history.
+
+### Track activity and engineering
+
+- circuits/layouts where supported;
+- track sessions and finalization;
+- session/component usage attribution;
+- technical setups and setup snapshots;
+- deterministic performance/operational intelligence already implemented.
+
+### Maintenance and reliability
+
+- maintenance schedules and status;
+- maintenance records and reset events;
+- maintenance work orders/workboard;
+- operational alerts and readiness information.
+
+### Event operations
+
+- race weekends/events;
+- entries;
+- event tasks;
+- event notes;
+- event schedule items;
+- trackside/mobile event workflows already present.
+
+### Costs, records and collaboration
+
+- expenses and cost history;
+- documents and authorized private downloads;
+- audit trail;
+- dashboard and Control Center;
+- Data Hub export/import and workspace backup/restore workflows already implemented.
+
+## Pilot feature freeze
+
+The product surface above is sufficient to begin preparing for a first real team. Until pilot feedback proves otherwise, **do not add new macro product areas**.
+
+Work is allowed and encouraged when it improves the existing Pilot Release through:
+
+- security hardening;
+- tenant-isolation and authorization coverage;
+- data integrity and transactional safety;
+- backup and recovery;
+- monitoring and operational reliability;
+- bug fixes;
+- performance;
+- mobile/trackside usability;
+- accessibility;
+- clearer onboarding and help;
+- maintainability/refactoring of existing functionality;
+- tests; and
+- workflow improvements directly observed during the pilot.
+
+## Explicitly deferred
+
+These are not requirements for the first-team pilot unless the pilot itself demonstrates that one is necessary to continue:
+
+- automated checkout, subscriptions and billing;
+- automated customer acquisition or self-service sales;
+- public third-party APIs;
+- native iOS/Android applications;
+- social feeds or marketplaces;
+- a broad championship-management suite;
+- a sponsor/CRM suite;
+- generative AI features or speculative AI setup/race-strategy recommendations;
+- full live telemetry platforms or hardware integrations such as MyChron/Alfano ingestion;
+- unrelated sim-racing/game features inside the core product; and
+- speculative enterprise features for customers PitMetric does not yet have.
 
 ## Data and integrity boundaries
 
-- Monetary amounts are integer cents.
-- Durations and component usage are integer minutes.
-- Lap times are integer milliseconds.
-- Historical karts, component installations, track sessions, maintenance records, and expenses stay auditable.
-- Historical entities are archived in preference to physical deletion where appropriate.
-- A browser-supplied model ID is never trusted without authorization and workspace ownership checks.
-- Session creation, session editing, session deletion, component installation changes, and maintenance completion use database transactions.
+- Workspace isolation is non-negotiable: a user must never obtain another workspace's private operational data by changing an identifier or URL.
+- Relationships between workspace-owned records must remain inside the same workspace.
+- Browser-supplied model IDs are never trusted without authorization and workspace checks.
+- Historical technical and operational records remain auditable.
+- Multi-record operations that would corrupt history if partially completed use database transactions.
+- Monetary, duration, usage and lap-time values keep their documented canonical integer representations.
+- Historical entities should be archived or transitioned through auditable states rather than physically deleted when deletion would destroy useful history.
+- Customer documents and backups are private data and require explicit authorization to access.
 
-## Completion criteria
+## Technical direction
 
-### Functionally complete
+- Laravel 13;
+- PHP version required by `composer.json` (currently PHP 8.4.x-compatible);
+- Livewire 4 and Flux 2;
+- Tailwind CSS 4;
+- Pest 4;
+- PostgreSQL-compatible production design, while preserving supported local development workflows;
+- Laravel policies/gates, workspace scoping and explicit authorization for protected records; and
+- no second frontend framework added without a demonstrated need.
 
-The MVP is functionally complete when a verified owner-driver can, within their personal workspace:
+## Pilot readiness definition
 
-1. register, verify their email, sign in, recover their password, and complete onboarding;
-2. create, view, edit, and archive a kart;
-3. create components and retain component installation history;
-4. create maintenance schedules and see approaching or overdue maintenance;
-5. create, edit, and delete track sessions with correct component usage attribution;
-6. complete maintenance without losing historical component usage;
-7. create optional expenses and see a safe, accurate cost-per-hour result; and
-8. view current maintenance, session, cost, and recent-activity information on the dashboard.
+PitMetric is ready to invite the first real team when the existing product can be trusted with real pilot data. At minimum:
 
-Every workflow must provide loading, validation, success, error, and empty states. Destructive actions require confirmation. The product must remain usable at a 320px viewport, and the primary mobile action is **Register Session**.
+1. cross-workspace access attempts are covered and denied for protected resources;
+2. role permissions are enforced consistently on sensitive actions;
+3. production HTTPS/session/security settings are hardened;
+4. private documents and uploads cannot be accessed outside their authorized workspace;
+5. database and customer-file backups exist and a restore has been tested;
+6. errors can be detected through production monitoring/logging;
+7. destructive and multi-record workflows cannot easily leave corrupted partial state;
+8. critical email/invitation/account-recovery flows work end to end;
+9. the primary team workflows are usable on a phone at the track;
+10. a complete internal simulated race-weekend workflow has been executed without needing manual database intervention; and
+11. a staging environment or equivalent safe validation path exists before risky production changes.
 
-Each implemented workflow requires feature coverage. Important calculations require unit coverage.
+## Pilot validation
 
-### Validated by real users
+The first pilot is intentionally high-touch. Success does not require immediate revenue.
 
-Technical completion alone does not validate the product. Before expanding the MVP, PitMetric should demonstrate:
+The first team should be manually onboarded and observed. The most useful evidence is:
 
-- at least 10 conversations with amateur kart owners or drivers;
-- at least 5 people who already track relevant maintenance, session, or cost data;
-- at least 3 people who try the prototype;
-- at least 3 users who register more than one track session;
-- at least 1 user who continues using PitMetric for four weeks; and
-- at least 1 user who says that losing PitMetric would remove meaningful value.
+- whether the team can create and maintain its real technical structure;
+- whether it records real sessions/events more than once;
+- whether maintenance/readiness information changes a real action;
+- which parts of the workflow still happen in spreadsheets, messages or paper;
+- whether PitMetric is used again on the next track day/weekend; and
+- whether the team would miss the product if access disappeared.
+
+New macro features should be prioritized only after this evidence exists.

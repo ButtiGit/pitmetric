@@ -178,22 +178,24 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Product
 
-- PitMetric is a Laravel 13, Livewire 4 and Flux 2 application for amateur kart owners.
-- The core product flow is: track session → component usage → maintenance status → maintenance record → cost analysis.
-- The first MVP is designed for one personal workspace per user.
-- Team collaboration, invitations and multiple roles are not part of the MVP.
+- PitMetric is a Laravel 13, Livewire 4 and Flux 2 web application for small motorsport teams and serious owner-drivers, with karting as the first pilot market.
+- The current milestone is **PitMetric Pilot 0.1 — Security, Reliability & First Team**.
+- The immediate goal is not automated sales or self-service commercialization. The goal is to make the existing product safe, stable, understandable and useful for one manually onboarded real team.
+- The core operational loop is: workspace/team → vehicle → components/installations → configuration → event/session/setup → usage → maintenance → costs/documents → operational insight.
+- Team collaboration, invitations, workspace switching and role-based access are existing product capabilities and are inside the current pilot scope.
+- `docs/PROJECT_SCOPE.md` is the authority for the current Pilot Release boundary. Older single-user assumptions that remain in detailed legacy specifications must not be used to remove or disable already implemented pilot capabilities.
 
 ## Existing project conventions
 
 - Preserve the installed Laravel Livewire starter-kit architecture.
-- Preserve Livewire single-file components and the existing `⚡` filename convention.
-- Preserve `pages::` Livewire aliases.
+- Preserve Livewire single-file components and the existing `⚡` filename convention where already used.
+- Preserve `pages::` Livewire aliases where already used.
 - Preserve Flux UI components and existing Flux overrides.
 - Preserve `wire:navigate`, persisted toast behaviour and dark-mode support.
 - Preserve Tailwind CSS 4 CSS-first configuration.
 - Do not introduce a Tailwind configuration file unless technically necessary.
 - Do not use Tailwind CSS 3 directives or conventions.
-- Keep code compatible with PHP 8.3 even if the local environment uses PHP 8.4.
+- Keep code compatible with the PHP version required by `composer.json`.
 - Use Pest with the existing `test()` style.
 - Preserve UTF-8 and LF formatting.
 - Be cautious when editing Unicode filenames on Windows.
@@ -202,39 +204,60 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Use Laravel, Livewire, Blade and Flux.
 - Do not introduce React, Vue or another frontend framework.
-- Prefer single-file Livewire components where consistent with the existing codebase.
-- Keep critical business logic out of large Livewire components.
-- Use action or service classes for transactional domain workflows.
-- Use Laravel policies and workspace-scoped queries.
-- Every PitMetric domain record must belong to the authenticated user's workspace.
-- Never trust a model ID received from the browser without checking authorization and workspace ownership.
-- Use database transactions for:
-  - session creation;
-  - session editing;
-  - session deletion;
-  - component installation changes;
-  - maintenance completion.
-- Store monetary values as integer cents.
-- Store durations and component usage as integer minutes.
-- Store lap times as integer milliseconds.
-- Prefer archiving historical entities instead of physically deleting them.
+- Prefer existing application patterns before introducing new abstractions.
+- Keep critical business logic out of large controllers and Livewire components; use focused action or service classes for transactional domain workflows.
+- Use Laravel policies, authorization gates and workspace-scoped queries for protected domain records.
+- Every workspace-owned PitMetric record must be isolated from other workspaces.
+- Never trust a model ID received from the browser without checking authorization, membership and workspace ownership.
+- Every relationship between workspace-owned entities must preserve the same-workspace invariant.
+- Use database transactions for multi-record operations whose partial completion would corrupt history, usage, maintenance, configuration, event or financial data.
+- Store monetary values as integer cents unless an existing schema explicitly documents another canonical representation.
+- Store canonical durations and component usage using the established integer units in the domain model.
+- Store lap times using the established integer millisecond representation where applicable.
+- Prefer archiving or auditable state transitions over physical deletion for historical operational records.
 
-## MVP limits
+## Pilot Release boundary
 
-Do not implement the following unless a later approved specification explicitly requests them:
+The current codebase already contains the product surface to validate with the first team. Until the first pilot produces evidence that another macro capability is necessary, development should focus on:
 
-- team collaboration;
-- invitations;
-- multiple roles;
-- telemetry;
-- artificial intelligence features inside the product;
-- subscriptions;
-- payments;
-- public APIs;
+- security and tenant isolation;
+- reliability, backups and recovery;
+- correctness and data integrity;
+- test coverage and regression prevention;
+- performance and query efficiency;
+- mobile/trackside usability;
+- accessibility and clear error handling;
+- onboarding and first-use clarity;
+- maintainability of existing workflows; and
+- bugs or workflow improvements discovered during pilot use.
+
+Existing pilot capabilities that may be improved but should not be removed merely because older documentation omitted them include:
+
+- workspaces, teams, invitations and roles;
+- vehicles, drivers, components and installation history;
+- configurations and configuration versions;
+- track sessions and usage attribution;
+- maintenance schedules, records and work orders;
+- expenses and cost history;
+- race weekends/events, entries, tasks, schedules and notes;
+- technical setups and snapshots;
+- documents;
+- dashboard and Control Center;
+- deterministic performance/operational intelligence;
+- Data Hub import/export;
+- audit trail and operational notifications; and
+- trackside/mobile workflows already present in the application.
+
+Do not add a new macro product area unless the user explicitly approves a scope change. Deferred examples include:
+
+- automated billing, subscriptions and self-service sales;
+- public APIs for third parties;
 - native mobile applications;
-- social features;
-- marketplaces;
-- undocumented features.
+- social feeds and marketplaces;
+- broad championship or sponsor-management suites;
+- generative AI or speculative setup/race-strategy recommendations;
+- live telemetry platforms or hardware integrations that are not required to unblock the first pilot; and
+- unrelated sim-racing/game functionality inside the core operational product.
 
 ## Design direction
 
@@ -248,7 +271,7 @@ Do not implement the following unless a later approved specification explicitly 
 - Do not copy Nintendo or Mario Kart assets, branding, characters, fonts, sounds or exact layouts.
 - Prioritize readability and professional credibility over decorative effects.
 - Design mobile-first and support a 320px viewport.
-- The primary mobile action is Register Session.
+- Prioritize trackside tasks and the next operational action on small screens.
 - Never use colour as the only way to communicate a state.
 - Forms must have visible labels.
 - Destructive actions require confirmation.
@@ -260,17 +283,14 @@ Do not implement the following unless a later approved specification explicitly 
 - Do not edit `.env`.
 - Do not commit secrets.
 - Do not commit `vendor`, `node_modules`, SQLite databases or generated build artefacts unless already intentionally tracked.
-- Add feature tests for every implemented workflow.
-- Add unit tests for important calculations.
+- Add or update feature tests for implemented workflows and regression fixes.
+- Add unit/service-level tests for important calculations and domain rules.
+- Add explicit authorization and cross-workspace tests whenever a protected resource or relationship changes.
 - Avoid unrelated refactors.
 - Inspect the current repository before adding files or choosing paths.
+- Documentation-only changes do not require application tests or frontend builds unless they change executable project configuration.
 
-Before completing every coding task, run:
-
-- php artisan test
-- vendor/bin/pint
-- vendor/bin/pint --test
-- npm run build
+Before completing coding tasks that modify executable application code, run the relevant affected tests and the repository's formatting/build checks required by the change.
 
 For every completed task report:
 
@@ -278,5 +298,5 @@ For every completed task report:
 - architectural decisions;
 - test results;
 - formatting result;
-- frontend build result;
+- frontend build result; and
 - any unresolved risk.
