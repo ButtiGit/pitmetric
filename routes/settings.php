@@ -17,3 +17,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ])
         ->name('security.edit');
 });
+
+require __DIR__.'/productization.php';

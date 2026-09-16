@@ -12,6 +12,7 @@ use App\Models\Session;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\MaintenanceHealthService;
+use App\Services\OperationalNotificationService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -23,6 +24,7 @@ class DashboardController extends Controller
         Request $request,
         WorkspaceContext $workspaceContext,
         MaintenanceHealthService $healthService,
+        OperationalNotificationService $operationalNotifications,
     ): View {
         $user = $request->user();
 
@@ -36,7 +38,8 @@ class DashboardController extends Controller
         $eventsReady = $domainReady && $workspaceContext->isEventsReady();
 
         if ($baseReady) {
-            $workspaceContext->personal($user);
+            $workspace = $workspaceContext->personal($user);
+            $operationalNotifications->generate($workspace);
         }
 
         $vehicleCount = $baseReady ? Vehicle::query()->where('status', 'active')->count() : 0;

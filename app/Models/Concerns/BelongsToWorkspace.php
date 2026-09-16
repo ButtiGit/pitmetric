@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Models\User;
+use App\Services\AuditTrailService;
 use App\Services\WorkspaceContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -50,5 +51,13 @@ trait BelongsToWorkspace
 
             $model->setAttribute('workspace_id', $workspaceId);
         });
+
+        static::created(fn (Model $model) => app(AuditTrailService::class)->created($model));
+        static::updated(fn (Model $model) => app(AuditTrailService::class)->updated($model));
+        static::deleted(fn (Model $model) => app(AuditTrailService::class)->deleted($model));
+
+        if (method_exists(static::class, 'restored')) {
+            static::restored(fn (Model $model) => app(AuditTrailService::class)->restored($model));
+        }
     }
 }
