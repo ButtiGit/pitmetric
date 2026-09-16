@@ -84,7 +84,7 @@ class DataHubService
     }
 
     /**
-     * @param array<string, mixed> $backup
+     * @param  array<string, mixed>  $backup
      * @return array<string, int>
      */
     public function import(Workspace $workspace, User $user, array $backup): array
@@ -305,7 +305,7 @@ class DataHubService
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param  list<array<string, mixed>>  $rows
      * @return list<int>
      */
     private function ids(array $rows): array
@@ -314,7 +314,7 @@ class DataHubService
     }
 
     /**
-     * @param list<int> $parentIds
+     * @param  list<int>  $parentIds
      * @return list<array<string, mixed>>
      */
     private function children(string $table, string $column, array $parentIds): array
@@ -332,7 +332,7 @@ class DataHubService
     }
 
     /**
-     * @param array<string, mixed> $backup
+     * @param  array<string, mixed>  $backup
      */
     private function validateBackup(array $backup): void
     {
@@ -367,7 +367,7 @@ class DataHubService
     }
 
     /**
-     * @param array<string, mixed> $backup
+     * @param  array<string, mixed>  $backup
      * @return array<int, int>
      */
     private function metricMap(array $backup): array
@@ -395,8 +395,8 @@ class DataHubService
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
-     * @param callable(array<string, mixed>): array<string, mixed> $transform
+     * @param  list<array<string, mixed>>  $rows
+     * @param  callable(array<string, mixed>): array<string, mixed>  $transform
      * @return array<int, int>
      */
     private function insertRows(string $table, array $rows, callable $transform): array
@@ -420,7 +420,7 @@ class DataHubService
     }
 
     /**
-     * @param array<string, mixed> $row
+     * @param  array<string, mixed>  $row
      * @return array<string, mixed>
      */
     private function prepare(array $row, ?int $workspaceId, ?int $userId): array
@@ -465,7 +465,7 @@ class DataHubService
     }
 
     /**
-     * @param array<string, array<int, int>> $maps
+     * @param  array<string, array<int, int>>  $maps
      */
     private function relatedId(mixed $type, mixed $oldId, array $maps): ?int
     {

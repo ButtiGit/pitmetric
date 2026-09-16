@@ -56,8 +56,8 @@ class AuditTrailService
     }
 
     /**
-     * @param array<string, mixed>|null $before
-     * @param array<string, mixed>|null $after
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>|null  $after
      */
     public function custom(
         int $workspaceId,
@@ -80,8 +80,8 @@ class AuditTrailService
     }
 
     /**
-     * @param array<string, mixed>|null $before
-     * @param array<string, mixed>|null $after
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>|null  $after
      */
     private function recordModel(Model $model, string $action, ?array $before, ?array $after): void
     {
@@ -103,8 +103,8 @@ class AuditTrailService
     }
 
     /**
-     * @param array<string, mixed>|null $before
-     * @param array<string, mixed>|null $after
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>|null  $after
      */
     private function write(
         int $workspaceId,

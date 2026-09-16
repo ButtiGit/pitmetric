@@ -117,8 +117,8 @@ class OperationalNotificationService
     }
 
     /**
-     * @param Collection<int, User> $recipients
-     * @param array<string, mixed> $payload
+     * @param  Collection<int, User>  $recipients
+     * @param  array<string, mixed>  $payload
      */
     private function notify(Collection $recipients, array $payload): int
     {
