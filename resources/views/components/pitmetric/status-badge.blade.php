@@ -1,11 +1,24 @@
 @props([
-    'label',
+    'label' => null,
+    'status' => null,
     'variant' => 'neutral',
     'symbol' => null,
 ])
 
 @php
-    $badgeVariant = in_array($variant, ['neutral', 'success', 'warning', 'danger', 'info'], true) ? $variant : 'neutral';
+    $statusVariant = match ($status) {
+        'active', 'completed', 'done', 'healthy', 'available' => 'success',
+        'in_progress', 'warning' => 'warning',
+        'blocked', 'overdue', 'failed' => 'danger',
+        'planned', 'pending', 'todo' => 'info',
+        default => 'neutral',
+    };
+
+    $requestedVariant = $variant === 'neutral' && $status !== null ? $statusVariant : $variant;
+    $badgeVariant = in_array($requestedVariant, ['neutral', 'success', 'warning', 'danger', 'info'], true)
+        ? $requestedVariant
+        : 'neutral';
+    $resolvedLabel = $label ?? ($status !== null ? ucwords(str_replace('_', ' ', $status)) : '—');
     $hasSymbol = $symbol !== null && $symbol !== '';
 
     $variantClasses = [
@@ -37,5 +50,5 @@
         {{ $hasSymbol ? $symbol : $defaultSymbols[$badgeVariant] }}
     </span>
 
-    <span class="min-w-0 break-words">{{ $label }}</span>
+    <span class="min-w-0 break-words">{{ $resolvedLabel }}</span>
 </span>

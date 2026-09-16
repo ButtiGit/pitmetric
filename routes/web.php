@@ -6,6 +6,7 @@ use App\Http\Controllers\ComponentInstallationController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NewsletterPreferencesController;
 use App\Http\Controllers\PublicUpdateController;
@@ -81,6 +82,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/team/invitations/{teamInvitation}', [TeamController::class, 'revokeInvitation'])
             ->name('team.invitations.destroy');
         Route::patch('/team/members/{member}', [TeamController::class, 'updateMember'])->name('team.members.update');
+
+        Route::get('/insights', [IntelligenceController::class, 'index'])->name('insights.index');
+        Route::get('/insights/events/{raceEvent}', [IntelligenceController::class, 'weekendReport'])
+            ->name('insights.events.report');
+        Route::get('/insights/events/{raceEvent}/csv', [IntelligenceController::class, 'weekendReportCsv'])
+            ->name('insights.events.report.csv');
 
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
 
