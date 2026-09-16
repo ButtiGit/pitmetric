@@ -7,6 +7,7 @@ use App\Models\ConfigurationVersion;
 use App\Models\Driver;
 use App\Models\MaintenanceSchedule;
 use App\Models\RaceEvent;
+use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\MaintenanceHealthService;
@@ -121,6 +122,7 @@ class RaceEventController extends Controller
             'sessions.configurationVersion.components',
             'sessions.eventEntry.driver',
             'sessions.usageValues.metric',
+            'sessions.setupSnapshot.technicalSetup',
             'scheduleItems.eventEntry.driver',
             'scheduleItems.eventEntry.vehicle',
             'scheduleItems.session',
@@ -175,6 +177,12 @@ class RaceEventController extends Controller
                 ->whereHas('configuration', fn ($query) => $query->where('workspace_id', $workspace->getKey())->where('status', 'active'))
                 ->with(['configuration.vehicle', 'components'])
                 ->orderByDesc('id')
+                ->get(),
+            'setups' => TechnicalSetup::query()
+                ->with('vehicle')
+                ->where('status', 'active')
+                ->orderBy('vehicle_id')
+                ->orderBy('name')
                 ->get(),
             'maintenanceSchedules' => $maintenanceSchedules,
             'maintenanceStates' => $maintenanceHealth['states'],
