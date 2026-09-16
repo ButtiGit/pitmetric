@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureDatabaseAccess;
+use App\Http\Middleware\OperationalLogContext;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        $middleware->appendToGroup('web', [SetLocale::class]);
+        $middleware->appendToGroup('web', [SetLocale::class, OperationalLogContext::class]);
         $middleware->alias([
             'database.access' => EnsureDatabaseAccess::class,
         ]);

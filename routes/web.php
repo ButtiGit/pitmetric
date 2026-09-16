@@ -5,10 +5,12 @@ use App\Http\Controllers\ComponentController;
 use App\Http\Controllers\ComponentInstallationController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataHubController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NewsletterPreferencesController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
@@ -60,8 +62,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
 
-    // Backwards-compatible beta aliases. The manager navigation now uses the canonical
-    // *.index names; older links remain functional until all beta clients have rolled forward.
     Route::get('/demo/garage', [VehicleController::class, 'index'])->name('demo.garage');
     Route::get('/demo/components', [ComponentController::class, 'index'])->name('demo.components');
     Route::get('/demo/configurations', [ConfigurationController::class, 'index'])->name('demo.configurations');
@@ -89,9 +89,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/insights/events/{raceEvent}/csv', [IntelligenceController::class, 'weekendReportCsv'])
             ->name('insights.events.report.csv');
 
+        Route::get('/data-hub', [DataHubController::class, 'index'])->name('data-hub.index');
+        Route::get('/data-hub/export/{dataset}', [DataHubController::class, 'export'])->name('data-hub.export');
+        Route::get('/data-hub/backup', [DataHubController::class, 'backup'])->name('data-hub.backup');
+        Route::get('/data-hub/attachments/{workspaceAttachment}', [DataHubController::class, 'downloadAttachment'])
+            ->name('data-hub.attachments.download');
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])
+            ->name('notifications.read');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
+            ->name('notifications.read-all');
+
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
 
         Route::middleware('can:team-write')->group(function () {
+            Route::post('/data-hub/import', [DataHubController::class, 'import'])->name('data-hub.import');
+            Route::post('/data-hub/attachments', [DataHubController::class, 'storeAttachment'])
+                ->name('data-hub.attachments.store');
+            Route::delete('/data-hub/attachments/{workspaceAttachment}', [DataHubController::class, 'destroyAttachment'])
+                ->name('data-hub.attachments.destroy');
+
             Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
             Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
             Route::post('/drivers', [RaceEventOperationsController::class, 'storeDriver'])->name('drivers.store');
