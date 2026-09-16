@@ -305,8 +305,8 @@ class DataHubService
     }
 
     /**
-     * @param  list<array<string, mixed>>  $rows
-     * @return list<int>
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, int>
      */
     private function ids(array $rows): array
     {
@@ -314,8 +314,8 @@ class DataHubService
     }
 
     /**
-     * @param  list<int>  $parentIds
-     * @return list<array<string, mixed>>
+     * @param  array<int, int>  $parentIds
+     * @return array<int, array<string, mixed>>
      */
     private function children(string $table, string $column, array $parentIds): array
     {

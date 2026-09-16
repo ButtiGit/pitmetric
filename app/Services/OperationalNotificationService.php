@@ -8,6 +8,7 @@ use App\Models\RaceEvent;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Notifications\OperationalAlertNotification;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
@@ -49,12 +50,13 @@ class OperationalNotificationService
                 $recipients = $members;
             }
 
-            $isOverdue = $workOrder->due_at?->isPast() ?? false;
+            $dueAt = Carbon::parse($workOrder->due_at);
+            $isOverdue = $dueAt->isPast();
             $created += $this->notify(
                 $recipients,
                 [
                     'workspace_id' => $workspace->getKey(),
-                    'alert_key' => 'work-order:'.$workOrder->getKey().':'.($workOrder->due_at?->toIso8601String() ?? 'none'),
+                    'alert_key' => 'work-order:'.$workOrder->getKey().':'.$dueAt->toIso8601String(),
                     'category' => 'maintenance',
                     'severity' => $isOverdue ? 'critical' : 'warning',
                     'title' => $isOverdue ? 'Maintenance overdue' : 'Maintenance due soon',
@@ -74,12 +76,13 @@ class OperationalNotificationService
             ->get();
 
         foreach ($eventTasks as $task) {
-            $isOverdue = $task->due_at?->isPast() ?? false;
+            $dueAt = Carbon::parse($task->due_at);
+            $isOverdue = $dueAt->isPast();
             $created += $this->notify(
                 $members,
                 [
                     'workspace_id' => $workspace->getKey(),
-                    'alert_key' => 'event-task:'.$task->getKey().':'.($task->due_at?->toIso8601String() ?? 'none'),
+                    'alert_key' => 'event-task:'.$task->getKey().':'.$dueAt->toIso8601String(),
                     'category' => 'event',
                     'severity' => $isOverdue ? 'critical' : 'warning',
                     'title' => $isOverdue ? 'Event task overdue' : 'Event task due soon',
@@ -98,15 +101,16 @@ class OperationalNotificationService
             ->get();
 
         foreach ($upcomingEvents as $event) {
+            $startDate = Carbon::parse($event->start_date);
             $created += $this->notify(
                 $members,
                 [
                     'workspace_id' => $workspace->getKey(),
-                    'alert_key' => 'event-start:'.$event->getKey().':'.$event->start_date->toDateString(),
+                    'alert_key' => 'event-start:'.$event->getKey().':'.$startDate->toDateString(),
                     'category' => 'event',
                     'severity' => 'info',
                     'title' => 'Race weekend approaching',
-                    'message' => $event->name.' starts '.$event->start_date->format('d M Y'),
+                    'message' => $event->name.' starts '.$startDate->format('d M Y'),
                     'route_name' => 'events.show',
                     'route_params' => ['raceEvent' => $event->getKey()],
                 ],

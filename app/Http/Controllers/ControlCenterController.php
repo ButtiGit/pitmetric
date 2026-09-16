@@ -199,6 +199,10 @@ class ControlCenterController extends Controller
         $file = $validated['document'];
         $path = $file->store('workspaces/'.$workspace->getKey().'/documents', 'local');
 
+        if (! is_string($path)) {
+            throw new \RuntimeException('Unable to store the uploaded document.');
+        }
+
         try {
             Document::query()->create([
                 'uploaded_by' => $user->getKey(),
