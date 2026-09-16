@@ -20,6 +20,10 @@ use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\UsageBatch;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\WorkspaceAttachment;
+use App\Observers\MaintenanceWorkOrderObserver;
+use App\Observers\WorkspaceAuditObserver;
 use App\Policies\WorkspaceOwnedPolicy;
 use App\Services\WorkspaceContext;
 use Carbon\CarbonImmutable;
@@ -40,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
-        foreach ([
+        $workspaceOwnedModels = [
             Circuit::class,
             Component::class,
             ComponentInstallation::class,
@@ -58,9 +62,28 @@ class AppServiceProvider extends ServiceProvider
             Session::class,
             TechnicalSetup::class,
             UsageBatch::class,
-        ] as $model) {
+            WorkspaceAttachment::class,
+        ];
+
+        foreach ($workspaceOwnedModels as $model) {
             Gate::policy($model, WorkspaceOwnedPolicy::class);
         }
+
+        foreach ([
+            Component::class,
+            Expense::class,
+            MaintenanceRecord::class,
+            MaintenanceWorkOrder::class,
+            RaceEvent::class,
+            Session::class,
+            TechnicalSetup::class,
+            Vehicle::class,
+            WorkspaceAttachment::class,
+        ] as $auditedModel) {
+            $auditedModel::observe(WorkspaceAuditObserver::class);
+        }
+
+        MaintenanceWorkOrder::observe(MaintenanceWorkOrderObserver::class);
 
         Gate::define('manage-updates', fn (User $user): bool => $this->isUpdateEditor($user));
 

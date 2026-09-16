@@ -19,7 +19,8 @@
                         <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">{{ app()->getLocale() === 'it' ? 'Intelligence' : 'Intelligence' }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">Intelligence</flux:sidebar.item>
+                        <flux:sidebar.item icon="circle-stack" :href="route('data-hub.index')" :current="request()->routeIs('data-hub.*')">{{ app()->getLocale() === 'it' ? 'Data Hub' : 'Data Hub' }}</flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
 
