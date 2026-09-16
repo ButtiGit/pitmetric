@@ -16,6 +16,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\RaceEvent;
 use App\Models\Session;
+use App\Models\TechnicalSetup;
 use App\Models\UsageBatch;
 use App\Models\User;
 use App\Policies\WorkspaceOwnedPolicy;
@@ -53,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
             MaintenanceSchedule::class,
             RaceEvent::class,
             Session::class,
+            TechnicalSetup::class,
             UsageBatch::class,
         ] as $model) {
             Gate::policy($model, WorkspaceOwnedPolicy::class);
