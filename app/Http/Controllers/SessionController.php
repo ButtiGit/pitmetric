@@ -10,9 +10,11 @@ use App\Models\Expense;
 use App\Models\MaintenanceSchedule;
 use App\Models\RaceEvent;
 use App\Models\Session;
+use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Services\FinalizeSessionService;
 use App\Services\MaintenanceHealthService;
+use App\Services\SetupSnapshotService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,13 +38,21 @@ class SessionController extends Controller
             return view('demo.workspace', ['initialSection' => 'sessions']);
         }
 
-        if (! $workspaceContext->isCoreReady()) {
+        if (! $workspaceContext->isTechnicalSetupReady()) {
             return view('garage.unavailable');
         }
 
         $workspace = $workspaceContext->personal($user);
         $sessions = Session::query()
-            ->with(['vehicle', 'configurationVersion.configuration', 'circuitLayout.circuit', 'usageValues.metric', 'raceEvent', 'eventEntry.driver'])
+            ->with([
+                'vehicle',
+                'configurationVersion.configuration',
+                'circuitLayout.circuit',
+                'usageValues.metric',
+                'raceEvent',
+                'eventEntry.driver',
+                'setupSnapshot.technicalSetup',
+            ])
             ->latest('started_at')
             ->latest('id')
             ->limit(50)
@@ -67,6 +77,12 @@ class SessionController extends Controller
                 ->with(['configuration.vehicle', 'components'])
                 ->orderByDesc('id')
                 ->get(),
+            'setups' => TechnicalSetup::query()
+                ->with('vehicle')
+                ->where('status', 'active')
+                ->orderBy('vehicle_id')
+                ->orderBy('name')
+                ->get(),
             'layouts' => CircuitLayout::query()
                 ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
                 ->with('circuit')
@@ -76,6 +92,7 @@ class SessionController extends Controller
             'sessions' => $sessions,
             'defaults' => [
                 'configuration_version_id' => $lastSession?->configuration_version_id,
+                'technical_setup_id' => $lastSession?->setupSnapshot?->technical_setup_id,
                 'circuit_layout_id' => $lastSession?->circuit_layout_id,
                 'session_type' => $lastSession->session_type ?? 'practice',
                 'started_at' => now()->format('Y-m-d\TH:i'),
@@ -91,6 +108,7 @@ class SessionController extends Controller
         WorkspaceContext $workspaceContext,
         FinalizeSessionService $finalizeSessionService,
         MaintenanceHealthService $healthService,
+        SetupSnapshotService $snapshotService,
     ): RedirectResponse {
         $user = $request->user();
 
@@ -105,6 +123,7 @@ class SessionController extends Controller
             'event_entry_id' => ['nullable', 'integer', 'required_with:event_id'],
             'schedule_item_id' => ['nullable', 'integer'],
             'configuration_version_id' => ['required', 'integer'],
+            'technical_setup_id' => ['nullable', 'integer'],
             'circuit_layout_id' => ['nullable', 'integer'],
             'session_type' => ['required', 'in:practice,qualifying,heat,prefinal,final,race,test'],
             'started_at' => ['required', 'date'],
@@ -175,6 +194,23 @@ class SessionController extends Controller
             ->with('configuration.vehicle')
             ->firstOrFail();
 
+        $technicalSetup = null;
+
+        if (! empty($validated['technical_setup_id'])) {
+            $technicalSetup = TechnicalSetup::query()
+                ->whereKey((int) $validated['technical_setup_id'])
+                ->where('vehicle_id', $version->configuration->vehicle_id)
+                ->where('status', 'active')
+                ->firstOrFail();
+        } else {
+            $technicalSetup = TechnicalSetup::query()
+                ->where('vehicle_id', $version->configuration->vehicle_id)
+                ->where('status', 'active')
+                ->latest('updated_at')
+                ->latest('id')
+                ->first();
+        }
+
         $layoutId = $raceEvent?->circuit_layout_id;
 
         if ($layoutId === null && ! empty($validated['circuit_layout_id'])) {
@@ -186,7 +222,7 @@ class SessionController extends Controller
             abort_if($layoutId === null, 404);
         }
 
-        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService, $raceEvent, $eventEntry, $scheduleItem): Session {
+        $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService, $snapshotService, $technicalSetup, $raceEvent, $eventEntry, $scheduleItem): Session {
             $session = Session::create([
                 'event_id' => $raceEvent?->getKey(),
                 'event_entry_id' => $eventEntry?->getKey(),
@@ -208,6 +244,8 @@ class SessionController extends Controller
             ]);
 
             $finalizedSession = $finalizeSessionService->finalize($session);
+            $snapshotService->capture($finalizedSession, $technicalSetup, $user);
+
             $sessionCostCents = isset($validated['session_cost']) && (float) $validated['session_cost'] > 0
                 ? (int) round(((float) $validated['session_cost']) * 100)
                 : null;
@@ -249,12 +287,12 @@ class SessionController extends Controller
 
         if ($raceEvent instanceof RaceEvent) {
             return to_route('events.show', ['raceEvent' => $raceEvent, 'recorded' => $session->getKey()])
-                ->with('status', __('Event session recorded, usage updated and Trackside schedule synchronized.'))
+                ->with('status', __('Event session recorded, usage updated and immutable setup snapshot captured.'))
                 ->with('maintenance_attention', $health['summary']['attention']);
         }
 
         return to_route('sessions.index', ['recorded' => $session->getKey()])
-            ->with('status', __('Session recorded, component usage updated and session cost linked to expenses.'))
+            ->with('status', __('Session recorded, usage updated and immutable setup snapshot captured.'))
             ->with('maintenance_attention', $health['summary']['attention']);
     }
 
