@@ -22,3 +22,25 @@ test('verified users can visit the dashboard', function () {
     $response = $this->get(route('dashboard'));
     $response->assertOk();
 });
+
+test('base users see read only platform navigation without database only tools', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response
+        ->assertOk()
+        ->assertSee(route('dashboard'), false)
+        ->assertSee(route('events.index'), false)
+        ->assertSee(route('garage.index'), false)
+        ->assertSee(route('components.index'), false)
+        ->assertSee(route('configurations.index'), false)
+        ->assertSee(route('setups.index'), false)
+        ->assertSee(route('circuits.index'), false)
+        ->assertSee(route('sessions.index'), false)
+        ->assertSee(route('maintenance.index'), false)
+        ->assertSee(route('expenses.index'), false)
+        ->assertDontSee(route('team.index'), false)
+        ->assertDontSee(route('insights.index'), false)
+        ->assertDontSee(route('control-center.index'), false);
+});

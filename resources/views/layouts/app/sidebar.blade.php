@@ -6,23 +6,24 @@
             <flux:sidebar.header class="border-b border-white/5 pb-4"><x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate /><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
 
             <flux:sidebar.nav class="pt-4">
-                @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
-                    <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
-                        <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
+                <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
+                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="calendar-days" :href="route('events.index')" :current="request()->routeIs('events.*')">{{ __('demo.nav.events') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="truck" :href="route('garage.index')" :current="request()->routeIs('garage.*')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="wrench-screwdriver" :href="route('components.index')" :current="request()->routeIs('components.*') || request()->routeIs('component-installations.*')">{{ __('demo.nav.components') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="squares-2x2" :href="route('configurations.index')" :current="request()->routeIs('configurations.*')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="adjustments-horizontal" :href="route('setups.index')" :current="request()->routeIs('setups.*')">{{ app()->getLocale() === 'it' ? 'Setup tecnici' : 'Technical setups' }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="map" :href="route('circuits.index')" :current="request()->routeIs('circuits.*')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
+
+                    @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
                         <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
-                        <flux:sidebar.item icon="calendar-days" :href="route('events.index')" :current="request()->routeIs('events.*')">{{ __('demo.nav.events') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="truck" :href="route('garage.index')" :current="request()->routeIs('garage.*')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="wrench-screwdriver" :href="route('components.index')" :current="request()->routeIs('components.*') || request()->routeIs('component-installations.*')">{{ __('demo.nav.components') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="squares-2x2" :href="route('configurations.index')" :current="request()->routeIs('configurations.*')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="adjustments-horizontal" :href="route('setups.index')" :current="request()->routeIs('setups.*')">{{ app()->getLocale() === 'it' ? 'Setup tecnici' : 'Technical setups' }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="map" :href="route('circuits.index')" :current="request()->routeIs('circuits.*')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">{{ app()->getLocale() === 'it' ? 'Intelligence' : 'Intelligence' }}</flux:sidebar.item>
                         <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
-                    </flux:sidebar.group>
-                @endif
+                    @endif
+                </flux:sidebar.group>
 
                 @can('manage-updates')
                     <flux:sidebar.group :heading="__('pitmetric.studio.eyebrow')" class="mt-4 grid gap-1">
@@ -46,7 +47,7 @@
 
         <flux:header data-pm-mobile-header class="pm-mobile-header sticky top-0 z-40 border-b border-white/5 bg-[#111317]/95 backdrop-blur-xl lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-            <a href="{{ auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates') ? route('dashboard') : route('home') }}" class="ml-1 inline-flex min-w-0 items-center" wire:navigate aria-label="PitMetric">
+            <a href="{{ route('dashboard') }}" class="ml-1 inline-flex min-w-0 items-center" wire:navigate aria-label="PitMetric">
                 <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-7 max-w-[8.5rem] w-auto">
             </a>
             <flux:spacer />
