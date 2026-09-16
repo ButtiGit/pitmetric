@@ -287,7 +287,7 @@ class DataHubController extends Controller
         return count($rows);
     }
 
-    /** @return array<string, list<array{id: int, label: string}>> */
+    /** @return array<string, array<int, array{id: int, label: string}>> */
     private function attachmentTargets(): array
     {
         return [
