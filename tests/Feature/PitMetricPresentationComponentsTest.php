@@ -2,11 +2,12 @@
 
 use Illuminate\Support\Facades\Blade;
 
-test('page header renders its title, description, breadcrumbs, and actions', function () {
+test('page header renders its title, description, breadcrumbs, actions, and optional help', function () {
     $html = Blade::render(<<<'BLADE'
         <x-pitmetric.page-header
             title="Garage"
             description="Manage your karts and their operational history."
+            help="Vehicles are the physical assets managed by this workspace."
         >
             <x-slot:breadcrumbs>
                 <span>Operations</span>
@@ -23,13 +24,24 @@ test('page header renders its title, description, breadcrumbs, and actions', fun
         ->toContain('Garage')
         ->toContain('Manage your karts and their operational history.')
         ->toContain('Operations')
-        ->toContain('Add kart');
+        ->toContain('Add kart')
+        ->toContain('data-pitmetric-help-tooltip');
 });
 
 test('page header renders the requested semantic heading level', function () {
     $html = Blade::render('<x-pitmetric.page-header title="Garage" heading-level="2" />');
 
     expect($html)->toContain('<h2')->toContain('>Garage</h2>');
+});
+
+test('help tooltip renders a question mark trigger with accessible copy', function () {
+    $html = Blade::render('<x-pitmetric.help-tooltip text="Helpful context" label="Explain this field" />');
+
+    expect($html)
+        ->toContain('data-pitmetric-help-tooltip')
+        ->toContain('aria-label="Explain this field"')
+        ->toContain('Helpful context')
+        ->toContain('>?</button>');
 });
 
 test('metric card renders its label, value, and supporting text', function () {
