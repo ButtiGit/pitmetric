@@ -135,7 +135,7 @@ it('completes a work order through the maintenance ledger and links the cost', f
     expect(app(ComponentUsageCalculator::class)->sinceLastService($tracker))->toBe(5400);
 
     $this->post(route('maintenance.work-orders.complete', $workOrder), [
-        'performed_at' => '2026-09-16 12:00:00',
+        'performed_at' => now()->subHour()->format('Y-m-d H:i:s'),
         'description' => 'Gearbox oil replaced',
         'cost' => '84.50',
         'notes' => 'No metal found in the old oil.',
