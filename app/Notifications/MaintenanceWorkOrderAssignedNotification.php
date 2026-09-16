@@ -6,6 +6,7 @@ use App\Models\MaintenanceWorkOrder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Carbon;
 
 class MaintenanceWorkOrderAssignedNotification extends Notification implements ShouldQueue
 {
@@ -27,7 +28,9 @@ class MaintenanceWorkOrderAssignedNotification extends Notification implements S
             'work_order_id' => $this->workOrder->getKey(),
             'title' => $this->workOrder->title,
             'priority' => $this->workOrder->priority,
-            'due_at' => $this->workOrder->due_at?->toIso8601String(),
+            'due_at' => $this->workOrder->due_at === null
+                ? null
+                : Carbon::parse((string) $this->workOrder->due_at)->toIso8601String(),
             'url' => route('maintenance.index'),
         ];
     }

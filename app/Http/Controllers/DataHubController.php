@@ -14,6 +14,7 @@ use App\Models\Vehicle;
 use App\Models\Workspace;
 use App\Models\WorkspaceAttachment;
 use App\Services\WorkspaceContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -25,11 +26,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DataHubController extends Controller
 {
+    /** @var array<string, class-string<Model>> */
     private const ATTACHABLES = [
         'event' => RaceEvent::class,
         'expense' => Expense::class,
@@ -71,11 +72,9 @@ class DataHubController extends Controller
             throw ValidationException::withMessages(['file' => __('Imports are limited to 1,000 rows per file.')]);
         }
 
-        $created = DB::transaction(function () use ($validated, $rows, $user): int {
-            return $validated['dataset'] === 'vehicles'
-                ? $this->importVehicles($rows)
-                : $this->importExpenses($rows, $user);
-        });
+        $created = DB::transaction(fn (): int => $validated['dataset'] === 'vehicles'
+            ? $this->importVehicles($rows)
+            : $this->importExpenses($rows, $user));
 
         return to_route('data-hub.index')->with('status', __('Imported :count rows successfully.', ['count' => $created]));
     }
@@ -83,12 +82,10 @@ class DataHubController extends Controller
     public function export(Request $request, string $dataset, WorkspaceContext $workspaceContext): StreamedResponse
     {
         $workspaceContext->personal($this->user($request));
-
         abort_unless(in_array($dataset, ['vehicles', 'expenses', 'sessions', 'maintenance'], true), 404);
 
         return response()->streamDownload(function () use ($dataset): void {
             $stream = fopen('php://output', 'w');
-
             if ($stream === false) {
                 return;
             }
@@ -108,7 +105,6 @@ class DataHubController extends Controller
     {
         $workspace = $workspaceContext->personal($this->user($request));
         $workspaceId = (int) $workspace->getKey();
-
         $payload = [
             'schema' => 'pitmetric-workspace-backup-v1',
             'exported_at' => now()->toIso8601String(),
@@ -124,9 +120,7 @@ class DataHubController extends Controller
         ];
 
         return response()->streamDownload(
-            static function () use ($payload): void {
-                echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-            },
+            static fn () => print(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)),
             'pitmetric-workspace-backup-'.$workspaceId.'-'.now()->format('Y-m-d-His').'.json',
             ['Content-Type' => 'application/json; charset=UTF-8'],
         );
@@ -136,19 +130,14 @@ class DataHubController extends Controller
     {
         $user = $this->user($request);
         $workspace = $workspaceContext->personal($user);
-
         $validated = $request->validate([
             'attachable_type' => ['required', 'in:'.implode(',', array_keys(self::ATTACHABLES))],
             'attachable_id' => ['required', 'integer'],
             'label' => ['nullable', 'string', 'max:180'],
-            'file' => [
-                'required', 'file', 'max:10240',
-                'mimes:pdf,jpg,jpeg,png,webp,csv,txt',
-                'mimetypes:application/pdf,image/jpeg,image/png,image/webp,text/plain,text/csv,application/csv,application/vnd.ms-excel',
-            ],
+            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,csv,txt', 'mimetypes:application/pdf,image/jpeg,image/png,image/webp,text/plain,text/csv,application/csv,application/vnd.ms-excel'],
         ]);
 
-        $this->findAttachable($validated['attachable_type'], (int) $validated['attachable_id']);
+        $this->findAttachable((string) $validated['attachable_type'], (int) $validated['attachable_id']);
 
         /** @var UploadedFile $file */
         $file = $validated['file'];
@@ -175,11 +164,10 @@ class DataHubController extends Controller
         return to_route('data-hub.index')->with('status', __('Private document uploaded.'));
     }
 
-    public function downloadAttachment(Request $request, WorkspaceAttachment $workspaceAttachment, WorkspaceContext $workspaceContext): BinaryFileResponse|StreamedResponse
+    public function downloadAttachment(Request $request, WorkspaceAttachment $workspaceAttachment, WorkspaceContext $workspaceContext): StreamedResponse
     {
         $workspaceContext->personal($this->user($request));
         Gate::authorize('view', $workspaceAttachment);
-
         abort_unless(Storage::disk($workspaceAttachment->disk)->exists($workspaceAttachment->path), 404);
 
         return Storage::disk($workspaceAttachment->disk)->download(
@@ -193,7 +181,6 @@ class DataHubController extends Controller
     {
         $workspaceContext->personal($this->user($request));
         Gate::authorize('delete', $workspaceAttachment);
-
         Storage::disk($workspaceAttachment->disk)->delete($workspaceAttachment->path);
         $workspaceAttachment->delete();
 
@@ -204,13 +191,11 @@ class DataHubController extends Controller
     private function csvRows(UploadedFile $file): array
     {
         $handle = fopen($file->getRealPath(), 'r');
-
         if ($handle === false) {
             throw ValidationException::withMessages(['file' => __('The CSV file could not be read.')]);
         }
 
         $header = fgetcsv($handle);
-
         if (! is_array($header)) {
             fclose($handle);
             throw ValidationException::withMessages(['file' => __('The CSV file needs a header row.')]);
@@ -220,12 +205,16 @@ class DataHubController extends Controller
         $rows = [];
 
         while (($values = fgetcsv($handle)) !== false) {
-            if ($values === [null] || $values === []) {
+            if ($values === [null]) {
                 continue;
             }
 
-            $values = array_pad($values, count($keys), null);
-            $rows[] = array_combine($keys, array_slice($values, 0, count($keys))) ?: [];
+            $row = [];
+            foreach ($keys as $index => $key) {
+                $value = $values[$index] ?? null;
+                $row[$key] = $value === null ? null : trim((string) $value);
+            }
+            $rows[] = $row;
         }
 
         fclose($handle);
@@ -297,14 +286,14 @@ class DataHubController extends Controller
     private function attachmentTargets(): array
     {
         return [
-            'event' => RaceEvent::query()->latest('start_date')->limit(50)->get()->map(fn (RaceEvent $event): array => ['id' => (int) $event->getKey(), 'label' => $event->name])->all(),
-            'expense' => Expense::query()->latest('occurred_at')->limit(50)->get()->map(fn (Expense $expense): array => ['id' => (int) $expense->getKey(), 'label' => $expense->description])->all(),
-            'session' => Session::query()->latest('started_at')->limit(50)->get()->map(fn (Session $session): array => ['id' => (int) $session->getKey(), 'label' => ucfirst($session->session_type).' · '.$session->started_at->format('d/m/Y H:i')])->all(),
-            'maintenance_record' => MaintenanceRecord::query()->latest('performed_at')->limit(50)->get()->map(fn (MaintenanceRecord $record): array => ['id' => (int) $record->getKey(), 'label' => $record->description])->all(),
+            'event' => RaceEvent::query()->latest('start_date')->limit(50)->get()->map(fn (RaceEvent $event): array => ['id' => (int) $event->getKey(), 'label' => $event->name])->values()->all(),
+            'expense' => Expense::query()->latest('occurred_at')->limit(50)->get()->map(fn (Expense $expense): array => ['id' => (int) $expense->getKey(), 'label' => $expense->description])->values()->all(),
+            'session' => Session::query()->latest('started_at')->limit(50)->get()->map(fn (Session $session): array => ['id' => (int) $session->getKey(), 'label' => ucfirst($session->session_type).' · '.Carbon::parse((string) $session->started_at)->format('d/m/Y H:i')])->values()->all(),
+            'maintenance_record' => MaintenanceRecord::query()->latest('performed_at')->limit(50)->get()->map(fn (MaintenanceRecord $record): array => ['id' => (int) $record->getKey(), 'label' => $record->description])->values()->all(),
         ];
     }
 
-    private function findAttachable(string $type, int $id): object
+    private function findAttachable(string $type, int $id): Model
     {
         $model = self::ATTACHABLES[$type] ?? null;
         abort_unless($model !== null, 404);
@@ -331,28 +320,28 @@ class DataHubController extends Controller
     private function writeVehiclesCsv($stream): void
     {
         fputcsv($stream, ['name', 'category', 'manufacturer', 'model', 'year', 'identifier', 'status', 'notes']);
-        Vehicle::query()->orderBy('name')->each(fn (Vehicle $v) => fputcsv($stream, [$v->name, $v->category, $v->manufacturer, $v->model, $v->year, $v->identifier, $v->status, $v->notes]));
+        Vehicle::query()->orderBy('name')->each(fn (Vehicle $vehicle) => fputcsv($stream, [$vehicle->name, $vehicle->category, $vehicle->manufacturer, $vehicle->model, $vehicle->year, $vehicle->identifier, $vehicle->status, $vehicle->notes]));
     }
 
     /** @param resource $stream */
     private function writeExpensesCsv($stream): void
     {
         fputcsv($stream, ['amount', 'currency', 'category', 'description', 'occurred_at']);
-        Expense::query()->orderBy('occurred_at')->each(fn (Expense $e) => fputcsv($stream, [number_format($e->amount_cents / 100, 2, '.', ''), $e->currency, $e->category, $e->description, $e->occurred_at->toIso8601String()]));
+        Expense::query()->orderBy('occurred_at')->each(fn (Expense $expense) => fputcsv($stream, [number_format($expense->amount_cents / 100, 2, '.', ''), $expense->currency, $expense->category, $expense->description, Carbon::parse((string) $expense->occurred_at)->toIso8601String()]));
     }
 
     /** @param resource $stream */
     private function writeSessionsCsv($stream): void
     {
         fputcsv($stream, ['id', 'event_id', 'vehicle_id', 'session_type', 'started_at', 'completed_laps', 'duration_seconds', 'distance_override_meters', 'status']);
-        Session::query()->orderBy('started_at')->each(fn (Session $s) => fputcsv($stream, [$s->id, $s->event_id, $s->vehicle_id, $s->session_type, $s->started_at->toIso8601String(), $s->completed_laps, $s->duration_seconds, $s->distance_override_meters, $s->status]));
+        Session::query()->orderBy('started_at')->each(fn (Session $session) => fputcsv($stream, [$session->id, $session->event_id, $session->vehicle_id, $session->session_type, Carbon::parse((string) $session->started_at)->toIso8601String(), $session->completed_laps, $session->duration_seconds, $session->distance_override_meters, $session->status]));
     }
 
     /** @param resource $stream */
     private function writeMaintenanceCsv($stream): void
     {
         fputcsv($stream, ['id', 'component_id', 'performed_at', 'description', 'cost_cents', 'notes']);
-        MaintenanceRecord::query()->orderBy('performed_at')->each(fn (MaintenanceRecord $m) => fputcsv($stream, [$m->id, $m->component_id, $m->performed_at->toIso8601String(), $m->description, $m->cost_cents, $m->notes]));
+        MaintenanceRecord::query()->orderBy('performed_at')->each(fn (MaintenanceRecord $record) => fputcsv($stream, [$record->id, $record->component_id, Carbon::parse((string) $record->performed_at)->toIso8601String(), $record->description, $record->cost_cents, $record->notes]));
     }
 
     private function user(Request $request): User
