@@ -1,12 +1,12 @@
 @php
-    $gameSetup = $setup ?? null;
-    $setupValues = $gameSetup?->values ?? [];
+    $technicalSetup = $setup ?? null;
+    $setupValues = $technicalSetup?->values ?? [];
     $fieldValue = static fn (string $key): mixed => old($key, $setupValues[$key] ?? '');
 @endphp
 
 <div class="grid gap-5">
     <div class="grid gap-4 md:grid-cols-2">
-        @if (! $gameSetup)
+        @if (! $technicalSetup)
             <label class="grid gap-2">
                 <span class="pm-label">{{ $it ? 'Mezzo' : 'Vehicle' }}</span>
                 <select class="pm-input" name="vehicle_id" required>
@@ -19,19 +19,19 @@
         @else
             <div class="rounded-xl border border-pm-border bg-pm-subtle p-4">
                 <p class="pm-label">{{ $it ? 'Mezzo' : 'Vehicle' }}</p>
-                <p class="mt-2 font-bold text-pm-text">{{ $gameSetup->vehicle->name }}</p>
+                <p class="mt-2 font-bold text-pm-text">{{ $technicalSetup->vehicle->name }}</p>
             </div>
         @endif
 
         <label class="grid gap-2">
             <span class="pm-label">{{ $it ? 'Nome setup' : 'Setup name' }}</span>
-            <input class="pm-input" name="name" maxlength="120" required value="{{ old('name', $gameSetup?->name) }}" placeholder="Dry baseline">
+            <input class="pm-input" name="name" maxlength="120" required value="{{ old('name', $technicalSetup?->name) }}" placeholder="Dry baseline">
         </label>
     </div>
 
     <label class="grid gap-2">
         <span class="pm-label">{{ $it ? 'Descrizione / condizioni' : 'Description / conditions' }}</span>
-        <textarea class="pm-input min-h-20" name="description" maxlength="2000" placeholder="{{ $it ? 'Asciutto, pista gommata, temperatura media...' : 'Dry, rubbered track, medium temperature...' }}">{{ old('description', $gameSetup?->description) }}</textarea>
+        <textarea class="pm-input min-h-20" name="description" maxlength="2000" placeholder="{{ $it ? 'Asciutto, pista gommata, temperatura media...' : 'Dry, rubbered track, medium temperature...' }}">{{ old('description', $technicalSetup?->description) }}</textarea>
     </label>
 
     <section class="rounded-xl border border-pm-border bg-pm-subtle p-4">
