@@ -179,7 +179,7 @@
                                     <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">{{ $it ? 'Costo/ora' : 'Cost/hour' }}</p>
                                     <p class="mt-1 font-bold text-zinc-950 dark:text-white">{{ $money($weekend['cost_per_hour_cents']) }}</p>
                                 </div>
-                                <a class="pm-race-button justify-center" href="{{ route('events.report', $event) }}" wire:navigate>
+                                <a class="pm-race-button justify-center" href="{{ route('insights.events.report', $event) }}" wire:navigate>
                                     {{ $it ? 'Weekend Report' : 'Weekend Report' }}
                                 </a>
                             </article>
