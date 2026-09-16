@@ -22,8 +22,8 @@ class SetupSnapshotService
             'technical_setup_id' => $technicalSetup?->getKey(),
             'vehicle_id' => $session->vehicle_id,
             'configuration_version_id' => $session->configuration_version_id,
-            'name' => $technicalSetup?->name ?? __('Unspecified setup'),
-            'values' => $technicalSetup?->values ?? [],
+            'name' => $technicalSetup->name ?? __('Unspecified setup'),
+            'values' => $technicalSetup->values ?? [],
             'captured_at' => $session->started_at ?? now(),
             'created_by' => $user->getKey(),
         ]);
