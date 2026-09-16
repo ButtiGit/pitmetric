@@ -7,7 +7,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   ci:
@@ -17,8 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: true
-          ref: productization-point-7
+          persist-credentials: false
 
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
@@ -34,87 +33,6 @@ jobs:
 
       - name: Setup Application
         run: composer setup
-
-      - name: Apply PHPStan fixes
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          def replace(path, old, new):
-              file = Path(path)
-              text = file.read_text()
-              if old not in text:
-                  raise SystemExit(f'Expected snippet not found in {path}: {old[:80]!r}')
-              file.write_text(text.replace(old, new, 1))
-
-          replace(
-              'app/Http/Controllers/ControlCenterController.php',
-              "$path = $file->store('workspaces/'.$workspace->getKey().'/documents', 'local');\n\n        try {",
-              "$path = $file->store('workspaces/'.$workspace->getKey().'/documents', 'local');\n\n        if (! is_string($path)) {\n            throw new \\RuntimeException('Unable to store the uploaded document.');\n        }\n\n        try {",
-          )
-
-          replace(
-              'app/Services/DataHubService.php',
-              "/**\n     * @param  list<array<string, mixed>>  $rows\n     * @return list<int>\n     */\n    private function ids(array $rows): array",
-              "/**\n     * @param  array<int, array<string, mixed>>  $rows\n     * @return array<int, int>\n     */\n    private function ids(array $rows): array",
-          )
-          replace(
-              'app/Services/DataHubService.php',
-              "/**\n     * @param  list<int>  $parentIds\n     * @return list<array<string, mixed>>\n     */\n    private function children(string $table, string $column, array $parentIds): array",
-              "/**\n     * @param  array<int, int>  $parentIds\n     * @return array<int, array<string, mixed>>\n     */\n    private function children(string $table, string $column, array $parentIds): array",
-          )
-
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "use App\\Notifications\\OperationalAlertNotification;\nuse Illuminate\\Support\\Collection;",
-              "use App\\Notifications\\OperationalAlertNotification;\nuse Illuminate\\Support\\Carbon;\nuse Illuminate\\Support\\Collection;",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "$isOverdue = $workOrder->due_at?->isPast() ?? false;\n            $created += $this->notify(",
-              "$dueAt = Carbon::parse($workOrder->due_at);\n            $isOverdue = $dueAt->isPast();\n            $created += $this->notify(",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "'alert_key' => 'work-order:'.$workOrder->getKey().':'.($workOrder->due_at?->toIso8601String() ?? 'none'),",
-              "'alert_key' => 'work-order:'.$workOrder->getKey().':'.$dueAt->toIso8601String(),",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "$isOverdue = $task->due_at?->isPast() ?? false;\n            $created += $this->notify(",
-              "$dueAt = Carbon::parse($task->due_at);\n            $isOverdue = $dueAt->isPast();\n            $created += $this->notify(",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "'alert_key' => 'event-task:'.$task->getKey().':'.($task->due_at?->toIso8601String() ?? 'none'),",
-              "'alert_key' => 'event-task:'.$task->getKey().':'.$dueAt->toIso8601String(),",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "foreach ($upcomingEvents as $event) {\n            $created += $this->notify(",
-              "foreach ($upcomingEvents as $event) {\n            $startDate = Carbon::parse($event->start_date);\n            $created += $this->notify(",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "'alert_key' => 'event-start:'.$event->getKey().':'.$event->start_date->toDateString(),",
-              "'alert_key' => 'event-start:'.$event->getKey().':'.$startDate->toDateString(),",
-          )
-          replace(
-              'app/Services/OperationalNotificationService.php',
-              "'message' => $event->name.' starts '.$event->start_date->format('d M Y'),",
-              "'message' => $event->name.' starts '.$startDate->format('d M Y'),",
-          )
-          PY
-
-          vendor/bin/pint app/Http/Controllers/ControlCenterController.php app/Services/DataHubService.php app/Services/OperationalNotificationService.php
-
-          if ! git diff --quiet -- app/Http/Controllers/ControlCenterController.php app/Services/DataHubService.php app/Services/OperationalNotificationService.php; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add app/Http/Controllers/ControlCenterController.php app/Services/DataHubService.php app/Services/OperationalNotificationService.php
-            git commit -m "Fix productization static analysis"
-            git push origin HEAD:productization-point-7
-          fi
 
       - name: Validate standalone game
         run: |
