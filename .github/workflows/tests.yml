@@ -34,5 +34,11 @@ jobs:
       - name: Setup Application
         run: composer setup
 
+      - name: Validate standalone game
+        run: |
+          php -l public/game_sim.php
+          node --check public/game_assets/game_data_2026.js
+          node --check public/game_assets/game_sim.js
+
       - name: Run CI Checks
         run: composer ci:check

@@ -1,157 +1,41 @@
 :root {
-    color-scheme: dark;
-    --game_bg: #07090d;
-    --game_panel: #0d1118;
-    --game_panel_2: #121822;
-    --game_border: #232c39;
-    --game_text: #f2f5f9;
-    --game_muted: #8d98a8;
-    --game_accent: #ff3b30;
-    --game_green: #37d67a;
-    --game_yellow: #f7c948;
-    --game_orange: #ff8f3d;
-    --game_blue: #4ea1ff;
-    --game_purple: #b56dff;
-    --game_cyan: #41d8d0;
-    --game_danger: #ff5160;
-    --game_shadow: 0 20px 55px rgba(0, 0, 0, .3);
+    --game_bg:#060708;
+    --game_panel:#0e1013;
+    --game_panel_2:#14171b;
+    --game_line:#262a31;
+    --game_text:#f5f7fa;
+    --game_muted:#8e96a3;
+    --game_red:#ff3038;
+    --game_green:#35e48a;
+    --game_yellow:#ffd24a;
+    --game_team:#e10600;
+    --game_team_soft:rgba(225,6,0,.16);
+    --game_radius:16px;
+    color-scheme:dark;
 }
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--game_bg); color: var(--game_text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-body { min-height: 100vh; background-image: radial-gradient(circle at 18% 0%, rgba(255, 59, 48, .10), transparent 28%), radial-gradient(circle at 100% 20%, rgba(78, 161, 255, .08), transparent 32%); }
-button, input, select { font: inherit; }
-button { cursor: pointer; }
-.game_shell { width: min(1900px, 100%); margin: 0 auto; padding: 16px; }
-.game_header { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; margin-bottom: 14px; }
-.game_brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.game_logo { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--game_accent), #8d0a0a); display: grid; place-items: center; font-weight: 900; box-shadow: 0 9px 28px rgba(255, 59, 48, .22); }
-.game_brand_text { min-width: 0; }
-.game_brand_title { margin: 0; font-size: 19px; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.game_brand_subtitle { margin: 2px 0 0; color: var(--game_muted); font-size: 12px; }
-.game_header_actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-.game_button { border: 1px solid var(--game_border); color: var(--game_text); background: var(--game_panel_2); padding: 9px 12px; border-radius: 10px; font-weight: 750; font-size: 12px; transition: .18s ease; }
-.game_button:hover { transform: translateY(-1px); border-color: #3b4656; }
-.game_button.game_primary { background: var(--game_accent); border-color: var(--game_accent); }
-.game_button.game_green { background: rgba(55, 214, 122, .12); color: var(--game_green); border-color: rgba(55, 214, 122, .28); }
-.game_button.game_warning { background: rgba(247, 201, 72, .10); color: var(--game_yellow); border-color: rgba(247, 201, 72, .24); }
-.game_button.game_danger { background: rgba(255, 81, 96, .10); color: var(--game_danger); border-color: rgba(255, 81, 96, .24); }
-.game_button:disabled { opacity: .38; cursor: not-allowed; transform: none; }
-.game_schedule { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
-.game_schedule_item { position: relative; overflow: hidden; border: 1px solid var(--game_border); background: rgba(13, 17, 24, .92); border-radius: 12px; padding: 11px; min-height: 76px; }
-.game_schedule_item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #3c4655; }
-.game_schedule_item.game_current::before { background: var(--game_accent); }
-.game_schedule_item.game_done::before { background: var(--game_green); }
-.game_schedule_day { color: var(--game_muted); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
-.game_schedule_name { margin-top: 5px; font-size: 13px; font-weight: 850; }
-.game_schedule_meta { margin-top: 3px; color: var(--game_muted); font-size: 11px; }
-.game_grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(310px, .63fr) minmax(330px, .72fr); gap: 12px; align-items: start; }
-.game_stack { display: grid; gap: 12px; }
-.game_panel { background: rgba(13, 17, 24, .94); border: 1px solid var(--game_border); border-radius: 14px; box-shadow: var(--game_shadow); overflow: hidden; }
-.game_panel_header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--game_border); }
-.game_panel_title { margin: 0; font-size: 12px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
-.game_panel_body { padding: 14px; }
-.game_badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 999px; background: #161d28; border: 1px solid var(--game_border); font-size: 10px; font-weight: 800; color: var(--game_muted); }
-.game_badge.game_live { color: var(--game_green); border-color: rgba(55,214,122,.28); background: rgba(55,214,122,.08); }
-.game_badge.game_alert { color: var(--game_yellow); border-color: rgba(247,201,72,.28); background: rgba(247,201,72,.08); }
-.game_live_dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 14px currentColor; }
-.game_session_hero { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: start; }
-.game_session_name { margin: 0; font-size: clamp(26px, 4vw, 46px); line-height: 1; letter-spacing: -.045em; }
-.game_session_objective { margin: 10px 0 0; max-width: 740px; color: #c0c8d4; font-size: 13px; line-height: 1.55; }
-.game_position { min-width: 105px; text-align: right; }
-.game_position_value { font-size: 42px; line-height: .9; font-weight: 950; letter-spacing: -.07em; }
-.game_position_label { margin-top: 7px; color: var(--game_muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
-.game_race_strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; margin-top: 14px; }
-.game_stat { background: var(--game_panel_2); border: 1px solid var(--game_border); border-radius: 10px; padding: 9px; min-width: 0; }
-.game_stat_label { font-size: 9px; color: var(--game_muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.game_stat_value { margin-top: 4px; font-size: 16px; font-weight: 850; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.game_stat_sub { margin-top: 2px; font-size: 10px; color: var(--game_muted); }
-.game_telemetry_grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.game_telemetry_card { background: var(--game_panel_2); border: 1px solid var(--game_border); border-radius: 11px; padding: 10px; }
-.game_telemetry_label { color: var(--game_muted); font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
-.game_telemetry_value { margin-top: 5px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 18px; font-weight: 900; }
-.game_bar { margin-top: 7px; height: 5px; border-radius: 99px; background: #202835; overflow: hidden; }
-.game_bar_fill { height: 100%; width: 50%; background: var(--game_green); transition: width .2s linear, background .2s linear; }
-.game_car_area { display: grid; grid-template-columns: minmax(180px, .8fr) minmax(0, 1.2fr); gap: 14px; align-items: center; }
-.game_car_wrap { display: grid; place-items: center; min-height: 315px; border-radius: 12px; background: radial-gradient(circle, rgba(78,161,255,.08), transparent 58%), #090d13; border: 1px solid var(--game_border); }
-#game_car_svg { width: min(240px, 100%); height: 310px; filter: drop-shadow(0 20px 18px rgba(0,0,0,.45)); }
-.game_car_body { fill: #303b49; stroke: #6c7a8e; stroke-width: 2; }
-.game_car_accent { fill: var(--game_accent); }
-.game_car_tyre { fill: #090a0c; stroke: #495360; stroke-width: 2; }
-.game_car_damage_zone { fill: rgba(55, 214, 122, .14); stroke: rgba(55, 214, 122, .7); stroke-width: 2; transition: fill .25s, stroke .25s; }
-.game_damage_list { display: grid; gap: 7px; }
-.game_damage_row { display: grid; grid-template-columns: 95px 1fr 42px; gap: 8px; align-items: center; font-size: 11px; }
-.game_damage_name { color: #c6ced9; }
-.game_damage_value { text-align: right; font-family: monospace; font-weight: 800; }
-.game_chart { width: 100%; height: 155px; display: block; background: #090d13; border: 1px solid var(--game_border); border-radius: 11px; }
-.game_chat { height: 425px; display: flex; flex-direction: column; }
-.game_chat_log { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 9px; scrollbar-color: #3b4656 transparent; }
-.game_message { max-width: 92%; padding: 9px 10px; border-radius: 11px; font-size: 12px; line-height: 1.42; border: 1px solid var(--game_border); }
-.game_message.game_driver { align-self: flex-start; background: #141c27; }
-.game_message.game_engineer { align-self: flex-end; background: rgba(78,161,255,.12); border-color: rgba(78,161,255,.28); }
-.game_message.game_system { align-self: center; max-width: 100%; color: var(--game_muted); background: transparent; border-style: dashed; text-align: center; font-size: 10px; }
-.game_message_sender { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--game_muted); font-weight: 900; margin-bottom: 4px; }
-.game_chat_controls { border-top: 1px solid var(--game_border); padding: 10px; }
-.game_quick_commands { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
-.game_quick_button { border: 1px solid var(--game_border); background: #121822; color: #dfe5ec; padding: 7px 5px; border-radius: 8px; font-size: 10px; font-weight: 800; }
-.game_quick_button:hover { border-color: #4d5b6e; }
-.game_chat_form { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
-.game_input, .game_select, .game_range_wrap { width: 100%; background: #0b0f15; color: var(--game_text); border: 1px solid var(--game_border); border-radius: 9px; padding: 9px 10px; outline: none; }
-.game_input:focus, .game_select:focus { border-color: var(--game_blue); box-shadow: 0 0 0 3px rgba(78,161,255,.08); }
-.game_engineer_controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.game_control_card { border: 1px solid var(--game_border); background: var(--game_panel_2); border-radius: 10px; padding: 10px; }
-.game_control_title { font-size: 10px; color: var(--game_muted); text-transform: uppercase; letter-spacing: .07em; font-weight: 850; }
-.game_control_value { margin-top: 5px; font-weight: 850; font-size: 13px; }
-.game_setup_grid { display: grid; gap: 10px; }
-.game_setup_row { display: grid; grid-template-columns: 120px 1fr 54px; align-items: center; gap: 10px; font-size: 11px; }
-.game_setup_row input[type="range"] { width: 100%; accent-color: var(--game_accent); }
-.game_setup_value { font-family: monospace; text-align: right; font-weight: 850; }
-.game_alerts { display: grid; gap: 7px; }
-.game_alert { border: 1px solid var(--game_border); border-left-width: 3px; border-radius: 9px; padding: 8px 9px; background: #111720; }
-.game_alert.game_info { border-left-color: var(--game_blue); }
-.game_alert.game_warn { border-left-color: var(--game_yellow); }
-.game_alert.game_critical { border-left-color: var(--game_danger); }
-.game_alert_title { font-size: 10px; font-weight: 900; }
-.game_alert_text { margin-top: 3px; color: var(--game_muted); font-size: 10px; line-height: 1.4; }
-.game_footer_bar { position: sticky; bottom: 10px; margin-top: 12px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; background: rgba(9, 12, 17, .92); backdrop-filter: blur(12px); border: 1px solid var(--game_border); border-radius: 12px; padding: 9px; z-index: 20; }
-.game_footer_status { font-size: 11px; color: var(--game_muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.game_speed_controls { display: flex; gap: 5px; }
-.game_speed_button { min-width: 36px; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--game_border); color: var(--game_muted); background: #111721; font-size: 10px; font-weight: 900; }
-.game_speed_button.game_active { color: var(--game_text); border-color: var(--game_blue); background: rgba(78,161,255,.10); }
-.game_overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(2, 4, 7, .78); backdrop-filter: blur(8px); }
-.game_overlay[hidden] { display: none; }
-.game_modal { width: min(760px, 100%); max-height: min(760px, 92vh); overflow: auto; background: #0d1118; border: 1px solid #303a48; border-radius: 17px; box-shadow: 0 35px 90px rgba(0,0,0,.6); padding: 22px; }
-.game_modal_title { margin: 0; font-size: 29px; letter-spacing: -.04em; }
-.game_modal_text { color: #b6c0cc; font-size: 13px; line-height: 1.6; }
-.game_result_grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0; }
-.game_result_card { border: 1px solid var(--game_border); background: var(--game_panel_2); border-radius: 11px; padding: 12px; }
-.game_result_label { color: var(--game_muted); text-transform: uppercase; font-size: 9px; font-weight: 850; letter-spacing: .07em; }
-.game_result_value { margin-top: 5px; font-size: 20px; font-weight: 900; }
-.game_hidden { display: none !important; }
-@media (max-width: 1350px) {
-    .game_grid { grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); }
-    .game_grid > .game_stack:last-child { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
-    .game_chat { height: 380px; }
-}
-@media (max-width: 900px) {
-    .game_shell { padding: 10px; }
-    .game_header { grid-template-columns: 1fr; }
-    .game_header_actions { justify-content: flex-start; }
-    .game_schedule { grid-template-columns: repeat(5, 180px); overflow-x: auto; padding-bottom: 3px; }
-    .game_grid { grid-template-columns: 1fr; }
-    .game_grid > .game_stack:last-child { grid-column: auto; grid-template-columns: 1fr; }
-    .game_race_strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .game_telemetry_grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .game_car_area { grid-template-columns: 1fr; }
-    .game_car_wrap { min-height: 260px; }
-    #game_car_svg { height: 255px; }
-    .game_footer_bar { grid-template-columns: 1fr; }
-}
-@media (max-width: 560px) {
-    .game_session_hero { grid-template-columns: 1fr; }
-    .game_position { text-align: left; }
-    .game_race_strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .game_engineer_controls { grid-template-columns: 1fr; }
-    .game_setup_row { grid-template-columns: 95px 1fr 46px; }
-    .game_quick_commands { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .game_result_grid { grid-template-columns: 1fr; }
-}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--game_bg);color:var(--game_text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{overflow-x:hidden;background:radial-gradient(circle at 15% 0%,rgba(255,48,56,.08),transparent 24rem),var(--game_bg)}
+button,input{font:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.game_app{min-height:100vh;padding-bottom:82px}
+.game_topbar{height:72px;display:grid;grid-template-columns:minmax(260px,1fr) auto minmax(260px,1fr);align-items:center;gap:20px;padding:0 22px;border-bottom:1px solid var(--game_line);background:rgba(6,7,8,.96);position:sticky;top:0;z-index:40;backdrop-filter:blur(16px)}
+.game_brand{display:flex;align-items:center;gap:12px;min-width:0}.game_brand_mark{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--game_team),#ff3941);display:grid;place-items:center;font-weight:1000;font-style:italic;letter-spacing:-2px;box-shadow:0 0 30px var(--game_team_soft)}.game_brand strong{font-size:13px;letter-spacing:.16em;display:block}.game_brand small{color:var(--game_muted);font-size:11px;display:block;margin-top:2px}.game_weekend_identity{display:flex;align-items:center;gap:10px;justify-content:center;min-width:0}.game_weekend_identity strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:390px}.game_round,.game_sprint_badge{font-size:10px;letter-spacing:.12em;font-weight:900;border:1px solid var(--game_line);border-radius:999px;padding:6px 9px;color:var(--game_muted)}.game_sprint_badge{color:#111;background:var(--game_yellow);border-color:var(--game_yellow)}.game_top_actions{display:flex;justify-content:flex-end;gap:8px}.game_icon_button{border:1px solid var(--game_line);background:#111419;color:#dfe3e8;border-radius:9px;padding:9px 11px;font-size:10px;letter-spacing:.08em;font-weight:900}.game_icon_button:hover{border-color:#4b515c;background:#191d23}
+.game_session_strip{display:flex;gap:8px;padding:12px 22px;border-bottom:1px solid var(--game_line);overflow:auto;scrollbar-width:none;background:#090b0d}.game_session_strip::-webkit-scrollbar{display:none}.game_session_step{min-width:145px;border:1px solid var(--game_line);border-radius:10px;padding:9px 11px;background:#0f1114;color:var(--game_muted);display:flex;align-items:center;justify-content:space-between;gap:10px}.game_session_step strong{display:block;font-size:11px;letter-spacing:.08em;color:#d9dde3}.game_session_step small{font-size:9px}.game_session_step.game_current{border-color:var(--game_team);box-shadow:0 0 0 1px var(--game_team) inset;background:var(--game_team_soft)}.game_session_step.game_done{opacity:.55}.game_session_step.game_done::after{content:'✓';color:var(--game_green);font-weight:900}.game_session_step.game_current::after{content:'LIVE';font-size:8px;color:var(--game_team);font-weight:1000;letter-spacing:.12em}
+.game_cockpit{display:grid;grid-template-columns:minmax(360px,1.08fr) minmax(430px,1.32fr) minmax(270px,.72fr);gap:14px;padding:14px;align-items:start}.game_track_column,.game_radio_column,.game_commands_column{display:flex;flex-direction:column;gap:14px;min-width:0}
+.game_track_scene,.game_pitcrew_panel,.game_radio_column,.game_command_panel,.game_skill_panel{background:linear-gradient(180deg,#111419,#0c0e11);border:1px solid var(--game_line);border-radius:var(--game_radius);overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.24)}
+.game_scene_header{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 10px;gap:16px}.game_scene_header h1{font-size:27px;line-height:1;margin:9px 0 7px;letter-spacing:-.04em}.game_scene_header p{margin:0;color:var(--game_muted);font-size:12px;max-width:520px}.game_live_pill{font-size:9px;font-weight:1000;letter-spacing:.14em;border:1px solid var(--game_line);padding:5px 8px;border-radius:999px;color:var(--game_muted)}.game_live_pill.game_is_live{color:#07150e;background:var(--game_green);border-color:var(--game_green);box-shadow:0 0 20px rgba(53,228,138,.25)}.game_position_box{min-width:74px;text-align:center;border-left:1px solid var(--game_line);padding-left:15px}.game_position_box span{font-size:36px;font-weight:1000;letter-spacing:-.07em}.game_position_box small{display:block;color:var(--game_muted);font-size:9px;letter-spacing:.14em}
+.game_track_visual{position:relative;margin:0 12px 12px;border-radius:13px;min-height:260px;overflow:hidden;background:radial-gradient(circle at center,rgba(255,255,255,.035),transparent 60%),repeating-linear-gradient(0deg,transparent,transparent 26px,rgba(255,255,255,.015) 27px),#090b0d;border:1px solid #1d2025}.game_track_svg{display:block;width:100%;height:255px}.game_track_shadow{fill:none;stroke:#030405;stroke-width:29;stroke-linecap:round;stroke-linejoin:round}.game_track_line{fill:none;stroke:#353a42;stroke-width:17;stroke-linecap:round;stroke-linejoin:round}.game_track_car{fill:var(--game_team);stroke:white;stroke-width:3;filter:drop-shadow(0 0 10px var(--game_team))}.game_track_hud{position:absolute;left:12px;right:12px;bottom:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.game_track_hud>div{background:rgba(7,8,10,.88);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 9px;backdrop-filter:blur(8px)}.game_track_hud small{display:block;color:var(--game_muted);font-size:8px;letter-spacing:.1em}.game_track_hud strong{font-size:13px}
+.game_car_and_data{display:grid;grid-template-columns:180px 1fr;gap:10px;padding:0 12px 12px}.game_car_card{border:1px solid #1f2329;background:#090b0d;border-radius:12px;padding:8px;min-height:205px}.game_car_title{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.1em;color:var(--game_muted);font-weight:900}.game_car_title b{color:var(--game_green)}.game_car_svg{width:100%;height:174px;display:block}.game_car_tyre{fill:#191c21;stroke:#353a42}.game_car_body{fill:#2b3038;stroke:#69717e;stroke-width:2}.game_car_accent{fill:var(--game_team);opacity:.9}.game_damage_zone{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.12);stroke-width:2;transition:.2s}.game_damage_zone.game_damage_minor{fill:rgba(255,210,74,.28);stroke:var(--game_yellow)}.game_damage_zone.game_damage_major{fill:rgba(255,48,56,.42);stroke:var(--game_red);filter:drop-shadow(0 0 6px rgba(255,48,56,.45))}.game_car_svg text{fill:white;font-size:28px;font-weight:1000}.game_live_data{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.game_data_tile{background:#0a0c0f;border:1px solid #1f2329;border-radius:10px;padding:10px}.game_data_tile small{display:block;color:var(--game_muted);font-size:8px;letter-spacing:.12em}.game_data_tile strong{font-size:20px;display:inline-block;margin-top:3px}.game_data_tile span{display:block;font-size:9px;color:#7f8793;margin-top:2px}
+.game_pitcrew_panel{padding:14px}.game_panel_heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.game_panel_heading h2{font-size:16px;margin:3px 0 0}.game_kicker{font-size:8px;color:var(--game_team);letter-spacing:.16em;font-weight:1000}.game_crew_state{font-size:9px;font-weight:1000;letter-spacing:.12em;color:var(--game_muted);border:1px solid var(--game_line);border-radius:999px;padding:6px 9px}.game_crew_state.game_ready{color:#04170d;background:var(--game_green);border-color:var(--game_green)}.game_pitcrew_orders{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.game_pitcrew_orders button{border:1px solid #292e36;background:#171a1f;color:#d8dde4;padding:9px 6px;border-radius:8px;font-size:9px;font-weight:900;letter-spacing:.04em}.game_pitcrew_orders button:hover{border-color:var(--game_team);background:var(--game_team_soft)}
+.game_radio_column{height:calc(100vh - 190px);min-height:620px;position:sticky;top:100px}.game_radio_header{padding:14px 16px;border-bottom:1px solid var(--game_line);display:flex;align-items:center;justify-content:space-between;background:#0c0f12}.game_driver_identity{display:flex;align-items:center;gap:10px}.game_driver_number{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--game_team);font-weight:1000;font-size:17px;box-shadow:0 0 20px var(--game_team_soft)}.game_driver_identity strong{display:block;font-size:15px}.game_driver_identity small{display:block;color:var(--game_muted);font-size:10px;margin-top:2px}.game_radio_status{font-size:9px;font-weight:1000;letter-spacing:.12em;color:#aeb5bf}.game_radio_dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--game_green);margin-right:6px;box-shadow:0 0 10px var(--game_green)}
+.game_radio_log{flex:1;overflow:auto;padding:16px;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.025),transparent 18rem),#080a0c;scrollbar-color:#313741 transparent}.game_message{max-width:87%;margin:0 0 11px}.game_message_meta{font-size:8px;letter-spacing:.12em;color:#6f7782;margin-bottom:4px;font-weight:900}.game_message_bubble{display:inline-block;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.42;border:1px solid #242931;background:#13161a;color:#eef1f5}.game_message.game_engineer{margin-left:auto;text-align:right}.game_message.game_engineer .game_message_bubble{background:var(--game_team_soft);border-color:color-mix(in srgb,var(--game_team),#252a32 60%)}.game_message.game_driver .game_message_bubble{border-left:3px solid var(--game_team)}.game_message.game_crew .game_message_bubble{border-left:3px solid var(--game_yellow)}.game_message.game_system{max-width:100%;text-align:center;margin:8px auto 13px}.game_message.game_system .game_message_bubble{background:transparent;border:0;color:#6f7782;font-size:9px;text-transform:uppercase;letter-spacing:.08em;padding:3px}.game_message.game_urgent .game_message_bubble{border-color:var(--game_red);box-shadow:0 0 0 1px rgba(255,48,56,.18),0 0 18px rgba(255,48,56,.08)}
+.game_radio_quick{display:flex;gap:5px;padding:8px 10px;overflow:auto;border-top:1px solid var(--game_line);background:#101318;scrollbar-width:none}.game_radio_quick::-webkit-scrollbar{display:none}.game_radio_quick button{white-space:nowrap;border:1px solid #2b3038;background:#181c21;color:#d9dee5;border-radius:999px;padding:7px 9px;font-size:8px;letter-spacing:.06em;font-weight:900}.game_radio_quick button:hover{border-color:var(--game_team);color:white}.game_channel_tabs{display:flex;border-top:1px solid var(--game_line);background:#0d0f12}.game_channel_tabs button{flex:1;border:0;border-bottom:2px solid transparent;background:transparent;color:#707986;padding:8px;font-size:8px;font-weight:1000;letter-spacing:.12em}.game_channel_tabs button.game_channel_active{color:#fff;border-bottom-color:var(--game_team)}.game_radio_form{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:10px;background:#0d0f12}.game_channel_prefix{font-size:8px;font-weight:1000;letter-spacing:.1em;color:var(--game_team);min-width:42px}.game_radio_form input{height:42px;border:1px solid #2b3038;border-radius:9px;background:#07090b;color:white;padding:0 12px;outline:none;font-size:12px}.game_radio_form input:focus{border-color:var(--game_team);box-shadow:0 0 0 2px var(--game_team_soft)}.game_radio_form button{height:42px;border:0;border-radius:9px;background:var(--game_team);color:#fff;font-weight:1000;font-size:9px;letter-spacing:.1em;padding:0 16px}
+.game_commands_column{position:sticky;top:100px;max-height:calc(100vh - 190px);overflow:auto;padding-right:1px;scrollbar-width:thin;scrollbar-color:#2c3139 transparent}.game_command_panel,.game_skill_panel{padding:14px}.game_command_hint,.game_rating_note{font-size:10px;line-height:1.45;color:var(--game_muted);margin:0 0 12px}.game_command_group{border-top:1px solid var(--game_line);padding-top:10px;margin-top:10px}.game_command_group h3{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#aeb5bf;margin:0 0 8px}.game_command_group button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #1d2127;background:transparent;color:#aeb5bf;padding:7px 4px;font-size:10px}.game_command_group button::before{content:'›';color:var(--game_team);margin-right:7px;font-weight:1000}.game_command_group button:hover{color:white;background:var(--game_team_soft);padding-left:8px}.game_skill_panel h2{font-size:16px;margin:4px 0 12px}.game_skill_rows{display:grid;gap:7px}.game_skill_row{display:grid;grid-template-columns:72px 1fr 26px;align-items:center;gap:8px}.game_skill_row span{font-size:9px;color:#abb2bc}.game_skill_row b{font-size:9px;text-align:right}.game_skill_bar{height:5px;background:#252a31;border-radius:999px;overflow:hidden}.game_skill_fill{height:100%;border-radius:999px;background:var(--game_team)}.game_rating_note{margin-top:12px;margin-bottom:0;font-size:8px}
+.game_bottom_bar{position:fixed;z-index:35;left:0;right:0;bottom:0;height:68px;border-top:1px solid #2a2f37;background:rgba(8,10,12,.96);backdrop-filter:blur(15px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 18px;gap:14px}.game_engineer_score{font-size:9px;letter-spacing:.09em;color:var(--game_muted);font-weight:900}.game_engineer_score strong{font-size:21px;color:white;margin:0 8px}.game_engineer_score span{font-weight:500;letter-spacing:0}.game_speed_buttons{display:flex;border:1px solid #2a2f37;border-radius:9px;overflow:hidden}.game_speed_buttons button{border:0;border-right:1px solid #2a2f37;background:#111419;color:#7e8793;padding:9px 12px;font-size:9px;font-weight:900}.game_speed_buttons button:last-child{border-right:0}.game_speed_buttons button.game_speed_active{background:#2a3038;color:white}.game_session_button{justify-self:end;min-width:180px;border:0;border-radius:9px;background:var(--game_team);color:white;padding:13px 18px;font-size:10px;letter-spacing:.1em;font-weight:1000;box-shadow:0 0 24px var(--game_team_soft)}.game_session_button.game_pause{background:#2b3038}.game_session_button:disabled{opacity:.4;cursor:not-allowed}
+.game_setup_overlay{position:fixed;z-index:100;inset:0;background:rgba(3,4,5,.97);overflow:auto;padding:34px 18px}.game_setup_screen{width:min(1160px,100%);margin:0 auto}.game_setup_intro{max-width:700px;margin-bottom:32px}.game_setup_intro h1{font-size:clamp(42px,7vw,82px);line-height:.91;letter-spacing:-.065em;margin:8px 0 14px}.game_setup_intro p{font-size:15px;color:var(--game_muted);line-height:1.55;max-width:600px}.game_setup_section{margin:24px 0 30px}.game_setup_title{display:flex;align-items:center;gap:9px;margin-bottom:12px}.game_setup_title span{color:var(--game_team);font-size:10px;font-weight:1000}.game_setup_title h2{font-size:16px;margin:0}.game_team_grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.game_team_option{position:relative;text-align:left;border:1px solid #242931;background:#101318;border-radius:11px;color:white;padding:13px;min-height:82px;overflow:hidden}.game_team_option::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--game_option_color)}.game_team_option strong{display:block;font-size:12px}.game_team_option small{display:block;color:#767f8b;margin-top:5px;font-size:9px}.game_team_option.game_selected{border-color:var(--game_option_color);box-shadow:0 0 0 1px var(--game_option_color) inset}.game_driver_grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:720px}.game_driver_option{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:12px;border:1px solid #242931;background:#101318;border-radius:11px;color:white;padding:12px;text-align:left}.game_driver_option .game_driver_option_number{font-size:25px;font-weight:1000;color:var(--game_team)}.game_driver_option strong{font-size:13px;display:block}.game_driver_option small{font-size:9px;color:var(--game_muted)}.game_driver_option b{font-size:10px;color:#dce1e7}.game_driver_option.game_selected{border-color:var(--game_team);box-shadow:0 0 0 1px var(--game_team) inset}.game_calendar_grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.game_calendar_option{border:1px solid #22272e;background:#0f1215;border-radius:10px;color:#dfe4ea;text-align:left;padding:10px;position:relative}.game_calendar_option strong{display:block;font-size:11px;padding-right:36px}.game_calendar_option small{display:block;color:#737c88;font-size:9px;margin-top:4px}.game_calendar_option .game_round_num{position:absolute;right:9px;top:9px;color:#525a65;font-size:9px;font-weight:1000}.game_calendar_option .game_sprint_tag{display:inline-block;color:#101010;background:var(--game_yellow);border-radius:4px;padding:2px 5px;font-size:7px;font-weight:1000;margin-top:7px;letter-spacing:.06em}.game_calendar_option.game_selected{border-color:var(--game_team);background:var(--game_team_soft)}.game_setup_footer{position:sticky;bottom:8px;background:rgba(13,15,18,.95);border:1px solid #292e36;border-radius:13px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;backdrop-filter:blur(16px);margin:20px 0}.game_setup_footer div{font-size:11px;color:var(--game_muted)}.game_setup_footer button{border:0;border-radius:9px;background:var(--game_team);color:white;padding:13px 20px;font-size:10px;font-weight:1000;letter-spacing:.1em}.game_setup_footer button:disabled{opacity:.35}
+.game_calendar_overlay,.game_result_overlay{position:fixed;z-index:90;inset:0;background:rgba(0,0,0,.8);display:grid;place-items:center;padding:20px}.game_calendar_modal{width:min(1050px,100%);max-height:88vh;overflow:auto;background:#0d1013;border:1px solid #2a2f37;border-radius:16px;padding:18px}.game_modal_head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}.game_modal_head h2{font-size:28px;margin:4px 0 0}.game_modal_head button{border:1px solid #2b3038;border-radius:50%;background:#15191e;color:white;width:34px;height:34px;font-size:20px}.game_calendar_full{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.game_calendar_row{border:1px solid #22272e;border-radius:9px;padding:10px;background:#111419}.game_calendar_row strong{display:block;font-size:11px}.game_calendar_row small{display:block;color:var(--game_muted);font-size:9px;margin-top:4px}.game_calendar_row span{display:inline-block;margin-top:7px;font-size:7px;font-weight:1000;letter-spacing:.07em;color:#111;background:var(--game_yellow);padding:2px 5px;border-radius:4px}.game_result_modal{width:min(510px,100%);background:#0d1013;border:1px solid #30353e;border-radius:17px;padding:24px;box-shadow:0 30px 100px rgba(0,0,0,.55)}.game_result_modal h2{font-size:30px;letter-spacing:-.04em;margin:6px 0 8px}.game_result_modal p{color:var(--game_muted);font-size:12px;line-height:1.5}.game_result_stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:16px 0}.game_result_stat{border:1px solid #262b32;background:#101317;border-radius:9px;padding:10px}.game_result_stat small{display:block;font-size:8px;color:var(--game_muted);letter-spacing:.1em}.game_result_stat strong{display:block;font-size:18px;margin-top:3px}.game_result_modal button{width:100%;border:0;border-radius:9px;background:var(--game_team);color:white;padding:13px;font-size:10px;font-weight:1000;letter-spacing:.1em}
+@media(max-width:1180px){.game_cockpit{grid-template-columns:1fr 1.15fr}.game_commands_column{grid-column:1/-1;position:static;max-height:none;display:grid;grid-template-columns:1fr 1fr}.game_radio_column{position:static;height:720px}.game_team_grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:820px){.game_topbar{grid-template-columns:1fr auto;height:auto;min-height:64px;padding:10px 12px}.game_weekend_identity{grid-column:1/-1;grid-row:2;justify-content:flex-start}.game_top_actions .game_icon_button:first-child{display:none}.game_cockpit{grid-template-columns:1fr;padding:8px}.game_radio_column{order:-1;height:68vh;min-height:520px}.game_commands_column{display:block}.game_skill_panel{margin-top:8px}.game_track_scene{margin-top:0}.game_pitcrew_orders{grid-template-columns:repeat(3,1fr)}.game_car_and_data{grid-template-columns:130px 1fr}.game_team_grid{grid-template-columns:repeat(2,1fr)}.game_calendar_grid{grid-template-columns:repeat(2,1fr)}.game_calendar_full{grid-template-columns:1fr}.game_bottom_bar{grid-template-columns:1fr auto;height:74px;padding:8px}.game_speed_buttons{display:none}.game_engineer_score span{display:none}.game_session_button{min-width:145px}.game_setup_overlay{padding:18px 10px}.game_setup_intro h1{font-size:52px}}
+@media(max-width:520px){.game_brand small{display:none}.game_top_actions .game_icon_button{font-size:8px;padding:8px}.game_track_hud{grid-template-columns:repeat(2,1fr)}.game_track_visual{min-height:305px}.game_track_svg{height:235px}.game_car_and_data{grid-template-columns:1fr}.game_car_card{display:none}.game_live_data{grid-template-columns:repeat(3,1fr)}.game_data_tile{padding:8px}.game_data_tile strong{font-size:15px}.game_pitcrew_orders{grid-template-columns:repeat(2,1fr)}.game_driver_grid{grid-template-columns:1fr}.game_calendar_grid{grid-template-columns:1fr}.game_setup_footer{align-items:flex-start;flex-direction:column}.game_setup_footer button{width:100%}.game_radio_form{grid-template-columns:1fr auto}.game_channel_prefix{display:none}.game_radio_quick{padding-bottom:9px}.game_commands_column{display:none}.game_session_strip{padding:8px}.game_session_step{min-width:120px}}
