@@ -16,6 +16,8 @@ it('creates the managed PitMetric schema through deterministic migrations', func
         'configurations',
         'configuration_versions',
         'configuration_version_components',
+        'technical_setups',
+        'setup_snapshots',
         'circuits',
         'circuit_layouts',
         'track_sessions',
@@ -42,6 +44,8 @@ it('creates the managed PitMetric schema through deterministic migrations', func
         ->and(Schema::hasColumn('maintenance_records', 'event_id'))->toBeTrue()
         ->and(Schema::hasColumn('event_notes', 'kind'))->toBeTrue()
         ->and(Schema::hasColumns('event_schedule_items', ['event_id', 'event_entry_id', 'session_id', 'starts_at', 'status']))->toBeTrue()
+        ->and(Schema::hasColumns('technical_setups', ['workspace_id', 'vehicle_id', 'name', 'values', 'status', 'created_by']))->toBeTrue()
+        ->and(Schema::hasColumns('setup_snapshots', ['workspace_id', 'session_id', 'technical_setup_id', 'vehicle_id', 'configuration_version_id', 'name', 'values', 'captured_at']))->toBeTrue()
         ->and(Schema::hasColumns('workspace_user', ['role', 'status', 'joined_at']))->toBeTrue();
 });
 
