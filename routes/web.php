@@ -13,6 +13,7 @@ use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TechnicalSetupController;
 use App\Http\Controllers\UpdateStudioController;
 use App\Http\Controllers\UserStudioController;
 use App\Http\Controllers\VehicleController;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/garage', [VehicleController::class, 'index'])->name('garage.index');
     Route::get('/components', [ComponentController::class, 'index'])->name('components.index');
     Route::get('/configurations', [ConfigurationController::class, 'index'])->name('configurations.index');
+    Route::get('/setups', [TechnicalSetupController::class, 'index'])->name('setups.index');
     Route::get('/circuits', [CircuitController::class, 'index'])->name('circuits.index');
     Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
     Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
@@ -112,6 +114,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/configurations/{configuration}', [ConfigurationController::class, 'destroy'])
                 ->name('configurations.destroy');
 
+            Route::post('/setups', [TechnicalSetupController::class, 'store'])->name('setups.store');
+            Route::put('/setups/{technicalSetup}', [TechnicalSetupController::class, 'update'])->name('setups.update');
+            Route::delete('/setups/{technicalSetup}', [TechnicalSetupController::class, 'destroy'])->name('setups.destroy');
+
             Route::post('/circuits', [CircuitController::class, 'store'])->name('circuits.store');
             Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
 
@@ -132,8 +138,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
         });
 });
 
