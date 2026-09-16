@@ -177,5 +177,28 @@ it('renders the control center with readiness, data hub, documents, alerts and a
         ->assertSee('DATA HUB')
         ->assertSee('PRIVATE DOCUMENTS')
         ->assertSee('OPERATIONAL ALERTS')
-        ->assertSee('AUDIT TRAIL');
+        ->assertSee('AUDIT TRAIL')
+        ->assertSee('data-pitmetric-help-tooltip', false);
+});
+
+it('keeps the control center restricted to workspace owners and managers', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $workspace = $owner->workspaces()->firstOrFail();
+    $mechanic = User::factory()->create();
+
+    DB::table('users')->where('id', $mechanic->id)->update(['database_access_enabled' => true]);
+    $workspace->users()->attach($mechanic, [
+        'role' => 'mechanic_engineer',
+        'status' => 'active',
+        'joined_at' => now(),
+    ]);
+
+    $this->actingAs($mechanic)
+        ->get(route('control-center.index'))
+        ->assertForbidden();
+
+    $this->actingAs($mechanic)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee(route('control-center.index'), false);
 });
