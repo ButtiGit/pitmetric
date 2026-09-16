@@ -20,8 +20,11 @@
 
                     @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
                         <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
-                        <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">{{ app()->getLocale() === 'it' ? 'Intelligence' : 'Intelligence' }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
+                        <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">Intelligence</flux:sidebar.item>
+
+                        @can('team-manage')
+                            <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
+                        @endcan
                     @endif
                 </flux:sidebar.group>
 
@@ -55,6 +58,7 @@
         </flux:header>
 
         {{ $slot }}
+        <x-pitmetric.context-help />
         @persist('toast')<flux:toast.group><flux:toast /></flux:toast.group>@endpersist
         @fluxScripts
     </body>
