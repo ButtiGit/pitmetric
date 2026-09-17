@@ -6,11 +6,12 @@ use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['event_id', 'event_entry_id', 'kind', 'body', 'occurred_at', 'created_by'])]
 class EventNote extends Model
 {
-    use BelongsToWorkspace;
+    use BelongsToWorkspace, SoftDeletes;
 
     protected $attributes = [
         'kind' => 'technical',
