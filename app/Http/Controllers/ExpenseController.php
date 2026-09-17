@@ -57,13 +57,7 @@ class ExpenseController extends Controller
         }
 
         $workspaceContext->personal($user);
-
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'gt:0', 'max:1000000'],
-            'category' => ['required', 'string', 'max:80'],
-            'description' => ['required', 'string', 'max:180'],
-            'occurred_at' => ['required', 'date'],
-        ]);
+        $validated = $request->validate($this->rules());
 
         Expense::create([
             'amount_cents' => (int) round(((float) $validated['amount']) * 100),
@@ -77,6 +71,25 @@ class ExpenseController extends Controller
         return to_route('expenses.index')->with('status', __('Expense recorded.'));
     }
 
+    public function update(Request $request, Expense $expense): RedirectResponse
+    {
+        Gate::authorize('update', $expense);
+
+        if ($expense->related_type !== null) {
+            return to_route('expenses.index')->with('error', __('Linked operational costs must be edited from their source record.'));
+        }
+
+        $validated = $request->validate($this->rules());
+        $expense->update([
+            'amount_cents' => (int) round(((float) $validated['amount']) * 100),
+            'category' => $validated['category'],
+            'description' => $validated['description'],
+            'occurred_at' => Carbon::parse($validated['occurred_at']),
+        ]);
+
+        return to_route('expenses.index', ['expense' => $expense->getKey()])->with('status', __('Expense updated.'));
+    }
+
     public function destroy(Expense $expense): RedirectResponse
     {
         Gate::authorize('delete', $expense);
@@ -87,7 +100,18 @@ class ExpenseController extends Controller
 
         $expense->delete();
 
-        return to_route('expenses.index')->with('status', __('Expense deleted.'));
+        return to_route('expenses.index')->with('status', __('Expense archived.'));
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function rules(): array
+    {
+        return [
+            'amount' => ['required', 'numeric', 'gt:0', 'max:1000000'],
+            'category' => ['required', 'string', 'max:80'],
+            'description' => ['required', 'string', 'max:180'],
+            'occurred_at' => ['required', 'date'],
+        ];
     }
 
     private function hasDatabaseAccess(User $user): bool
