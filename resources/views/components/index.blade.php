@@ -63,8 +63,10 @@
                             <thead class="border-b border-pm-border bg-pm-subtle text-[11px] uppercase tracking-[0.1em] text-pm-muted"><tr><th class="px-4 py-3">Component</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">{{ $it ? 'Montato su' : 'Installed on' }}</th><th class="px-4 py-3">Metric</th><th class="px-4 py-3">{{ $it ? 'Dall’ultimo service' : 'Since service' }}</th><th class="px-4 py-3">Lifetime</th><th class="px-4 py-3">{{ $it ? 'Acquisto' : 'Purchase' }}</th><th class="px-4 py-3"></th></tr></thead>
                             <tbody class="divide-y divide-pm-border">
                                 @foreach ($components as $component)
-                                    @php($tracker = $component->trackers->first())
-                                    @php($installation = $component->activeInstallation)
+                                    @php
+                                        $tracker = $component->trackers->first();
+                                        $installation = $component->activeInstallation;
+                                    @endphp
                                     <tr id="component-{{ $component->id }}" class="scroll-mt-28 transition-colors target:bg-pm-accent/5">
                                         <td class="px-4 py-4"><p class="font-bold text-pm-text">{{ $component->name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $component->serial_number ?: '—' }}</p></td>
                                         <td class="px-4 py-4 text-pm-text-secondary">{{ $component->type->name }}</td>
