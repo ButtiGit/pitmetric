@@ -8,7 +8,7 @@
                 default => number_format($value, 0, ',', '.').' '.$metric->display_unit,
             };
         };
-        $availableComponents = $components->filter(fn ($component) => $component->activeInstallation === null);
+        $availableComponents = $components->filter(fn ($candidate) => $candidate->activeInstallation === null);
     @endphp
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -38,7 +38,7 @@
                     <x-crud-modal id="install-component" :title="$it ? 'Monta componente' : 'Install component'" :description="$it ? 'Registri posizione, data e costo dell’operazione in un solo passaggio.' : 'Record position, date and operation cost in one step.'" :trigger="$it ? 'Monta componente' : 'Install component'" trigger-class="pm-ghost-button">
                         <form method="POST" action="{{ route('component-installations.store') }}" class="grid gap-4 md:grid-cols-2">
                             @csrf
-                            <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Componente disponibile' : 'Available component' }}</span><select class="pm-input" name="component_id" required><option value="">{{ $it ? 'Seleziona componente' : 'Select component' }}</option>@foreach ($availableComponents as $component)<option value="{{ $component->id }}">{{ $component->name }} · {{ $component->type->name }}</option>@endforeach</select></label>
+                            <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Componente disponibile' : 'Available component' }}</span><select class="pm-input" name="component_id" required><option value="">{{ $it ? 'Seleziona componente' : 'Select component' }}</option>@foreach ($availableComponents as $availablePart)<option value="{{ $availablePart->id }}">{{ $availablePart->name }} · {{ $availablePart->type->name }}</option>@endforeach</select></label>
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Mezzo' : 'Vehicle' }}</span><select class="pm-input" name="vehicle_id" required><option value="">{{ $it ? 'Seleziona mezzo' : 'Select vehicle' }}</option>@foreach ($vehicles as $vehicle)<option value="{{ $vehicle->id }}">{{ $vehicle->name }}</option>@endforeach</select></label>
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Posizione / ruolo' : 'Position / role' }}</span><input class="pm-input" name="position_or_role" maxlength="100"></label>
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Montato il' : 'Installed at' }}</span><input class="pm-input" name="installed_at" type="datetime-local" required value="{{ now()->format('Y-m-d\TH:i') }}"></label>
@@ -62,20 +62,20 @@
                         <table class="w-full min-w-[1180px] text-left text-sm">
                             <thead class="border-b border-pm-border bg-pm-subtle text-[11px] uppercase tracking-[0.1em] text-pm-muted"><tr><th class="px-4 py-3">Component</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">{{ $it ? 'Montato su' : 'Installed on' }}</th><th class="px-4 py-3">Metric</th><th class="px-4 py-3">{{ $it ? 'Dall’ultimo service' : 'Since service' }}</th><th class="px-4 py-3">Lifetime</th><th class="px-4 py-3">{{ $it ? 'Acquisto' : 'Purchase' }}</th><th class="px-4 py-3"></th></tr></thead>
                             <tbody class="divide-y divide-pm-border">
-                                @foreach ($components as $component)
+                                @foreach ($components as $part)
                                     @php
-                                        $tracker = $component->trackers->first();
-                                        $installation = $component->activeInstallation;
+                                        $tracker = $part->trackers->first();
+                                        $installation = $part->activeInstallation;
                                     @endphp
-                                    <tr id="component-{{ $component->id }}" class="scroll-mt-28 transition-colors target:bg-pm-accent/5">
-                                        <td class="px-4 py-4"><p class="font-bold text-pm-text">{{ $component->name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $component->serial_number ?: '—' }}</p></td>
-                                        <td class="px-4 py-4 text-pm-text-secondary">{{ $component->type->name }}</td>
+                                    <tr id="component-{{ $part->id }}" class="scroll-mt-28 transition-colors target:bg-pm-accent/5">
+                                        <td class="px-4 py-4"><p class="font-bold text-pm-text">{{ $part->name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $part->serial_number ?: '—' }}</p></td>
+                                        <td class="px-4 py-4 text-pm-text-secondary">{{ $part->type->name }}</td>
                                         <td class="px-4 py-4">
                                             @if ($installation)
                                                 <p class="font-bold text-pm-text">{{ $installation->vehicle->name }}</p>
                                                 <p class="mt-1 text-xs text-pm-muted">{{ $installation->position_or_role ?: ($it ? 'Posizione non specificata' : 'Position not specified') }} · {{ $installation->installed_at->format('d/m/Y H:i') }}</p>
                                                 <div class="mt-2">
-                                                    <x-crud-modal id="remove-installation-{{ $installation->id }}" :title="$it ? 'Rimuovi componente' : 'Remove component'" :description="$component->name.' · '.$installation->vehicle->name" :trigger="$it ? 'Rimuovi dal mezzo' : 'Remove from vehicle'" trigger-class="text-xs font-bold text-pm-accent hover:underline">
+                                                    <x-crud-modal id="remove-installation-{{ $installation->id }}" :title="$it ? 'Rimuovi componente' : 'Remove component'" :description="$part->name.' · '.$installation->vehicle->name" :trigger="$it ? 'Rimuovi dal mezzo' : 'Remove from vehicle'" trigger-class="text-xs font-bold text-pm-accent hover:underline">
                                                         <form method="POST" action="{{ route('component-installations.remove', $installation) }}" class="grid gap-4 sm:grid-cols-2">
                                                             @csrf @method('PATCH')
                                                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Rimosso il' : 'Removed at' }}</span><input class="pm-input" name="removed_at" type="datetime-local" required value="{{ now()->format('Y-m-d\TH:i') }}"></label>
@@ -91,8 +91,8 @@
                                         <td class="px-4 py-4 text-pm-text-secondary">{{ $tracker?->metric?->name ?? '—' }}</td>
                                         <td class="px-4 py-4 font-mono text-pm-text">{{ $tracker ? $formatUsage($usage[$tracker->id]['since_service'], $tracker->metric) : '—' }}</td>
                                         <td class="px-4 py-4 font-mono text-pm-text">{{ $tracker ? $formatUsage($usage[$tracker->id]['lifetime'], $tracker->metric) : '—' }}</td>
-                                        <td class="px-4 py-4 text-pm-text-secondary">@if ($component->purchase_cost_cents !== null)<p class="font-mono font-bold text-pm-text">€ {{ number_format($component->purchase_cost_cents / 100, 2, ',', '.') }}</p><p class="mt-1 text-xs text-pm-muted">{{ $component->purchase_date?->format('d/m/Y') }}</p>@else — @endif</td>
-                                        <td class="px-4 py-4 text-right"><form method="POST" action="{{ route('components.destroy', $component) }}" onsubmit="return confirm(@js($it ? 'Archiviare questo componente?' : 'Archive this component?'))">@csrf @method('DELETE')<button class="text-xs font-bold text-pm-danger hover:underline" @disabled($installation)>{{ $it ? 'Archivia' : 'Archive' }}</button></form></td>
+                                        <td class="px-4 py-4 text-pm-text-secondary">@if ($part->purchase_cost_cents !== null)<p class="font-mono font-bold text-pm-text">€ {{ number_format($part->purchase_cost_cents / 100, 2, ',', '.') }}</p><p class="mt-1 text-xs text-pm-muted">{{ $part->purchase_date?->format('d/m/Y') }}</p>@else — @endif</td>
+                                        <td class="px-4 py-4 text-right"><form method="POST" action="{{ route('components.destroy', $part) }}" onsubmit="return confirm(@js($it ? 'Archiviare questo componente?' : 'Archive this component?'))">@csrf @method('DELETE')<button class="text-xs font-bold text-pm-danger hover:underline" @disabled($installation)>{{ $it ? 'Archivia' : 'Archive' }}</button></form></td>
                                     </tr>
                                 @endforeach
                             </tbody>
