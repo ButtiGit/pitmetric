@@ -50,8 +50,20 @@ it('shows the public about page with Simone profile and safe contacts', function
         ->assertSee('Cuneo, Piemonte, Italia')
         ->assertSee('mailto:simonebuttice05@gmail.com', false)
         ->assertDontSee('tel:', false)
-        ->assertSee('media/simone-buttice-profile.webp', false)
+        ->assertSee('media/simone-buttice-profile-original.jpeg', false)
         ->assertSee('Active development partners use PitMetric 100% free');
+});
+
+it('restores the high-resolution public brand media', function () {
+    $profile = public_path('media/simone-buttice-profile-original.jpeg');
+    $devlog = public_path('media/devlog-001-hq.webp');
+
+    expect(is_file($profile))->toBeTrue()
+        ->and(is_file($devlog))->toBeTrue()
+        ->and(filesize($profile))->toBeGreaterThan(80_000)
+        ->and(filesize($devlog))->toBeGreaterThan(300_000)
+        ->and(getimagesize($profile))->toMatchArray([938, 1061])
+        ->and(getimagesize($devlog))->toMatchArray([1672, 941]);
 });
 
 it('lists published updates', function () {
@@ -88,6 +100,16 @@ it('keeps legacy update rows readable before the media migration is applied', fu
     } finally {
         Model::preventAccessingMissingAttributes(false);
     }
+});
+
+it('always uses the high-quality artwork for the first development log', function () {
+    $update = Update::factory()->create([
+        'slug' => 'pitmetric-sta-prendendo-forma',
+        'media_type' => 'image',
+        'media_path' => 'updates/legacy-low-resolution.webp',
+    ]);
+
+    expect($update->mediaSource())->toBe('/media/devlog-001-hq.webp?v=20260915');
 });
 
 it('shows localized update copy when available', function () {
