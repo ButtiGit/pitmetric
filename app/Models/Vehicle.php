@@ -34,7 +34,25 @@ class Vehicle extends Model
     use BelongsToWorkspace, HasFactory, SoftDeletes;
 
     /** @var list<string> */
-    public const CATEGORIES = ['kart', 'car', 'motorcycle', 'prototype', 'other'];
+    public const CATEGORIES = [
+        'kart',
+        'formula',
+        'gt',
+        'touring',
+        'rally',
+        'prototype',
+        'hypercar',
+        'drift',
+        'road_car',
+        'car',
+        'motorcycle',
+        'quad',
+        'buggy',
+        'offroad',
+        'truck',
+        'boat',
+        'other',
+    ];
 
     /** @var list<string> */
     public const STATUSES = ['active', 'inactive'];
