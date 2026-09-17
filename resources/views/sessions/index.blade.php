@@ -50,7 +50,14 @@
             @if ($attentionSchedules->isNotEmpty())
                 <section class="pm-panel border-pm-warning/25 p-5 sm:p-6">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-warning">{{ $it ? 'Prima di girare' : 'Before running' }}</p><h2 class="mt-2 text-lg font-black text-pm-text">{{ $it ? 'Controlla gli interventi in attenzione' : 'Check maintenance items needing attention' }}</h2></div><a href="{{ route('maintenance.index') }}" class="pm-ghost-button">{{ $it ? 'Apri manutenzione' : 'Open maintenance' }}</a></div>
-                    <div class="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">@foreach ($attentionSchedules->take(6) as $schedule)@php($state = $maintenanceStates[$schedule->getKey()]['status'] ?? 'untracked')<div class="rounded-xl border border-pm-border bg-pm-subtle p-3"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-pm-text">{{ $schedule->tracker->component->name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $schedule->name }}</p></div><x-pitmetric.status-badge :label="$state" :variant="$state === 'overdue' ? 'danger' : 'warning'" /></div></div>@endforeach</div>
+                    <div class="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach ($attentionSchedules->take(6) as $schedule)
+                            @php
+                                $state = $maintenanceStates[$schedule->getKey()]['status'] ?? 'untracked';
+                            @endphp
+                            <div class="rounded-xl border border-pm-border bg-pm-subtle p-3"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-pm-text">{{ $schedule->tracker->component->name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $schedule->name }}</p></div><x-pitmetric.status-badge :label="$state" :variant="$state === 'overdue' ? 'danger' : 'warning'" /></div></div>
+                        @endforeach
+                    </div>
                 </section>
             @endif
 
@@ -69,7 +76,15 @@
                         <div class="mt-4 rounded-xl border border-pm-border bg-pm-subtle p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2"><div><p class="text-[10px] font-black uppercase tracking-[0.12em] text-pm-accent">SETUP SNAPSHOT</p><p class="mt-1 text-sm font-bold text-pm-text">{{ $snapshot?->name ?? ($it ? 'Setup non disponibile' : 'Setup unavailable') }}</p></div>@if ($snapshot)<span class="text-xs text-pm-muted">{{ $it ? 'Catturato' : 'Captured' }} {{ $snapshot->captured_at?->format('d/m/Y H:i') }}</span>@endif</div>
                             @if ($snapshotValues->isNotEmpty())
-                                <div class="mt-3 flex flex-wrap gap-2">@foreach ($snapshotValues as $key => $value)@php($definition = \App\Models\TechnicalSetup::FIELD_DEFINITIONS[$key] ?? ['label' => $key, 'unit' => ''])<span class="rounded-lg border border-pm-border bg-pm-panel px-2.5 py-1.5 text-xs text-pm-text-secondary"><strong class="text-pm-text">{{ $definition['label'] }}</strong> · {{ $value }}{{ $definition['unit'] !== '' ? ' '.$definition['unit'] : '' }}</span>@endforeach @if (count($snapshot?->values ?? []) > 6)<span class="px-2.5 py-1.5 text-xs font-bold text-pm-muted">+{{ count($snapshot->values) - 6 }}</span>@endif</div>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach ($snapshotValues as $key => $value)
+                                        @php
+                                            $definition = \App\Models\TechnicalSetup::FIELD_DEFINITIONS[$key] ?? ['label' => $key, 'unit' => ''];
+                                        @endphp
+                                        <span class="rounded-lg border border-pm-border bg-pm-panel px-2.5 py-1.5 text-xs text-pm-text-secondary"><strong class="text-pm-text">{{ $definition['label'] }}</strong> · {{ $value }}{{ $definition['unit'] !== '' ? ' '.$definition['unit'] : '' }}</span>
+                                    @endforeach
+                                    @if (count($snapshot?->values ?? []) > 6)<span class="px-2.5 py-1.5 text-xs font-bold text-pm-muted">+{{ count($snapshot->values) - 6 }}</span>@endif
+                                </div>
                             @else
                                 <p class="mt-2 text-xs text-pm-muted">{{ $it ? 'Snapshot storico senza parametri tecnici specificati.' : 'Historical snapshot with no technical parameters specified.' }}</p>
                             @endif
