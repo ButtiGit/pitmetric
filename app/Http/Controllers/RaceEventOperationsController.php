@@ -26,12 +26,7 @@ class RaceEventOperationsController extends Controller
     {
         $user = $this->user($request);
         $workspaceContext->personal($user);
-        $validated = $request->validate([
-            'display_name' => ['required', 'string', 'max:120'],
-            'racing_number' => ['nullable', 'string', 'max:20'],
-            'licence_reference' => ['nullable', 'string', 'max:80'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $validated = $request->validate($this->driverRules());
 
         Driver::create([
             ...$validated,
@@ -39,6 +34,30 @@ class RaceEventOperationsController extends Controller
         ]);
 
         return to_route('events.index')->with('status', __('Driver added.'));
+    }
+
+    public function updateDriver(Request $request, Driver $driver): RedirectResponse
+    {
+        Gate::authorize('update', $driver);
+        $validated = $request->validate($this->driverRules());
+        $driver->update($validated);
+
+        return back()->with('status', __('Driver updated.'));
+    }
+
+    public function destroyDriver(Driver $driver): RedirectResponse
+    {
+        Gate::authorize('delete', $driver);
+
+        if ($driver->eventEntries()->exists()) {
+            $driver->update(['status' => 'archived']);
+
+            return back()->with('status', __('Driver archived. Existing event history remains available.'));
+        }
+
+        $driver->delete();
+
+        return back()->with('status', __('Driver archived.'));
     }
 
     public function storeEntry(
@@ -51,22 +70,11 @@ class RaceEventOperationsController extends Controller
         $user = $this->user($request);
         $workspace = $workspaceContext->personal($user);
         $validated = $request->validate([
-            'driver_id' => ['required', 'integer'],
-            'vehicle_id' => ['required', 'integer'],
-            'configuration_version_id' => ['required', 'integer'],
-            'entry_number' => ['nullable', 'string', 'max:20'],
+            ...$this->entryRules(),
             'entry_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
-            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $driver = Driver::query()->whereKey((int) $validated['driver_id'])->firstOrFail();
-        $vehicle = Vehicle::query()->whereKey((int) $validated['vehicle_id'])->firstOrFail();
-        $version = ConfigurationVersion::query()
-            ->whereKey((int) $validated['configuration_version_id'])
-            ->whereHas('configuration', fn ($query) => $query
-                ->where('workspace_id', $workspace->getKey())
-                ->where('vehicle_id', $vehicle->getKey()))
-            ->firstOrFail();
+        [$driver, $vehicle, $version] = $this->resolveEntryRelations($validated, (int) $workspace->getKey());
 
         $entry = EventEntry::create([
             'event_id' => $raceEvent->getKey(),
@@ -89,6 +97,50 @@ class RaceEventOperationsController extends Controller
         );
 
         return to_route('events.show', $raceEvent)->with('status', __('Event entry added.'));
+    }
+
+    public function updateEntry(Request $request, EventEntry $eventEntry, WorkspaceContext $workspaceContext): RedirectResponse
+    {
+        $eventEntry->loadMissing('raceEvent');
+        Gate::authorize('update', $eventEntry->raceEvent);
+        $workspace = $workspaceContext->personal($this->user($request));
+        $validated = $request->validate($this->entryRules());
+        [$driver, $vehicle, $version] = $this->resolveEntryRelations($validated, (int) $workspace->getKey());
+
+        if ($eventEntry->sessions()->exists() && (int) $vehicle->getKey() !== (int) $eventEntry->vehicle_id) {
+            throw ValidationException::withMessages([
+                'vehicle_id' => __('The vehicle cannot be changed after sessions have been recorded for this entry.'),
+            ]);
+        }
+
+        $eventEntry->update([
+            'driver_id' => $driver->getKey(),
+            'vehicle_id' => $vehicle->getKey(),
+            'configuration_version_id' => $version->getKey(),
+            'entry_number' => $validated['entry_number'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return to_route('events.show', $eventEntry->event_id)->with('status', __('Event entry updated.'));
+    }
+
+    public function destroyEntry(EventEntry $eventEntry): RedirectResponse
+    {
+        $eventEntry->loadMissing('raceEvent');
+        Gate::authorize('update', $eventEntry->raceEvent);
+
+        if ($eventEntry->sessions()->exists()
+            || $eventEntry->scheduleItems()->exists()
+            || $eventEntry->tasks()->exists()
+            || $eventEntry->eventNotes()->exists()) {
+            return to_route('events.show', $eventEntry->event_id)
+                ->with('error', __('This entry already has operational history and cannot be deleted.'));
+        }
+
+        $eventId = $eventEntry->event_id;
+        $eventEntry->delete();
+
+        return to_route('events.show', $eventId)->with('status', __('Event entry deleted.'));
     }
 
     public function storeScheduleItem(Request $request, RaceEvent $raceEvent): RedirectResponse
@@ -217,18 +269,35 @@ class RaceEventOperationsController extends Controller
         Gate::authorize('update', $eventTask);
         $user = $this->user($request);
         $validated = $request->validate([
-            'status' => ['required', 'in:todo,in_progress,done'],
+            'event_entry_id' => ['sometimes', 'nullable', 'integer'],
+            'title' => ['sometimes', 'required', 'string', 'max:160'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:3000'],
+            'priority' => ['sometimes', 'required', 'in:low,normal,high,critical'],
+            'status' => ['sometimes', 'required', 'in:todo,in_progress,done'],
+            'due_at' => ['sometimes', 'nullable', 'date'],
             'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
             'cost_description' => ['nullable', 'string', 'max:180'],
         ]);
 
-        $completedAt = $validated['status'] === 'done' ? now() : null;
-        $eventTask->update([
-            'status' => $validated['status'],
-            'completed_at' => $completedAt,
-        ]);
+        $changes = [];
+        foreach (['title', 'description', 'priority'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $changes[$field] = $validated[$field];
+            }
+        }
+        if (array_key_exists('due_at', $validated)) {
+            $changes['due_at'] = $validated['due_at'] ? Carbon::parse($validated['due_at']) : null;
+        }
+        if (array_key_exists('event_entry_id', $validated)) {
+            $changes['event_entry_id'] = $this->entryIdForEvent($eventTask->raceEvent, $validated['event_entry_id']);
+        }
 
-        if ($completedAt !== null) {
+        $status = $validated['status'] ?? $eventTask->status;
+        $changes['status'] = $status;
+        $changes['completed_at'] = $status === 'done' ? ($eventTask->completed_at ?? now()) : null;
+        $eventTask->update($changes);
+
+        if ($status === 'done' && ! $eventTask->wasCompletedBeforeUpdate()) {
             $costService->record(
                 $user,
                 isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
@@ -236,24 +305,34 @@ class RaceEventOperationsController extends Controller
                 $validated['cost_description'] ?? __('Event task').': '.$eventTask->title,
                 'event_task',
                 (int) $eventTask->getKey(),
-                $completedAt,
+                $eventTask->completed_at ?? now(),
                 (int) $eventTask->event_id,
             );
         }
 
-        return to_route('events.show', $eventTask->event_id)->with('status', __('Task status updated.'));
+        return to_route('events.show', $eventTask->event_id)->with('status', __('Task updated.'));
+    }
+
+    public function destroyTask(EventTask $eventTask): RedirectResponse
+    {
+        Gate::authorize('delete', $eventTask);
+
+        if ($eventTask->status === 'done' || Expense::query()->where('related_type', 'event_task')->where('related_id', $eventTask->getKey())->exists()) {
+            return to_route('events.show', $eventTask->event_id)
+                ->with('error', __('Completed tasks with operational history cannot be deleted.'));
+        }
+
+        $eventId = $eventTask->event_id;
+        $eventTask->delete();
+
+        return to_route('events.show', $eventId)->with('status', __('Task deleted.'));
     }
 
     public function storeNote(Request $request, RaceEvent $raceEvent): RedirectResponse
     {
         Gate::authorize('update', $raceEvent);
         $user = $this->user($request);
-        $validated = $request->validate([
-            'event_entry_id' => ['nullable', 'integer'],
-            'kind' => ['required', 'in:technical,driver_feedback,incident,operations'],
-            'body' => ['required', 'string', 'max:5000'],
-            'occurred_at' => ['required', 'date'],
-        ]);
+        $validated = $request->validate($this->noteRules());
         $entryId = $this->entryIdForEvent($raceEvent, $validated['event_entry_id'] ?? null);
 
         EventNote::create([
@@ -266,6 +345,29 @@ class RaceEventOperationsController extends Controller
         ]);
 
         return to_route('events.show', $raceEvent)->with('status', __('Event note added.'));
+    }
+
+    public function updateNote(Request $request, EventNote $eventNote): RedirectResponse
+    {
+        Gate::authorize('update', $eventNote);
+        $validated = $request->validate($this->noteRules());
+        $eventNote->update([
+            'event_entry_id' => $this->entryIdForEvent($eventNote->raceEvent, $validated['event_entry_id'] ?? null),
+            'kind' => $validated['kind'],
+            'body' => $validated['body'],
+            'occurred_at' => Carbon::parse($validated['occurred_at']),
+        ]);
+
+        return to_route('events.show', $eventNote->event_id)->with('status', __('Event note updated.'));
+    }
+
+    public function destroyNote(EventNote $eventNote): RedirectResponse
+    {
+        Gate::authorize('delete', $eventNote);
+        $eventId = $eventNote->event_id;
+        $eventNote->delete();
+
+        return to_route('events.show', $eventId)->with('status', __('Event note deleted.'));
     }
 
     public function storeExpense(Request $request, RaceEvent $raceEvent): RedirectResponse
@@ -290,6 +392,55 @@ class RaceEventOperationsController extends Controller
         ]);
 
         return to_route('events.show', $raceEvent)->with('status', __('Event expense recorded.'));
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function driverRules(): array
+    {
+        return [
+            'display_name' => ['required', 'string', 'max:120'],
+            'racing_number' => ['nullable', 'string', 'max:20'],
+            'licence_reference' => ['nullable', 'string', 'max:80'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function entryRules(): array
+    {
+        return [
+            'driver_id' => ['required', 'integer'],
+            'vehicle_id' => ['required', 'integer'],
+            'configuration_version_id' => ['required', 'integer'],
+            'entry_number' => ['nullable', 'string', 'max:20'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /** @param array<string, mixed> $validated */
+    private function resolveEntryRelations(array $validated, int $workspaceId): array
+    {
+        $driver = Driver::query()->whereKey((int) $validated['driver_id'])->where('status', 'active')->firstOrFail();
+        $vehicle = Vehicle::query()->whereKey((int) $validated['vehicle_id'])->where('status', 'active')->firstOrFail();
+        $version = ConfigurationVersion::query()
+            ->whereKey((int) $validated['configuration_version_id'])
+            ->whereHas('configuration', fn ($query) => $query
+                ->where('workspace_id', $workspaceId)
+                ->where('vehicle_id', $vehicle->getKey()))
+            ->firstOrFail();
+
+        return [$driver, $vehicle, $version];
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function noteRules(): array
+    {
+        return [
+            'event_entry_id' => ['nullable', 'integer'],
+            'kind' => ['required', 'in:technical,driver_feedback,incident,operations'],
+            'body' => ['required', 'string', 'max:5000'],
+            'occurred_at' => ['required', 'date'],
+        ];
     }
 
     private function entryIdForEvent(RaceEvent $raceEvent, mixed $entryId): ?int
