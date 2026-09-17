@@ -35,6 +35,7 @@ class TechnicalSetupController extends Controller
         return view('setups.index', [
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
             'setups' => TechnicalSetup::query()
+                ->where('status', 'active')
                 ->with('vehicle')
                 ->withCount('snapshots')
                 ->orderBy('vehicle_id')
@@ -118,7 +119,7 @@ class TechnicalSetupController extends Controller
     public function destroy(TechnicalSetup $technicalSetup): RedirectResponse
     {
         Gate::authorize('delete', $technicalSetup);
-        $technicalSetup->delete();
+        $technicalSetup->update(['status' => 'archived']);
 
         return to_route('setups.index')->with('status', __('Technical setup archived. Existing session snapshots remain available.'));
     }
