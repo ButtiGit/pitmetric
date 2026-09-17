@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
     'event_id',
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class EventTask extends Model
 {
-    use BelongsToWorkspace;
+    use BelongsToWorkspace, SoftDeletes;
 
     protected $attributes = [
         'priority' => 'normal',
