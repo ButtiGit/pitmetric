@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RaceEventController extends Controller
@@ -46,12 +47,7 @@ class RaceEventController extends Controller
                 ->orderByDesc('id')
                 ->get(),
             'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(),
-            'layouts' => CircuitLayout::query()
-                ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
-                ->with('circuit')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(),
+            'layouts' => $this->availableLayouts($workspace->getKey()),
         ]);
     }
 
@@ -64,20 +60,8 @@ class RaceEventController extends Controller
         }
 
         $workspace = $workspaceContext->personal($user);
-        $validated = $request->validate([
-            'circuit_layout_id' => ['required', 'integer'],
-            'name' => ['required', 'string', 'max:140'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'championship' => ['nullable', 'string', 'max:120'],
-            'round_label' => ['nullable', 'string', 'max:80'],
-            'notes' => ['nullable', 'string', 'max:4000'],
-        ]);
-
-        $layout = CircuitLayout::query()
-            ->whereKey((int) $validated['circuit_layout_id'])
-            ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
-            ->firstOrFail();
+        $validated = $request->validate($this->rules());
+        $layout = $this->layoutForWorkspace((int) $validated['circuit_layout_id'], $workspace->getKey());
 
         $event = RaceEvent::create([
             'circuit_layout_id' => $layout->getKey(),
@@ -117,6 +101,10 @@ class RaceEventController extends Controller
             'entries.vehicle',
             'entries.configurationVersion.configuration',
             'entries.configurationVersion.components',
+            'entries.sessions',
+            'entries.scheduleItems',
+            'entries.tasks',
+            'entries.eventNotes',
             'sessions.vehicle',
             'sessions.configurationVersion.configuration',
             'sessions.configurationVersion.components',
@@ -173,6 +161,7 @@ class RaceEventController extends Controller
             'event' => $raceEvent,
             'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(),
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
+            'layouts' => $this->availableLayouts($workspace->getKey()),
             'versions' => ConfigurationVersion::query()
                 ->whereHas('configuration', fn ($query) => $query->where('workspace_id', $workspace->getKey())->where('status', 'active'))
                 ->with(['configuration.vehicle', 'components'])
@@ -192,6 +181,47 @@ class RaceEventController extends Controller
         ]);
     }
 
+    public function update(Request $request, RaceEvent $raceEvent, WorkspaceContext $workspaceContext): RedirectResponse
+    {
+        Gate::authorize('update', $raceEvent);
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            abort(401);
+        }
+
+        $workspace = $workspaceContext->personal($user);
+        $validated = $request->validate($this->rules());
+        $hasRecordedSessions = $raceEvent->sessions()->exists();
+
+        if ($hasRecordedSessions) {
+            $requestedLayout = (int) $validated['circuit_layout_id'];
+            $requestedStart = Carbon::parse($validated['start_date'])->startOfDay();
+            $requestedEnd = Carbon::parse($validated['end_date'])->startOfDay();
+
+            if ($requestedLayout !== (int) $raceEvent->circuit_layout_id
+                || ! $requestedStart->equalTo($raceEvent->start_date)
+                || ! $requestedEnd->equalTo($raceEvent->end_date)) {
+                throw ValidationException::withMessages([
+                    'event' => __('Circuit and dates cannot be changed after sessions have been recorded. Metadata can still be edited.'),
+                ]);
+            }
+        } else {
+            $layout = $this->layoutForWorkspace((int) $validated['circuit_layout_id'], $workspace->getKey());
+            $raceEvent->circuit_layout_id = $layout->getKey();
+            $raceEvent->start_date = Carbon::parse($validated['start_date'])->startOfDay();
+            $raceEvent->end_date = Carbon::parse($validated['end_date'])->startOfDay();
+        }
+
+        $raceEvent->name = $validated['name'];
+        $raceEvent->championship = $validated['championship'] ?? null;
+        $raceEvent->round_label = $validated['round_label'] ?? null;
+        $raceEvent->notes = $validated['notes'] ?? null;
+        $raceEvent->save();
+
+        return to_route('events.show', $raceEvent)->with('status', __('Race weekend updated.'));
+    }
+
     public function updateStatus(Request $request, RaceEvent $raceEvent): RedirectResponse
     {
         Gate::authorize('update', $raceEvent);
@@ -203,6 +233,55 @@ class RaceEventController extends Controller
         $raceEvent->update(['status' => $validated['status']]);
 
         return to_route('events.show', $raceEvent)->with('status', __('Race weekend status updated.'));
+    }
+
+    public function destroy(RaceEvent $raceEvent): RedirectResponse
+    {
+        Gate::authorize('delete', $raceEvent);
+
+        if ($raceEvent->sessions()->exists()
+            || $raceEvent->expenses()->exists()
+            || $raceEvent->maintenanceRecords()->exists()) {
+            $raceEvent->update(['status' => 'cancelled']);
+
+            return to_route('events.index')->with('status', __('Race weekend has historical records, so it was cancelled instead of deleted.'));
+        }
+
+        $raceEvent->delete();
+
+        return to_route('events.index')->with('status', __('Race weekend archived.'));
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function rules(): array
+    {
+        return [
+            'circuit_layout_id' => ['required', 'integer'],
+            'name' => ['required', 'string', 'max:140'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'championship' => ['nullable', 'string', 'max:120'],
+            'round_label' => ['nullable', 'string', 'max:80'],
+            'notes' => ['nullable', 'string', 'max:4000'],
+        ];
+    }
+
+    private function layoutForWorkspace(int $layoutId, int $workspaceId): CircuitLayout
+    {
+        return CircuitLayout::query()
+            ->whereKey($layoutId)
+            ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspaceId))
+            ->firstOrFail();
+    }
+
+    private function availableLayouts(int $workspaceId)
+    {
+        return CircuitLayout::query()
+            ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspaceId))
+            ->with('circuit')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
     }
 
     private function hasDatabaseAccess(User $user): bool
