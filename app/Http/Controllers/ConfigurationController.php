@@ -107,6 +107,24 @@ class ConfigurationController extends Controller
         return to_route('configurations.index')->with('status', __('Configuration created.'));
     }
 
+    public function update(Request $request, Configuration $configuration): RedirectResponse
+    {
+        Gate::authorize('update', $configuration);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $configuration->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        return to_route('configurations.index', ['configuration' => $configuration->getKey()])
+            ->with('status', __('Configuration updated.'));
+    }
+
     public function storeVersion(
         Request $request,
         Configuration $configuration,
