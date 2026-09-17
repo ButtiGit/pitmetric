@@ -31,13 +31,13 @@ class SetupSnapshot extends Model
     /** @return BelongsTo<TechnicalSetup, $this> */
     public function technicalSetup(): BelongsTo
     {
-        return $this->belongsTo(TechnicalSetup::class);
+        return $this->belongsTo(TechnicalSetup::class)->withTrashed();
     }
 
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<ConfigurationVersion, $this> */

@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'distance_override_meters',
     'status',
     'finalized_at',
+    'archived_at',
     'created_by',
     'notes',
 ])]
@@ -34,7 +35,7 @@ class Session extends Model
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
     {
-        return $this->belongsTo(RaceEvent::class, 'event_id');
+        return $this->belongsTo(RaceEvent::class, 'event_id')->withTrashed();
     }
 
     /** @return BelongsTo<EventEntry, $this> */
@@ -46,7 +47,7 @@ class Session extends Model
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<ConfigurationVersion, $this> */
@@ -81,6 +82,7 @@ class Session extends Model
             'duration_seconds' => 'integer',
             'distance_override_meters' => 'integer',
             'finalized_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 }

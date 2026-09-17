@@ -16,7 +16,7 @@ class Expense extends Model
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
     {
-        return $this->belongsTo(RaceEvent::class, 'event_id');
+        return $this->belongsTo(RaceEvent::class, 'event_id')->withTrashed();
     }
 
     protected function casts(): array

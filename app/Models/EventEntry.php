@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'vehicle_id',
     'configuration_version_id',
     'entry_number',
+    'archived_at',
     'notes',
 ])]
 class EventEntry extends Model
@@ -23,19 +24,19 @@ class EventEntry extends Model
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
     {
-        return $this->belongsTo(RaceEvent::class, 'event_id');
+        return $this->belongsTo(RaceEvent::class, 'event_id')->withTrashed();
     }
 
     /** @return BelongsTo<Driver, $this> */
     public function driver(): BelongsTo
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(Driver::class)->withTrashed();
     }
 
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<ConfigurationVersion, $this> */
@@ -66,5 +67,12 @@ class EventEntry extends Model
     public function eventNotes(): HasMany
     {
         return $this->hasMany(EventNote::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
     }
 }
