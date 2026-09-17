@@ -39,7 +39,7 @@ class RaceEvent extends Model
     /** @return HasMany<EventEntry, $this> */
     public function entries(): HasMany
     {
-        return $this->hasMany(EventEntry::class, 'event_id');
+        return $this->hasMany(EventEntry::class, 'event_id')->where('status', 'active');
     }
 
     /** @return HasMany<Session, $this> */
