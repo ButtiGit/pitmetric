@@ -38,6 +38,7 @@ class VehicleController extends Controller
         Gate::authorize('viewAny', Vehicle::class);
 
         $vehicles = Vehicle::query()
+            ->where('status', 'active')
             ->with([
                 'componentInstallations' => fn ($query) => $query
                     ->whereNull('removed_at')
@@ -96,7 +97,7 @@ class VehicleController extends Controller
     public function destroy(Vehicle $vehicle): RedirectResponse
     {
         Gate::authorize('delete', $vehicle);
-        $vehicle->delete();
+        $vehicle->update(['status' => 'inactive']);
 
         return to_route('garage.index')->with('status', __('garage.messages.deleted'));
     }
