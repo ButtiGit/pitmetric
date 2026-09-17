@@ -40,6 +40,7 @@ class ComponentController extends Controller
         $workspaceContext->personal($user);
 
         $components = Component::query()
+            ->where('status', 'active')
             ->with(['type', 'trackers.metric', 'trackers.resetEvents', 'activeInstallation.vehicle'])
             ->orderBy('name')
             ->get();
@@ -146,7 +147,7 @@ class ComponentController extends Controller
             ]);
         }
 
-        $component->delete();
+        $component->update(['status' => 'archived']);
 
         return to_route('components.index')->with('status', __('Component archived.'));
     }
