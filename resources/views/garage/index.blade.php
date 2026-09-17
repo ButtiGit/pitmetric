@@ -128,7 +128,7 @@
                                         @if ($activeInstallations->isEmpty())
                                             <a href="{{ route('components.index') }}" class="flex items-center justify-between rounded-xl border border-dashed border-pm-border bg-pm-page/70 px-3 py-3 text-sm transition hover:border-pm-accent/40 hover:bg-pm-accent/5">
                                                 <span class="font-semibold text-pm-muted">{{ __('garage.components.empty') }}</span>
-                                                <span class="text-xs font-black text-pm-accent">{{ __('garage.components.empty_action') }} →</span>
+                                                <span class="text-xs font-black text-pm-accent">{{ __('garage.components.empty_action') }}</span>
                                             </a>
                                         @else
                                             <div class="grid max-h-28 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
@@ -136,7 +136,7 @@
                                                     <a href="{{ route('components.index') }}#component-{{ $installation->component->id }}" class="group/component rounded-xl border border-pm-border bg-pm-page/80 px-3 py-2.5 transition hover:border-pm-accent/50 hover:bg-pm-accent/5" title="{{ __('garage.components.open') }}: {{ $installation->component->name }}">
                                                         <div class="flex items-center justify-between gap-2">
                                                             <span class="truncate text-sm font-black text-pm-text">{{ $installation->component->name }}</span>
-                                                            <span class="text-xs font-black text-pm-accent opacity-0 transition group-hover/component:opacity-100">↗</span>
+                                                            <span class="text-[10px] font-black uppercase tracking-[0.08em] text-pm-accent opacity-0 transition group-hover/component:opacity-100">{{ $it ? 'Apri' : 'Open' }}</span>
                                                         </div>
                                                         <p class="mt-1 truncate text-[11px] text-pm-muted">{{ $installation->component->type->name }}@if ($installation->position_or_role) · {{ $installation->position_or_role }}@endif</p>
                                                     </a>
