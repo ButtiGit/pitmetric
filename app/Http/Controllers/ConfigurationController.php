@@ -39,6 +39,7 @@ class ConfigurationController extends Controller
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
             'components' => Component::query()->with('type')->where('status', 'active')->orderBy('name')->get(),
             'configurations' => Configuration::query()
+                ->where('status', 'active')
                 ->with([
                     'vehicle',
                     'versions' => fn ($query) => $query->latest('version_number')->with('components.type'),
@@ -153,7 +154,7 @@ class ConfigurationController extends Controller
     public function destroy(Configuration $configuration): RedirectResponse
     {
         Gate::authorize('delete', $configuration);
-        $configuration->delete();
+        $configuration->update(['status' => 'archived']);
 
         return to_route('configurations.index')->with('status', __('Configuration archived.'));
     }
