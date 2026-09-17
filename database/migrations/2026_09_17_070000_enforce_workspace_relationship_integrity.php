@@ -101,7 +101,7 @@ return new class extends Migration
                 continue;
             }
 
-            throw new \RuntimeException(sprintf(
+            throw new RuntimeException(sprintf(
                 'Tenant integrity violation: %s.%s references a %s record from another workspace. Resolve the inconsistent data before applying this migration.',
                 $relation['child'],
                 $relation['column'],
