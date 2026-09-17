@@ -13,12 +13,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'driver_id',
     'vehicle_id',
     'configuration_version_id',
+    'status',
     'entry_number',
     'notes',
 ])]
 class EventEntry extends Model
 {
     use BelongsToWorkspace;
+
+    protected $attributes = [
+        'status' => 'active',
+    ];
 
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
@@ -29,13 +34,13 @@ class EventEntry extends Model
     /** @return BelongsTo<Driver, $this> */
     public function driver(): BelongsTo
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(Driver::class)->withTrashed();
     }
 
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<ConfigurationVersion, $this> */
