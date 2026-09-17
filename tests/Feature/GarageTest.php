@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
 use App\Models\Expense;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -70,6 +73,73 @@ it('creates vehicles inside the authenticated workspace and links acquisition co
     ]);
 
     expect(Expense::query()->count())->toBe(1);
+});
+
+it('accepts specialist motorsport vehicle types', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspaceId = (int) $user->workspaces()->value('workspaces.id');
+
+    $this->actingAs($user)
+        ->post(route('garage.store'), [
+            'name' => 'Formula #12',
+            'category' => 'formula',
+            'status' => 'active',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('garage.index'));
+
+    $this->assertDatabaseHas('vehicles', [
+        'workspace_id' => $workspaceId,
+        'name' => 'Formula #12',
+        'category' => 'formula',
+    ]);
+});
+
+it('shows active installed components as direct garage shortcuts', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspaceId = (int) $user->workspaces()->value('workspaces.id');
+    $this->actingAs($user);
+
+    $type = ComponentType::create(['name' => 'Engine']);
+    $activeComponent = Component::create([
+        'component_type_id' => $type->id,
+        'name' => 'Engine #9',
+        'status' => 'active',
+    ]);
+    $removedComponent = Component::create([
+        'component_type_id' => $type->id,
+        'name' => 'Old engine #3',
+        'status' => 'active',
+    ]);
+    $vehicle = Vehicle::factory()->create([
+        'workspace_id' => $workspaceId,
+        'name' => 'Formula #9',
+        'category' => 'formula',
+    ]);
+
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $activeComponent->id,
+        'created_by' => $user->id,
+        'position_or_role' => 'Power unit',
+        'installed_at' => now()->subDay(),
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $removedComponent->id,
+        'created_by' => $user->id,
+        'position_or_role' => 'Old power unit',
+        'installed_at' => now()->subDays(10),
+        'removed_at' => now()->subDays(2),
+    ]);
+
+    $this->get(route('garage.index'))
+        ->assertOk()
+        ->assertSee('Formula #9')
+        ->assertSee('Engine #9')
+        ->assertSee('Power unit')
+        ->assertSee(route('components.index').'#component-'.$activeComponent->id, false)
+        ->assertDontSee('Old engine #3');
 });
 
 it('validates vehicle data before storing it', function () {

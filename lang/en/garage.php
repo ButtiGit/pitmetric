@@ -11,7 +11,7 @@ return [
     ],
     'create' => [
         'title' => 'Add a vehicle',
-        'description' => 'Add the kart, car, motorcycle or prototype you want to manage with PitMetric.',
+        'description' => 'Choose the vehicle type to give it a recognizable silhouette in the Garage.',
         'submit' => 'Add vehicle',
     ],
     'list' => [
@@ -20,11 +20,11 @@ return [
     ],
     'empty' => [
         'title' => 'Your garage is empty',
-        'description' => 'Add your first kart, car, motorcycle or prototype to start organizing your work.',
+        'description' => 'Add your first vehicle to start organizing components, sessions and maintenance.',
     ],
     'fields' => [
         'name' => 'Vehicle name',
-        'category' => 'Category',
+        'category' => 'Vehicle type',
         'status' => 'Status',
         'manufacturer' => 'Manufacturer',
         'model' => 'Model',
@@ -35,14 +35,33 @@ return [
     ],
     'categories' => [
         'kart' => 'Kart',
-        'car' => 'Car',
+        'formula' => 'Formula / single-seater',
+        'gt' => 'GT',
+        'touring' => 'Touring car',
+        'rally' => 'Rally car',
+        'prototype' => 'Prototype / LMP',
+        'hypercar' => 'Hypercar',
+        'drift' => 'Drift car',
+        'road_car' => 'Road car',
+        'car' => 'Generic car',
         'motorcycle' => 'Motorcycle',
-        'prototype' => 'Prototype',
+        'quad' => 'Quad / ATV',
+        'buggy' => 'Buggy',
+        'offroad' => 'Off-road vehicle',
+        'truck' => 'Racing truck / truck',
+        'boat' => 'Boat',
         'other' => 'Other',
     ],
     'statuses' => [
         'active' => 'Active',
         'inactive' => 'Inactive',
+    ],
+    'components' => [
+        'title' => 'Installed components',
+        'hover_hint' => 'Hover the vehicle for shortcuts',
+        'empty' => 'No components installed',
+        'empty_action' => 'Open Components',
+        'open' => 'Open component',
     ],
     'edit' => [
         'toggle' => 'Edit vehicle',

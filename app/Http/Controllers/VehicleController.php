@@ -37,7 +37,16 @@ class VehicleController extends Controller
 
         Gate::authorize('viewAny', Vehicle::class);
 
-        $vehicles = Vehicle::query()->orderBy('name')->get();
+        $vehicles = Vehicle::query()
+            ->with([
+                'componentInstallations' => fn ($query) => $query
+                    ->whereNull('removed_at')
+                    ->with('component.type')
+                    ->orderBy('position_or_role')
+                    ->orderByDesc('installed_at'),
+            ])
+            ->orderBy('name')
+            ->get();
 
         return view('garage.index', compact('workspace', 'vehicles'));
     }

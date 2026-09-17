@@ -11,7 +11,7 @@ return [
     ],
     'create' => [
         'title' => 'Aggiungi un mezzo',
-        'description' => 'Inserisci kart, auto, moto o prototipi che vuoi gestire con PitMetric.',
+        'description' => 'Scegli il tipo di mezzo per assegnargli anche una silhouette riconoscibile nel Garage.',
         'submit' => 'Aggiungi mezzo',
     ],
     'list' => [
@@ -20,11 +20,11 @@ return [
     ],
     'empty' => [
         'title' => 'Il tuo garage è vuoto',
-        'description' => 'Aggiungi il tuo primo kart, auto, moto o prototipo per iniziare a organizzare il lavoro.',
+        'description' => 'Aggiungi il tuo primo mezzo per iniziare a organizzare componenti, sessioni e manutenzione.',
     ],
     'fields' => [
         'name' => 'Nome mezzo',
-        'category' => 'Categoria',
+        'category' => 'Tipo veicolo',
         'status' => 'Stato',
         'manufacturer' => 'Marca',
         'model' => 'Modello',
@@ -35,14 +35,33 @@ return [
     ],
     'categories' => [
         'kart' => 'Kart',
-        'car' => 'Auto',
+        'formula' => 'Formula / monoposto',
+        'gt' => 'GT',
+        'touring' => 'Turismo',
+        'rally' => 'Rally',
+        'prototype' => 'Prototipo / LMP',
+        'hypercar' => 'Hypercar',
+        'drift' => 'Drift',
+        'road_car' => 'Auto stradale',
+        'car' => 'Auto generica',
         'motorcycle' => 'Moto',
-        'prototype' => 'Prototipo',
+        'quad' => 'Quad / ATV',
+        'buggy' => 'Buggy',
+        'offroad' => 'Fuoristrada',
+        'truck' => 'Racing truck / camion',
+        'boat' => 'Imbarcazione',
         'other' => 'Altro',
     ],
     'statuses' => [
         'active' => 'Attivo',
         'inactive' => 'Inattivo',
+    ],
+    'components' => [
+        'title' => 'Componenti montati',
+        'hover_hint' => 'Passa sul mezzo per le scorciatoie',
+        'empty' => 'Nessun componente montato',
+        'empty_action' => 'Apri Componenti',
+        'open' => 'Apri componente',
     ],
     'edit' => [
         'toggle' => 'Modifica mezzo',

@@ -65,7 +65,7 @@
                                 @foreach ($components as $component)
                                     @php($tracker = $component->trackers->first())
                                     @php($installation = $component->activeInstallation)
-                                    <tr>
+                                    <tr id="component-{{ $component->id }}" class="scroll-mt-28 transition-colors target:bg-pm-accent/5">
                                         <td class="px-4 py-4"><p class="font-bold text-pm-text">{{ $component->name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $component->serial_number ?: '—' }}</p></td>
                                         <td class="px-4 py-4 text-pm-text-secondary">{{ $component->type->name }}</td>
                                         <td class="px-4 py-4">
