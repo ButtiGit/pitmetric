@@ -34,6 +34,12 @@ jobs:
       - name: Setup Application
         run: composer setup
 
+      - name: Inspect Pint formatting
+        run: |
+          ./vendor/bin/pint database/migrations/2026_09_17_070000_enforce_workspace_relationship_integrity.php
+          cat database/migrations/2026_09_17_070000_enforce_workspace_relationship_integrity.php
+          exit 1
+
       - name: Validate standalone game
         run: |
           php -l public/game_sim.php
