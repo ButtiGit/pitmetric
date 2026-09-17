@@ -1,106 +1,76 @@
 @props(['type' => 'other'])
 
-<svg {{ $attributes->merge(['class' => 'h-auto w-full']) }} viewBox="0 0 240 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+{{--
+    Vehicle artwork is sourced from established open-source icon libraries instead of
+    hand-drawn PitMetric placeholders. See THIRD_PARTY_NOTICES.md for attribution.
+--}}
+<svg {{ $attributes->merge(['class' => 'h-auto w-full']) }} viewBox="0 128 512 256" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     @switch($type)
-        @case('kart')
-            <path d="M30 64h21l8-17h48l10 9h35l10 8h43l6 8H27l3-8Z" fill="currentColor"/>
-            <path d="M92 34h23l11 13H92V34Z" fill="currentColor" opacity=".82"/>
-            <circle cx="62" cy="72" r="12" fill="currentColor"/>
-            <circle cx="178" cy="72" r="12" fill="currentColor"/>
-            @break
         @case('formula')
-            <path d="M18 67h35l15-10 35-4 18-22h18l15 22 50 8 21 6v8H18v-8Z" fill="currentColor"/>
-            <path d="M102 52 116 35h25l11 18-50-1Z" fill="currentColor" opacity=".84"/>
-            <rect x="21" y="58" width="31" height="5" rx="2.5" fill="currentColor"/>
-            <rect x="192" y="54" width="29" height="6" rx="3" fill="currentColor"/>
-            <circle cx="64" cy="73" r="13" fill="currentColor"/>
-            <circle cx="185" cy="73" r="13" fill="currentColor"/>
+            <path fill="currentColor" d="M355.975 292.25a24.82 24.82 0 1 0 24.82-24.81 24.84 24.84 0 0 0-24.82 24.81zm-253-24.81a24.81 24.81 0 1 1-24.82 24.81 24.84 24.84 0 0 1 24.81-24.81zm-76.67-71.52h67.25l-13.61 49.28 92-50.28h57.36l1.26 34.68 32 14.76 11.74-14.44h15.62l3.16 16c137.56-13 192.61 29.17 192.61 29.17s-7.52 5-25.93 8.39c-3.88 3.31-3.66 14.44-3.66 14.44h24.2v16h-52v-27.48c-1.84.07-4.45.41-7.06.47a40.81 40.81 0 1 0-77.25 23h-204.24a40.81 40.81 0 1 0-77.61-17.67c0 1.24.06 2.46.17 3.67h-36z" />
             @break
+
         @case('prototype')
-            <path d="M23 69 45 55l39-8 25-18h43l28 22 37 8 12 10v7H20l3-7Z" fill="currentColor"/>
-            <path d="m95 48 20-14h31l24 18-75-4Z" fill="currentColor" opacity=".78"/>
-            <circle cx="69" cy="74" r="13" fill="currentColor"/>
-            <circle cx="183" cy="74" r="13" fill="currentColor"/>
+            <path fill="currentColor" d="M408.29 262.879a35.125 35.125 0 1 0 35.125 35.125 35.17 35.17 0 0 0-35.125-35.125zm0 62.873a27.736 27.736 0 1 1 27.736-27.737 27.736 27.736 0 0 1-27.736 27.748zm8.876-27.737a8.876 8.876 0 1 1-8.876-8.875 8.876 8.876 0 0 1 8.876 8.875zm-265.538 0a35.125 35.125 0 1 0-35.126 35.126 35.17 35.17 0 0 0 35.126-35.126zm-35.126 27.737a27.736 27.736 0 1 1 27.737-27.737 27.736 27.736 0 0 1-27.737 27.748zm345.452-21.823a53.997 53.997 0 1 0-107.617-5.925 53.665 53.665 0 0 0 5.447 23.61H165.008a53.986 53.986 0 1 0-101.849-15.211C37.542 295.64 21 278.033 21 250.186c0-28.846 86.87-69.418 142.122-71.327v34.094a24.83 24.83 0 0 0 24.83 24.83h47.517a24.774 24.774 0 0 0 24.409-20.758s-1.62-21.668-6.813-25.518l3.407-2.54 24.474 28.08h94.104c63.994-.022 115.95 23.42 115.95 52.266 0 13.314-10.973 25.396-29.046 34.616zm-336.576-5.925a8.876 8.876 0 1 1-8.876-8.876 8.876 8.876 0 0 1 8.876 8.887z" />
             @break
+
+        @case('kart')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M18,10H15.53L14.38,8.28L15.8,7.33L14.7,5.67L10.2,8.67L11.3,10.33L12.73,9.38L13.88,11.12L13,12H10.2L5.83,5.45L4.17,6.55L5.87,9.11C3.04,9.65 1,12.12 1,15V17H3A3,3 0 0,0 6,20A3,3 0 0,0 9,17H15A3,3 0 0,0 18,20A3,3 0 0,0 21,17H23V15A5,5 0 0,0 18,10M6,18.5A1.5,1.5 0 0,1 4.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,17A1.5,1.5 0 0,1 6,18.5M18,18.5A1.5,1.5 0 0,1 16.5,17A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 19.5,17A1.5,1.5 0 0,1 18,18.5Z" />
+            </g>
+            @break
+
         @case('hypercar')
-            <path d="M18 70 42 57l41-8 24-17h41l27 17 45 10 9 11v7H18v-7Z" fill="currentColor"/>
-            <path d="m90 49 23-14h31l23 16-77-2Z" fill="currentColor" opacity=".72"/>
-            <circle cx="68" cy="75" r="13" fill="currentColor"/>
-            <circle cx="183" cy="75" r="13" fill="currentColor"/>
-            @break
         @case('gt')
-            <path d="M19 68 37 54l45-8 25-17h42l32 19 42 9 9 11v8H17l2-8Z" fill="currentColor"/>
-            <path d="m95 47 18-14h31l25 17-74-3Z" fill="currentColor" opacity=".72"/>
-            <path d="M184 46h33v6h-34l1-6Z" fill="currentColor" opacity=".85"/>
-            <circle cx="67" cy="74" r="13" fill="currentColor"/>
-            <circle cx="185" cy="74" r="13" fill="currentColor"/>
-            @break
-        @case('touring')
-            <path d="M17 68 34 48l48-7 18-14h49l30 18 43 8 11 15v8H17v-8Z" fill="currentColor"/>
-            <path d="M91 43 106 31h36l24 15-75-3Z" fill="currentColor" opacity=".72"/>
-            <circle cx="65" cy="74" r="13" fill="currentColor"/>
-            <circle cx="186" cy="74" r="13" fill="currentColor"/>
-            @break
-        @case('rally')
-            <path d="M17 69 34 50l42-8 19-15h53l31 18 42 10 12 14v8H17v-8Z" fill="currentColor"/>
-            <path d="M88 43 104 31h37l25 15-78-3Z" fill="currentColor" opacity=".72"/>
-            <path d="M31 44h22l9 5H31v-5Z" fill="currentColor" opacity=".8"/>
-            <circle cx="64" cy="75" r="14" fill="currentColor"/>
-            <circle cx="186" cy="75" r="14" fill="currentColor"/>
-            @break
         @case('drift')
-            <path d="M17 69 36 52l43-8 26-17h43l34 21 39 8 12 13v8H17v-8Z" fill="currentColor"/>
-            <path d="M91 45 110 31h33l24 17-76-3Z" fill="currentColor" opacity=".72"/>
-            <path d="M185 42h31v6h-32l1-6Z" fill="currentColor" opacity=".85"/>
-            <circle cx="65" cy="75" r="13" fill="currentColor"/>
-            <circle cx="187" cy="75" r="13" fill="currentColor"/>
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M12,8.5H7L4,11H3C1.89,11 1,11.89 1,13V16H3.17C3.6,17.2 4.73,18 6,18C7.27,18 8.4,17.2 8.82,16H15.17C15.6,17.2 16.73,18 18,18C19.27,18 20.4,17.2 20.82,16H23V15C23,13.89 21.97,13.53 21,13L12,8.5M5.25,12L7.5,10H11.5L15.5,12H5.25M6,13.5A1.5,1.5 0 0,1 7.5,15A1.5,1.5 0 0,1 6,16.5A1.5,1.5 0 0,1 4.5,15A1.5,1.5 0 0,1 6,13.5M18,13.5A1.5,1.5 0 0,1 19.5,15A1.5,1.5 0 0,1 18,16.5A1.5,1.5 0 0,1 16.5,15A1.5,1.5 0 0,1 18,13.5Z" />
+            </g>
             @break
+
+        @case('touring')
+        @case('rally')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M16,6H6L1,12V15H3A3,3 0 0,0 6,18A3,3 0 0,0 9,15H15A3,3 0 0,0 18,18A3,3 0 0,0 21,15H23V12C23,10.89 22.11,10 21,10H19L16,6M6.5,7.5H10.5V10H4.5L6.5,7.5M12,7.5H15.5L17.46,10H12V7.5M6,13.5A1.5,1.5 0 0,1 7.5,15A1.5,1.5 0 0,1 6,16.5A1.5,1.5 0 0,1 4.5,15A1.5,1.5 0 0,1 6,13.5M18,13.5A1.5,1.5 0 0,1 19.5,15A1.5,1.5 0 0,1 18,16.5A1.5,1.5 0 0,1 16.5,15A1.5,1.5 0 0,1 18,13.5Z" />
+            </g>
+            @break
+
+        @case('motorcycle')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M17.42,10L13.41,6H9V8H12.59L14.59,10H6.5C4,10 2,12 2,14.5C2,17 4,19 6.5,19C8.72,19 10.56,17.38 10.92,15.27L13.04,14C13,14.17 13,14.33 13,14.5C13,17 15,19 17.5,19C20,19 22,17 22,14.5C22,12 20,10 17.5,10M8.84,15.26C8.5,16.27 7.58,17 6.47,17C5.09,17 3.97,15.88 3.97,14.5C3.97,13.12 5.09,12 6.47,12C7.59,12 8.5,12.74 8.84,13.75H6V15.25L8.84,15.26M17.47,17C16.09,17 14.97,15.88 14.97,14.5C14.97,13.12 16.09,12 17.47,12A2.5,2.5 0 0,1 19.97,14.5A2.5,2.5 0 0,1 17.47,17Z" />
+            </g>
+            @break
+
+        @case('quad')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M20 11C19.8 11 19.6 11 19.5 11.1L17.4 9H20V6L16.3 7.9L13.4 5H9V7H12.6L14.6 9H11L7 11L5 9H0V11H4C1.8 11 0 12.8 0 15S1.8 19 4 19 8 17.2 8 15L10 17H13L16.5 10.9L17.5 11.9C16.6 12.6 16 13.8 16 15C16 17.2 17.8 19 20 19S24 17.2 24 15 22.2 11 20 11M4 17C2.9 17 2 16.1 2 15S2.9 13 4 13 6 13.9 6 15 5.1 17 4 17M20 17C18.9 17 18 16.1 18 15S18.9 13 20 13 22 13.9 22 15 21.1 17 20 17Z" />
+            </g>
+            @break
+
+        @case('buggy')
+        @case('offroad')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M16,6H10.5V10H1V15H3A3,3 0 0,0 6,18A3,3 0 0,0 9,15H15A3,3 0 0,0 18,18A3,3 0 0,0 21,15H23V12C23,10.89 22.11,10 21,10H19L16,6M12,7.5H15.5L17.46,10H12V7.5M6,13.5A1.5,1.5 0 0,1 7.5,15A1.5,1.5 0 0,1 6,16.5A1.5,1.5 0 0,1 4.5,15A1.5,1.5 0 0,1 6,13.5M18,13.5A1.5,1.5 0 0,1 19.5,15A1.5,1.5 0 0,1 18,16.5A1.5,1.5 0 0,1 16.5,15A1.5,1.5 0 0,1 18,13.5Z" />
+            </g>
+            @break
+
+        @case('truck')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M18,18.5A1.5,1.5 0 0,1 16.5,17A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 19.5,17A1.5,1.5 0 0,1 18,18.5M19.5,9.5L21.46,12H17V9.5M6,18.5A1.5,1.5 0 0,1 4.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,17A1.5,1.5 0 0,1 6,18.5M20,8H17V4H3C1.89,4 1,4.89 1,6V17H3A3,3 0 0,0 6,20A3,3 0 0,0 9,17H15A3,3 0 0,0 18,20A3,3 0 0,0 21,17H23V12L20,8Z" />
+            </g>
+            @break
+
+        @case('boat')
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M6,6H18V9.96L12,8L6,9.96M3.94,19H4C5.6,19 7,18.12 8,17C9,18.12 10.4,19 12,19C13.6,19 15,18.12 16,17C17,18.12 18.4,19 20,19H20.05L21.95,12.31C22.03,12.06 22,11.78 21.89,11.54C21.76,11.3 21.55,11.12 21.29,11.04L20,10.62V6C20,4.89 19.1,4 18,4H15V1H9V4H6A2,2 0 0,0 4,6V10.62L2.71,11.04C2.45,11.12 2.24,11.3 2.11,11.54C2,11.78 1.97,12.06 2.05,12.31M20,21C18.61,21 17.22,20.53 16,19.67C13.56,21.38 10.44,21.38 8,19.67C6.78,20.53 5.39,21 4,21H2V23H4C5.37,23 6.74,22.65 8,22C10.5,23.3 13.5,23.3 16,22C17.26,22.65 18.62,23 20,23H22V21H20Z" />
+            </g>
+            @break
+
         @case('road_car')
         @case('car')
-            <path d="M18 69 35 53l43-8 24-16h48l31 19 42 9 10 12v8H18v-8Z" fill="currentColor"/>
-            <path d="M91 46 108 33h35l23 16-75-3Z" fill="currentColor" opacity=".72"/>
-            <circle cx="66" cy="75" r="13" fill="currentColor"/>
-            <circle cx="185" cy="75" r="13" fill="currentColor"/>
-            @break
-        @case('motorcycle')
-            <circle cx="66" cy="72" r="19" stroke="currentColor" stroke-width="9"/>
-            <circle cx="183" cy="72" r="19" stroke="currentColor" stroke-width="9"/>
-            <path d="m71 68 34-29 28 5 18 24h-31l-18-16-16 18-15-2Z" fill="currentColor"/>
-            <path d="m132 43 20-18 15 5-12 18-23-5Z" fill="currentColor" opacity=".78"/>
-            @break
-        @case('quad')
-            <circle cx="58" cy="73" r="17" fill="currentColor"/>
-            <circle cx="184" cy="73" r="17" fill="currentColor"/>
-            <path d="M38 66h40l18-22h49l16 17h42l11 12H35l3-7Z" fill="currentColor"/>
-            <path d="m112 43 12-16h13l7 16h-32Z" fill="currentColor" opacity=".76"/>
-            @break
-        @case('buggy')
-            <circle cx="58" cy="73" r="18" fill="currentColor"/>
-            <circle cx="186" cy="73" r="18" fill="currentColor"/>
-            <path d="M32 65h39l23-28h51l27 28h39l8 10H28l4-10Z" fill="currentColor"/>
-            <path d="m101 39 13-13h22l15 13h-50Z" fill="currentColor" opacity=".72"/>
-            @break
-        @case('offroad')
-            <circle cx="58" cy="72" r="19" fill="currentColor"/>
-            <circle cx="186" cy="72" r="19" fill="currentColor"/>
-            <path d="M30 64h44l15-30h58l22 23h42l10 15H27l3-8Z" fill="currentColor"/>
-            <path d="M101 39V23h39l16 19-55-3Z" fill="currentColor" opacity=".74"/>
-            @break
-        @case('truck')
-            <circle cx="65" cy="74" r="14" fill="currentColor"/>
-            <circle cx="187" cy="74" r="14" fill="currentColor"/>
-            <path d="M24 35h103v39H24V35Zm106 14h47l26 16h18v9h-91V49Z" fill="currentColor"/>
-            <path d="M140 53h31l15 10h-46V53Z" fill="currentColor" opacity=".68"/>
-            @break
-        @case('boat')
-            <path d="M21 58h197l-20 19H52L21 58Z" fill="currentColor"/>
-            <path d="M92 31h54l30 27H70l22-27Z" fill="currentColor" opacity=".82"/>
-            <path d="M115 13h7v45h-7V13Z" fill="currentColor" opacity=".65"/>
-            @break
         @default
-            <path d="M18 69 35 53l43-8 24-16h48l31 19 42 9 10 12v8H18v-8Z" fill="currentColor"/>
-            <path d="M91 46 108 33h35l23 16-75-3Z" fill="currentColor" opacity=".72"/>
-            <circle cx="66" cy="75" r="13" fill="currentColor"/>
-            <circle cx="185" cy="75" r="13" fill="currentColor"/>
+            <g transform="translate(32 128) scale(18.6667 10.6667)">
+                <path fill="currentColor" d="M5,11L6.5,6.5H17.5L19,11M17.5,16A1.5,1.5 0 0,1 16,14.5A1.5,1.5 0 0,1 17.5,13A1.5,1.5 0 0,1 19,14.5A1.5,1.5 0 0,1 17.5,16M6.5,16A1.5,1.5 0 0,1 5,14.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 8,14.5A1.5,1.5 0 0,1 6.5,16M18.92,6C18.72,5.42 18.16,5 17.5,5H6.5C5.84,5 5.28,5.42 5.08,6L3,12V20A1,1 0 0,0 4,21H5A1,1 0 0,0 6,20V19H18V20A1,1 0 0,0 19,21H20A1,1 0 0,0 21,20V12L18.92,6Z" />
+            </g>
     @endswitch
 </svg>
