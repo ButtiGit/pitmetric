@@ -88,6 +88,17 @@ class TeamController extends Controller
         return to_route('team.index')->with('status', __('Team created and selected.'));
     }
 
+    public function update(Request $request, WorkspaceContext $workspaceContext): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+        $workspace = $workspaceContext->personal($user);
+        Gate::authorize('team-manage');
+        $workspace->update($request->validate(['name' => ['required', 'string', 'max:120']]));
+
+        return to_route('team.index')->with('status', __('Team updated.'));
+    }
+
     public function switch(Request $request, Workspace $workspace, WorkspaceContext $workspaceContext): RedirectResponse
     {
         $user = $request->user();

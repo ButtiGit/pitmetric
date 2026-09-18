@@ -17,11 +17,10 @@
     <div class="pitmetric-app bg-pm-page min-h-full">
         <div class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
             <x-pitmetric.page-header
-                eyebrow="PITMETRIC CONTROL"
                 title="Control Center"
                 :description="$it
-                    ? 'Audit, backup, documenti privati, alert operativi e readiness del team in un unico punto.'
-                    : 'Audit, portable backup, private documents, operational alerts and team readiness in one place.'"
+                    ? 'Documenti del team, backup, notifiche e registro delle modifiche.'
+                    : 'Team documents, backups, notifications and change history.'"
                 :help="__('help.control_center.page')"
             >
                 <x-slot:actions>
@@ -72,7 +71,7 @@
 
             <div class="grid gap-6 xl:grid-cols-2">
                 <section class="pm-panel p-5">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">DATA HUB</p>
+
                     <div class="mt-1 flex items-center gap-2">
                         <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Backup portabile' : 'Portable workspace backup' }}</h2>
                         <x-pitmetric.help-tooltip :text="__('help.control_center.data_hub')" position="right" />
@@ -150,7 +149,11 @@
                         @forelse ($documents as $document)
                             <div class="flex flex-col gap-3 rounded-xl border border-white/10 p-3 sm:flex-row sm:items-center">
                                 <div class="min-w-0 flex-1"><p class="truncate font-semibold text-zinc-950 dark:text-white">{{ $document->name }}</p><p class="mt-1 truncate text-xs text-zinc-500">{{ $document->original_name }} · {{ $bytes($document->size_bytes) }}@if ($document->attachable_type) · {{ $document->attachable_type }} #{{ $document->attachable_id }}@endif</p></div>
-                                <div class="flex gap-2"><a class="pm-ghost-button" href="{{ route('control-center.documents.download', $document) }}">{{ $it ? 'Scarica' : 'Download' }}</a>@can('team-write')<form method="POST" action="{{ route('control-center.documents.destroy', $document) }}">@csrf @method('DELETE')<button class="pm-ghost-button" type="submit" onclick="return confirm('{{ $it ? 'Eliminare questo documento?' : 'Delete this document?' }}')">{{ $it ? 'Elimina' : 'Delete' }}</button></form>@endcan</div>
+                                <div class="pm-record-actions"><x-pitmetric.record-editor id="edit-document-{{ $document->id }}" :title="$it ? 'Modifica documento' : 'Edit document'" :action="route('control-center.documents.update', $document)" >
+<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome' : 'Name' }}</span><input class="pm-input" name="name" type="text" value="{{ $document->name }}" required maxlength="180"></label>
+<label class="grid gap-2 sm:col-span-2"><span class="pm-label">Note</span><textarea class="pm-input min-h-24" name="notes" maxlength="2000">{{ $document->notes }}</textarea></label>
+</x-pitmetric.record-editor>
+<a class="pm-ghost-button" href="{{ route('control-center.documents.download', $document) }}">{{ $it ? 'Scarica' : 'Download' }}</a>@can('team-write')<form method="POST" action="{{ route('control-center.documents.destroy', $document) }}">@csrf @method('DELETE')<button class="pm-ghost-button" type="submit" onclick="return confirm('{{ $it ? 'Eliminare questo documento?' : 'Delete this document?' }}')">{{ $it ? 'Elimina' : 'Delete' }}</button></form>@endcan</div>
                             </div>
                         @empty
                             <p class="rounded-xl border border-dashed border-white/10 p-4 text-sm text-zinc-500">{{ $it ? 'Nessun documento privato caricato.' : 'No private documents uploaded.' }}</p>
@@ -161,7 +164,7 @@
 
             <section class="pm-panel overflow-hidden">
                 <div class="border-b border-white/10 p-5">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-pm-accent">AUDIT TRAIL</p>
+
                     <div class="mt-1 flex items-center gap-2">
                         <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ $it ? 'Chi ha cambiato cosa e quando' : 'Who changed what and when' }}</h2>
                         <x-pitmetric.help-tooltip :text="__('help.control_center.audit')" position="right" />

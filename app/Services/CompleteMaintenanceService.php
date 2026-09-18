@@ -10,6 +10,7 @@ use App\Models\TrackerResetEvent;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CompleteMaintenanceService
 {
@@ -20,12 +21,25 @@ class CompleteMaintenanceService
         string $description,
         ?int $costCents = null,
         ?string $notes = null,
+        ?MaintenanceWorkOrder $workOrder = null,
     ): MaintenanceRecord {
-        return DB::transaction(function () use ($schedule, $user, $performedAt, $description, $costCents, $notes): MaintenanceRecord {
+        return DB::transaction(function () use ($schedule, $user, $performedAt, $description, $costCents, $notes, $workOrder): MaintenanceRecord {
             $lockedSchedule = MaintenanceSchedule::query()
                 ->whereKey($schedule->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if (! $lockedSchedule->is_active) {
+                throw ValidationException::withMessages(['schedule' => __('Restore this maintenance schedule before recording work.')]);
+            }
+
+            if ($workOrder !== null) {
+                $lockedOrder = MaintenanceWorkOrder::query()->whereKey($workOrder->getKey())->lockForUpdate()->firstOrFail();
+                if (! in_array($lockedOrder->status, MaintenanceWorkOrder::OPEN_STATUSES, true)
+                    || (int) $lockedOrder->maintenance_schedule_id !== (int) $lockedSchedule->getKey()) {
+                    throw ValidationException::withMessages(['status' => __('Only open maintenance work orders can be completed.')]);
+                }
+            }
 
             $lockedSchedule->load('tracker.component');
 

@@ -2,7 +2,7 @@
     @php($it = app()->getLocale() === 'it')
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1200px] space-y-5">
-            <div><p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">RACE WEEKENDS</p><x-pitmetric.page-header :title="$it ? 'Il weekend diventa il centro del lavoro' : 'The weekend becomes the center of operations'" :description="$it ? 'Questa anteprima resta locale: quando l’account viene attivato, gli eventi reali vengono salvati nel database PitMetric.' : 'This preview stays local: when the account is activated, real events are stored in the PitMetric database.'" /></div>
+            <div><x-pitmetric.page-header :title="$it ? 'Il weekend diventa il centro del lavoro' : 'The weekend becomes the center of operations'" :description="$it ? 'Questa anteprima resta locale: quando l’account viene attivato, gli eventi reali vengono salvati nel database PitMetric.' : 'This preview stays local: when the account is activated, real events are stored in the PitMetric database.'" /></div>
 
             <section class="pm-panel overflow-hidden">
                 <div class="border-b border-pm-border p-5 sm:p-7">

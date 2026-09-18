@@ -174,10 +174,10 @@ it('renders the control center with readiness, data hub, documents, alerts and a
         ->get(route('control-center.index'))
         ->assertOk()
         ->assertSee('Control Center')
-        ->assertSee('DATA HUB')
+        ->assertSee('Portable workspace backup')
         ->assertSee('PRIVATE DOCUMENTS')
         ->assertSee('OPERATIONAL ALERTS')
-        ->assertSee('AUDIT TRAIL')
+        ->assertSee('Who changed what and when')
         ->assertSee('data-pitmetric-help-tooltip', false);
 });
 

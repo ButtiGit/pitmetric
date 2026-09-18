@@ -225,6 +225,19 @@ class ControlCenterController extends Controller
         return to_route('control-center.index')->with('status', 'Private document uploaded.');
     }
 
+    public function updateDocument(Request $request, Document $document, WorkspaceContext $workspaceContext): RedirectResponse
+    {
+        $workspaceContext->personal($this->user($request));
+        Gate::authorize('team-write');
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:180'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $document->update($validated);
+
+        return to_route('control-center.index')->with('status', __('Document updated.'));
+    }
+
     public function downloadDocument(
         Request $request,
         Document $document,

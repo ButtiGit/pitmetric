@@ -17,7 +17,7 @@
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div><p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">TEAM</p><x-pitmetric.page-header :title="$it ? 'Team e accessi' : 'Team and access'" :description="$it ? 'Seleziona il team operativo, invita collaboratori e assegna permessi senza uscire dal contesto in cui stai lavorando.' : 'Select the active team, invite collaborators and assign permissions without leaving the page you are working on.'" /></div>
+                <div><x-pitmetric.page-header :title="$it ? 'Team e accessi' : 'Team and access'" :description="$it ? 'Gestisci i team, invita collaboratori e assegna i permessi.' : 'Manage teams, invite collaborators and assign permissions.'" /></div>
                 <div class="flex flex-wrap gap-2">
                     <x-crud-modal id="create-team" :permission="null" :title="$it ? 'Nuovo team' : 'New team'" :description="$it ? 'Crea un ambiente separato. Diventerai owner del nuovo team.' : 'Create a separate workspace. You will become its owner.'" :trigger="$it ? '+ Team' : '+ Team'">
                         <form method="POST" action="{{ route('team.store') }}" class="grid gap-4">@csrf<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome team' : 'Team name' }}</span><input class="pm-input" name="name" required maxlength="120" placeholder="Butti Racing"></label><div class="flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Crea e seleziona' : 'Create and select' }}</button></div></form>
@@ -37,6 +37,9 @@
             <section class="pm-panel p-5 sm:p-6">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div><p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Team corrente' : 'Current team' }}</p><h2 class="mt-2 text-2xl font-black text-pm-text">{{ $workspace->name }}</h2><div class="mt-2 flex flex-wrap gap-2"><x-pitmetric.status-badge :label="$roleLabels[$currentRole] ?? $currentRole" variant="success" /><span class="rounded-full border border-pm-border bg-pm-subtle px-2.5 py-1 text-xs text-pm-muted">{{ $members->count() }} {{ $it ? 'membri' : 'members' }}</span></div></div>
+<x-pitmetric.record-editor id="edit-team" :title="$it ? 'Modifica team' : 'Edit team'" :action="route('team.update')" permission="team-manage">
+<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome team' : 'Team name' }}</span><input class="pm-input" name="name" type="text" value="{{ $workspace->name }}" required maxlength="120"></label>
+</x-pitmetric.record-editor>
                     <a href="{{ route('dashboard') }}" class="pm-ghost-button">{{ $it ? 'Torna al gestionale' : 'Back to manager' }}</a>
                 </div>
 

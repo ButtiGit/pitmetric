@@ -14,7 +14,7 @@
         <div class="mx-auto w-full max-w-[1600px] space-y-5">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">DATA WORKSPACE</p>
+
                     <x-pitmetric.page-header
                         :title="$it ? 'Telemetria' : 'Telemetry'"
                         :description="$it ? 'Importa acquisizioni diverse e confronta canali, GPS e tempi nello stesso schermo.' : 'Import different acquisitions and compare channels, GPS and lap timing on one screen.'"
@@ -75,6 +75,7 @@
                         <article class="pm-panel p-4">
                             <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate text-sm font-black text-pm-text">{{ $import->driver?->display_name ?? '—' }}</p><p class="truncate text-xs text-pm-muted">{{ $import->vehicle?->name }} · {{ $import->circuitLayout?->circuit?->name ?? '—' }}</p></div><span class="rounded-md border border-pm-border bg-pm-subtle px-2 py-1 font-mono text-[10px] uppercase text-pm-muted">{{ $import->source_vendor }}</span></div>
                             <div class="mt-4 grid grid-cols-2 gap-2"><div><p class="pm-label">Best lap</p><p class="mt-1 font-mono text-lg font-black text-pm-accent">{{ $formatMs($best) }}</p></div><div><p class="pm-label">Samples</p><p class="mt-1 font-mono text-lg font-black text-pm-text">{{ number_format($import->sample_count, 0, ',', '.') }}</p></div></div>
+<x-pitmetric.record-delete :action="route('telemetry.destroy', $import)" :label="$it ? 'Elimina acquisizione' : 'Delete acquisition'" :message="$it ? 'Eliminare file, campioni e giri di questa acquisizione? La sessione resta nello storico.' : 'Delete this acquisition, its file, samples and laps? The session stays in history.'" />
                         </article>
                     @endforeach
                 </div>

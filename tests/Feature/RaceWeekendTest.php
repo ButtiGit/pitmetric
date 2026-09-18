@@ -152,7 +152,7 @@ it('runs a race weekend through Trackside schedule sessions work notes and linke
 
     $this->get(route('events.show', $event))
         ->assertOk()
-        ->assertSee('TRACKSIDE MODE')
+        ->assertSee('Trackside schedule')
         ->assertSee('Heat 1 gruppo A')
         ->assertSee('Pilota A')
         ->assertSee('Kart 27')

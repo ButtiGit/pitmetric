@@ -13,11 +13,11 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
-            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('garage.index') }}#create-vehicle">{{ __('workflow.garage') }}</a><a href="{{ route('configurations.index') }}#create-configuration">{{ __('workflow.configurations') }}</a><a href="{{ route('maintenance.index') }}">{{ __('workflow.maintenance') }}</a></div>
+
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">COMPONENTS</p>
-                    <x-pitmetric.page-header :title="$it ? 'Componenti reali' : 'Real components'" :description="$it ? 'Ogni componente conserva utilizzo, manutenzione, costo e storico dei montaggi fisici sui mezzi.' : 'Every component keeps usage, maintenance, cost and physical installation history across vehicles.'" />
+
+                    <x-pitmetric.page-header :title="$it ? 'Componenti reali' : 'Real components'" :description="$it ? 'Componenti, contatori di utilizzo e installazioni sui mezzi.' : 'Components, usage counters and vehicle installations.'" />
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <x-crud-modal id="create-component" :title="$it ? 'Aggiungi componente' : 'Add component'" :description="$it ? 'Il costo di acquisto viene registrato subito anche nei Costi.' : 'Purchase cost is recorded in Expenses immediately.'" :trigger="$it ? '+ Componente' : '+ Component'">

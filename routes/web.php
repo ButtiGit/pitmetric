@@ -79,6 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('database.access')->group(function () {
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
         Route::post('/team', [TeamController::class, 'store'])->name('team.store');
+        Route::put('/team', [TeamController::class, 'update'])->name('team.update');
         Route::post('/team/switch/{workspace}', [TeamController::class, 'switch'])->name('team.switch');
         Route::post('/team/invitations', [TeamController::class, 'invite'])->name('team.invitations.store');
         Route::delete('/team/invitations/{teamInvitation}', [TeamController::class, 'revokeInvitation'])
@@ -97,6 +98,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
 
         Route::middleware('can:team-write')->group(function () {
+            Route::delete('/circuits/{circuit}', [CircuitController::class, 'destroy'])->name('circuits.destroy');
+            Route::patch('/circuits/{circuit}/restore', [CircuitController::class, 'restore'])->withTrashed()->name('circuits.restore');
+            Route::delete('/circuits/{circuit}/layouts/{circuitLayout}', [CircuitController::class, 'destroyLayout'])->name('circuits.layouts.destroy');
+            Route::patch('/circuits/{circuit}/layouts/{circuitLayout}/restore', [CircuitController::class, 'restoreLayout'])->withTrashed()->name('circuits.layouts.restore');
+            Route::patch('/events/{raceEvent}/restore', [RaceEventController::class, 'restore'])->withTrashed()->name('events.restore');
+            Route::delete('/events/{raceEvent}', [RaceEventController::class, 'destroy'])->name('events.destroy');
+            Route::put('/event-entries/{eventEntry}', [RaceEventOperationsController::class, 'updateEntry'])->name('events.entries.update');
+            Route::delete('/event-entries/{eventEntry}', [RaceEventOperationsController::class, 'destroyEntry'])->name('events.entries.destroy');
+            Route::put('/event-tasks/{eventTask}', [RaceEventOperationsController::class, 'updateTaskDetails'])->name('events.tasks.details');
+            Route::delete('/event-tasks/{eventTask}', [RaceEventOperationsController::class, 'destroyTask'])->name('events.tasks.destroy');
+            Route::put('/event-notes/{eventNote}', [RaceEventOperationsController::class, 'updateNote'])->name('events.notes.update');
+            Route::delete('/event-notes/{eventNote}', [RaceEventOperationsController::class, 'destroyNote'])->name('events.notes.destroy');
+            Route::put('/maintenance/{maintenanceSchedule}', [MaintenanceController::class, 'update'])->name('maintenance.update');
+            Route::delete('/maintenance/{maintenanceSchedule}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+            Route::patch('/maintenance/{maintenanceSchedule}/restore', [MaintenanceController::class, 'restore'])->name('maintenance.restore');
+            Route::delete('/maintenance/work-orders/{maintenanceWorkOrder}', [MaintenanceController::class, 'destroyWorkOrder'])->name('maintenance.work-orders.destroy');
+            Route::put('/sessions/{session}', [SessionController::class, 'update'])->name('sessions.update');
+            Route::delete('/telemetry/{telemetryImport}', [TelemetryController::class, 'destroy'])->name('telemetry.destroy');
+
             Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
             Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
             Route::put('/drivers/{driver}', [RaceEventOperationsController::class, 'updateDriver'])->name('drivers.update');

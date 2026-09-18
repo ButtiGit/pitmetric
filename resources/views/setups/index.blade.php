@@ -15,7 +15,7 @@
         <div class="mx-auto w-full max-w-[1420px] space-y-5">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">TECHNICAL SETUP</p>
+
                     <x-pitmetric.page-header
                         :title="$it ? 'Setup tecnici del mezzo' : 'Vehicle technical setups'"
                         :description="$it ? 'Componenti e setup ora sono separati: qui salvi regolazioni, pressioni e geometrie. Ogni sessione crea automaticamente una fotografia immutabile dei valori realmente usati.' : 'Components and setup are now separate: store adjustments, pressures and geometry here. Every session automatically captures an immutable snapshot of the values actually used.'"

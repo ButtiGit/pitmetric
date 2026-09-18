@@ -46,9 +46,10 @@ class RaceEventController extends Controller
                 ->orderByDesc('start_date')
                 ->orderByDesc('id')
                 ->get(),
+            'archivedEvents' => RaceEvent::onlyTrashed()->orderByDesc('start_date')->get(),
             'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(),
             'layouts' => CircuitLayout::query()
-                ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+                ->whereHas('circuit', fn ($query) => $query->whereNull('circuits.deleted_at')->where('workspace_id', $workspace->getKey()))
                 ->with('circuit')
                 ->where('is_active', true)
                 ->orderBy('name')
@@ -78,7 +79,7 @@ class RaceEventController extends Controller
         $layout = CircuitLayout::query()
             ->whereKey((int) $validated['circuit_layout_id'])
             ->where('is_active', true)
-            ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+            ->whereHas('circuit', fn ($query) => $query->whereNull('circuits.deleted_at')->where('workspace_id', $workspace->getKey()))
             ->firstOrFail();
 
         $event = RaceEvent::create([
@@ -218,6 +219,22 @@ class RaceEventController extends Controller
         $raceEvent->update($validated);
 
         return to_route('events.show', $raceEvent)->with('status', __('Race weekend updated.'));
+    }
+
+    public function restore(RaceEvent $raceEvent): RedirectResponse
+    {
+        Gate::authorize('update', $raceEvent);
+        $raceEvent->restore();
+
+        return to_route('events.index')->with('status', __('Weekend restored.'));
+    }
+
+    public function destroy(RaceEvent $raceEvent): RedirectResponse
+    {
+        Gate::authorize('delete', $raceEvent);
+        $raceEvent->delete();
+
+        return to_route('events.index')->with('status', __('Weekend archived. Sessions and costs are preserved.'));
     }
 
     public function updateStatus(Request $request, RaceEvent $raceEvent): RedirectResponse

@@ -15,6 +15,9 @@ use App\Services\WorkspaceContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use RuntimeException;
@@ -109,7 +112,7 @@ class TelemetryController extends Controller
             'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(),
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
             'layouts' => CircuitLayout::query()
-                ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+                ->whereHas('circuit', fn ($query) => $query->whereNull('circuits.deleted_at')->where('workspace_id', $workspace->getKey()))
                 ->with('circuit')
                 ->where('is_active', true)
                 ->orderBy('name')
@@ -121,6 +124,20 @@ class TelemetryController extends Controller
                 ->orderBy('category')
                 ->pluck('category'),
         ]);
+    }
+
+    public function destroy(TelemetryImport $telemetryImport): RedirectResponse
+    {
+        Gate::authorize('team-write');
+        $path = $telemetryImport->storage_path;
+        DB::transaction(function () use ($telemetryImport): void {
+            $telemetryImport->samples()->delete();
+            $telemetryImport->laps()->delete();
+            $telemetryImport->delete();
+        });
+        Storage::disk('local')->delete($path);
+
+        return to_route('telemetry.index')->with('status', __('Telemetry import deleted. Session usage is unchanged.'));
     }
 
     public function store(

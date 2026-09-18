@@ -115,6 +115,36 @@ class RaceEventOperationsController extends Controller
         return to_route('events.show', $raceEvent)->with('status', __('Event entry added.'));
     }
 
+    public function updateEntry(Request $request, EventEntry $eventEntry): RedirectResponse
+    {
+        Gate::authorize('update', $eventEntry);
+        $validated = $request->validate([
+            'entry_number' => ['nullable', 'string', 'max:20'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $eventEntry->update($validated);
+
+        return to_route('events.show', $eventEntry->event_id)->with('status', __('Entry updated.'));
+    }
+
+    public function destroyEntry(EventEntry $eventEntry): RedirectResponse
+    {
+        Gate::authorize('delete', $eventEntry);
+        DB::transaction(function () use ($eventEntry): void {
+            $entry = EventEntry::query()->whereKey($eventEntry->getKey())->lockForUpdate()->firstOrFail();
+            if ($entry->sessions()->exists() || $entry->scheduleItems()->exists()
+                || $entry->tasks()->exists() || $entry->eventNotes()->exists()
+                || Expense::query()->where('related_type', 'event_entry')->where('related_id', $entry->getKey())->exists()) {
+                throw ValidationException::withMessages([
+                    'entry' => __('This entry has sessions, activities or costs. Keep it in history; an unused entry can be deleted.'),
+                ]);
+            }
+            $entry->delete();
+        });
+
+        return to_route('events.show', $eventEntry->event_id)->with('status', __('Entry deleted.'));
+    }
+
     public function storeScheduleItem(Request $request, RaceEvent $raceEvent): RedirectResponse
     {
         Gate::authorize('update', $raceEvent);
@@ -246,26 +276,84 @@ class RaceEventOperationsController extends Controller
             'cost_description' => ['nullable', 'string', 'max:180'],
         ]);
 
-        $completedAt = $validated['status'] === 'done' ? now() : null;
-        $eventTask->update([
-            'status' => $validated['status'],
-            'completed_at' => $completedAt,
-        ]);
+        DB::transaction(function () use ($eventTask, $validated, $user, $costService): void {
+            $task = EventTask::query()->whereKey($eventTask->getKey())->lockForUpdate()->firstOrFail();
+            $completedAt = $validated['status'] === 'done'
+                ? ($task->completed_at === null ? now() : Carbon::parse($task->completed_at))
+                : null;
+            $task->update([
+                'status' => $validated['status'],
+                'completed_at' => $completedAt,
+            ]);
 
-        if ($completedAt !== null) {
-            $costService->record(
-                $user,
-                isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
-                'event_operations',
-                $validated['cost_description'] ?? __('Event task').': '.$eventTask->title,
-                'event_task',
-                (int) $eventTask->getKey(),
-                $completedAt,
-                (int) $eventTask->event_id,
-            );
-        }
+            if ($completedAt !== null) {
+                $costService->record(
+                    $user,
+                    isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+                    'event_operations',
+                    $validated['cost_description'] ?? __('Event task').': '.$task->title,
+                    'event_task',
+                    (int) $task->getKey(),
+                    $completedAt,
+                    (int) $task->event_id,
+                );
+            }
+        });
 
         return to_route('events.show', $eventTask->event_id)->with('status', __('Task status updated.'));
+    }
+
+    public function updateTaskDetails(Request $request, EventTask $eventTask): RedirectResponse
+    {
+        Gate::authorize('update', $eventTask);
+        $validated = $request->validate([
+            'event_entry_id' => ['nullable', 'integer'],
+            'title' => ['required', 'string', 'max:160'],
+            'description' => ['nullable', 'string', 'max:3000'],
+            'priority' => ['required', 'in:low,normal,high,critical'],
+            'due_at' => ['nullable', 'date'],
+        ]);
+        $validated['event_entry_id'] = $this->entryIdForEvent($eventTask->raceEvent, $validated['event_entry_id'] ?? null);
+        $eventTask->update($validated);
+
+        return to_route('events.show', $eventTask->event_id)->with('status', __('Task updated.'));
+    }
+
+    public function destroyTask(EventTask $eventTask): RedirectResponse
+    {
+        Gate::authorize('delete', $eventTask);
+        DB::transaction(function () use ($eventTask): void {
+            $task = EventTask::query()->whereKey($eventTask->getKey())->lockForUpdate()->firstOrFail();
+            if (Expense::query()->where('related_type', 'event_task')->where('related_id', $task->getKey())->exists()) {
+                throw ValidationException::withMessages(['task' => __('This task has a recorded cost and must remain in history.')]);
+            }
+            $task->delete();
+        });
+
+        return to_route('events.show', $eventTask->event_id)->with('status', __('Task deleted.'));
+    }
+
+    public function updateNote(Request $request, EventNote $eventNote): RedirectResponse
+    {
+        Gate::authorize('update', $eventNote);
+        $validated = $request->validate([
+            'event_entry_id' => ['nullable', 'integer'],
+            'kind' => ['required', 'in:technical,driver_feedback,incident,operations'],
+            'body' => ['required', 'string', 'max:5000'],
+            'occurred_at' => ['required', 'date'],
+        ]);
+        $validated['event_entry_id'] = $this->entryIdForEvent($eventNote->raceEvent, $validated['event_entry_id'] ?? null);
+        $eventNote->update($validated);
+
+        return to_route('events.show', $eventNote->event_id)->with('status', __('Note updated.'));
+    }
+
+    public function destroyNote(EventNote $eventNote): RedirectResponse
+    {
+        Gate::authorize('delete', $eventNote);
+        $eventNote->delete();
+
+        return to_route('events.show', $eventNote->event_id)->with('status', __('Note deleted.'));
     }
 
     public function storeNote(Request $request, RaceEvent $raceEvent): RedirectResponse
@@ -297,7 +385,7 @@ class RaceEventOperationsController extends Controller
         Gate::authorize('update', $raceEvent);
         $user = $this->user($request);
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'gt:0', 'max:1000000'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2', 'max:1000000'],
             'category' => ['required', 'string', 'max:80'],
             'description' => ['required', 'string', 'max:180'],
             'occurred_at' => ['required', 'date'],

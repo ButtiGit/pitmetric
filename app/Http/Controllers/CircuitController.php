@@ -37,7 +37,7 @@ class CircuitController extends Controller
         $workspaceContext->personal($user);
 
         return view('circuits.index', [
-            'circuits' => Circuit::query()->with('layouts')->orderBy('name')->get(),
+            'circuits' => Circuit::query()->withTrashed()->with(['layouts' => fn ($query) => $query->withTrashed()])->orderBy('name')->get(),
         ]);
     }
 
@@ -123,6 +123,41 @@ class CircuitController extends Controller
         $circuitLayout->update($validated);
 
         return to_route('circuits.index')->with('status', __('Layout updated.'));
+    }
+
+    public function destroy(Circuit $circuit): RedirectResponse
+    {
+        Gate::authorize('delete', $circuit);
+        $circuit->delete();
+
+        return to_route('circuits.index')->with('status', __('Circuit removed. Existing sessions and weekends are preserved.'));
+    }
+
+    public function restore(Circuit $circuit): RedirectResponse
+    {
+        Gate::authorize('update', $circuit);
+        $circuit->restore();
+
+        return to_route('circuits.index')->with('status', __('Circuit restored.'));
+    }
+
+    public function destroyLayout(Circuit $circuit, CircuitLayout $circuitLayout): RedirectResponse
+    {
+        Gate::authorize('update', $circuit);
+        abort_unless((int) $circuitLayout->circuit_id === (int) $circuit->getKey(), 404);
+        $circuitLayout->delete();
+
+        return to_route('circuits.index')->with('status', __('Layout removed. Historical distances are preserved.'));
+    }
+
+    public function restoreLayout(Circuit $circuit, CircuitLayout $circuitLayout): RedirectResponse
+    {
+        abort_if($circuit->trashed(), 404);
+        Gate::authorize('update', $circuit);
+        abort_unless((int) $circuitLayout->circuit_id === (int) $circuit->getKey(), 404);
+        $circuitLayout->restore();
+
+        return to_route('circuits.index')->with('status', __('Layout restored.'));
     }
 
     private function hasDatabaseAccess(User $user): bool

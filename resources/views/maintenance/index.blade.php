@@ -22,10 +22,10 @@
         <div class="mx-auto w-full max-w-[1440px] space-y-5">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">MAINTENANCE</p>
+
                     <x-pitmetric.page-header
                         :title="$it ? 'Workboard manutenzione' : 'Maintenance workboard'"
-                        :description="$it ? 'Trasforma gli alert di utilizzo in lavori assegnati, seguili fino al completamento e registra service e costi senza perdere lo storico.' : 'Turn usage alerts into assigned jobs, track them through completion, and record service and costs without losing history.'"
+                        :description="$it ? 'Pianifica gli interventi, controlla le scadenze e registra i lavori eseguiti.' : 'Plan maintenance, check due dates and record completed work.'"
                     />
                 </div>
 
@@ -168,7 +168,7 @@
             <section class="pm-panel p-4 sm:p-5">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-accent">WORKBOARD</p>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-accent">{{ $it ? 'Interventi' : 'Jobs' }}</p>
                         <h2 class="mt-1 text-lg font-black text-pm-text">{{ $it ? 'Coda operativa manutenzione' : 'Maintenance operations queue' }}</h2>
                     </div>
                     <p class="text-xs text-pm-muted">{{ $it ? 'Il completamento chiude il lavoro e resetta il contatore del piano.' : 'Completion closes the job and resets the schedule counter.' }}</p>
@@ -326,7 +326,8 @@
                                                         <button class="pm-race-button" type="submit">{{ $it ? 'Completa e registra' : 'Complete and record' }}</button>
                                                     </div>
                                                 </form>@endcan
-                                            </x-crud-modal>
+                                            </x-crud-modal><x-pitmetric.record-delete :action="route('maintenance.work-orders.destroy', $workOrder)" :label="__('crud.cancel_work')" :message="$it ? 'Annullare questo lavoro di manutenzione?' : 'Cancel this maintenance work order?'" />
+
                                         </div>
                                     </article>
                                 @empty
@@ -419,6 +420,14 @@
                                         </div>
                                     </form>@endcan
                                 </x-crud-modal>
+<x-pitmetric.record-editor id="edit-schedule-{{ $schedule->id }}" :title="$it ? 'Modifica piano' : 'Edit schedule'" :action="route('maintenance.update', $schedule)" >
+@php($unitScale = match ($schedule->tracker->metric->key) { 'distance' => 1000, 'runtime' => 3600, default => 1 })<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome piano' : 'Schedule name' }}</span><input class="pm-input" name="name" type="text" value="{{ $schedule->name }}" required maxlength="120"></label>
+<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Intervallo' : 'Interval' }} ({{ $schedule->tracker->metric->display_unit }})</span><input class="pm-input" name="interval_display" type="number" value="{{ $schedule->interval_value / $unitScale }}" required min="0.001" max="1000000" step="any"></label>
+<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Preavviso' : 'Warning' }} ({{ $schedule->tracker->metric->display_unit }})</span><input class="pm-input" name="warning_display" type="number" value="{{ $schedule->warning_value === null ? "" : $schedule->warning_value / $unitScale }}" min="0" max="1000000" step="any"></label>
+<label class="grid gap-2 sm:col-span-2"><span class="pm-label">Note</span><textarea class="pm-input min-h-24" name="notes" maxlength="2000">{{ $schedule->notes }}</textarea></label>
+</x-pitmetric.record-editor>
+<x-pitmetric.record-delete :action="route('maintenance.destroy', $schedule)" :label="__('crud.archive')" :message="__('crud.confirm_archive')" />
+
                             </div>
                         </article>
                     @empty
@@ -430,6 +439,11 @@
                 </div>
             </section>
 
+            @if ($archivedSchedules->isNotEmpty())
+                <details class="pm-panel pm-archive-list p-5"><summary>{{ $it ? 'Piani archiviati' : 'Archived schedules' }} ({{ $archivedSchedules->count() }})</summary>
+                    @foreach ($archivedSchedules as $schedule)<div class="pm-record-heading mt-3"><div><p>{{ $schedule->name }}</p><p class="text-sm text-pm-muted">{{ $schedule->tracker->component->name }}</p></div>@can('team-write')<form method="POST" action="{{ route('maintenance.restore', $schedule) }}">@csrf @method('PATCH')<button class="pm-row-action" type="submit">{{ __('crud.restore') }}</button></form>@endcan</div>@endforeach
+                </details>
+            @endif
             @if ($records->isNotEmpty())
                 <section class="pm-panel p-5 sm:p-6">
                     <h2 class="text-lg font-black text-pm-text">{{ $it ? 'Storico recente' : 'Recent history' }}</h2>

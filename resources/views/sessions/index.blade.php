@@ -16,9 +16,9 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
-            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('configurations.index') }}#create-configuration">{{ __('workflow.configurations') }}</a><a href="{{ route('setups.index') }}">{{ __('workflow.setups') }}</a><a href="{{ route('circuits.index') }}#create-circuit">{{ $it ? 'Circuiti' : 'Circuits' }}</a><a href="{{ route('timing.index') }}">{{ $it ? 'Tempi sul giro' : 'Lap times' }}</a><a href="{{ route('telemetry.index') }}">{{ $it ? 'Telemetria' : 'Telemetry' }}</a></div>
+
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div><p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">SESSIONS</p><x-pitmetric.page-header :title="$it ? 'Sessioni in pista' : 'Track sessions'" :description="$it ? 'Registra una sessione una sola volta: PitMetric aggiorna utilizzo, manutenzione e costi e conserva uno snapshot immutabile del setup tecnico usato.' : 'Record a session once: PitMetric updates usage, maintenance and costs and preserves an immutable snapshot of the technical setup used.'" /></div>
+                <div><x-pitmetric.page-header :title="$it ? 'Sessioni in pista' : 'Track sessions'" :description="$it ? 'Registra giri, durata e distanza. Utilizzo dei componenti e costi si aggiornano insieme alla sessione.' : 'Record laps, duration and distance. Component usage and costs update with the session.'" /></div>
                 <x-crud-modal id="record-session" :title="$it ? 'Registra sessione' : 'Record session'" :description="$it ? 'Scegli build componenti e setup tecnico. Se non selezioni un setup, PitMetric usa l’ultimo profilo attivo del mezzo e lo fotografa nello storico.' : 'Choose component build and technical setup. If no setup is selected, PitMetric uses the vehicle’s latest active profile and snapshots it into history.'" :trigger="$it ? '+ Registra sessione' : '+ Record session'" size="max-w-5xl">
                     @can('team-write')<form method="POST" action="{{ route('sessions.store') }}" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         @csrf
@@ -74,8 +74,12 @@
                             <div class="flex flex-wrap gap-2">@foreach ($session->usageValues as $usageValue)<span class="rounded-lg border border-pm-border bg-pm-subtle px-3 py-2 font-mono text-xs font-bold text-pm-text">{{ $usageValue->metric->name }}: {{ $formatUsage($usageValue->value, $usageValue->metric) }}</span>@endforeach</div>
                         </div>
 
+<div class="mt-3"><p class="whitespace-pre-wrap text-sm text-pm-text-secondary">{{ $session->notes }}</p><x-pitmetric.record-editor id="edit-session-{{ $session->id }}" :title="$it ? 'Modifica note' : 'Edit notes'" :trigger="$it ? 'Modifica note' : 'Edit notes'" :action="route('sessions.update', $session)">
+<label class="grid gap-2 sm:col-span-2"><span class="pm-label">Note</span><textarea class="pm-input min-h-24" name="notes" maxlength="4000">{{ $session->notes }}</textarea></label>
+</x-pitmetric.record-editor>
+</div>
                         <div class="mt-4 rounded-xl border border-pm-border bg-pm-subtle p-4">
-                            <div class="flex flex-wrap items-center justify-between gap-2"><div><p class="text-[10px] font-black uppercase tracking-[0.12em] text-pm-accent">SETUP SNAPSHOT</p><p class="mt-1 text-sm font-bold text-pm-text">{{ $snapshot?->name ?? ($it ? 'Setup non disponibile' : 'Setup unavailable') }}</p></div>@if ($snapshot)<span class="text-xs text-pm-muted">{{ $it ? 'Catturato' : 'Captured' }} {{ $snapshot->captured_at?->format('d/m/Y H:i') }}</span>@endif</div>
+                            <div class="flex flex-wrap items-center justify-between gap-2"><div><p class="text-[10px] font-black uppercase tracking-[0.12em] text-pm-accent">{{ $it ? 'Setup utilizzato' : 'Setup used' }}</p><p class="mt-1 text-sm font-bold text-pm-text">{{ $snapshot?->name ?? ($it ? 'Setup non disponibile' : 'Setup unavailable') }}</p></div>@if ($snapshot)<span class="text-xs text-pm-muted">{{ $it ? 'Catturato' : 'Captured' }} {{ $snapshot->captured_at?->format('d/m/Y H:i') }}</span>@endif</div>
                             @if ($snapshotValues->isNotEmpty())
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     @foreach ($snapshotValues as $key => $value)

@@ -7,7 +7,7 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
-            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('components.index') }}#create-component">{{ __('workflow.components') }}</a></div>
+
             <section class="pm-panel p-5 sm:p-6">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -55,7 +55,7 @@
             @if ($errors->any())<div class="rounded-xl border border-pm-danger/30 bg-pm-danger-subtle p-4 text-sm text-pm-danger"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">GARAGE</p>
+
                 <h1 class="mt-2 text-2xl font-black tracking-[-0.03em] text-pm-text sm:text-3xl">{{ __('garage.title') }}</h1>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-pm-text-secondary">{{ __('garage.description') }}</p>
             </div>

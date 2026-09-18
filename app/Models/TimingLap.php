@@ -46,7 +46,7 @@ class TimingLap extends Model
     /** @return BelongsTo<CircuitLayout, $this> */
     public function circuitLayout(): BelongsTo
     {
-        return $this->belongsTo(CircuitLayout::class);
+        return $this->belongsTo(CircuitLayout::class)->withTrashed();
     }
 
     /** @return BelongsTo<TelemetryImport, $this> */

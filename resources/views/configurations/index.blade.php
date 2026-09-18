@@ -2,9 +2,9 @@
     @php($it = app()->getLocale() === 'it')
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
-            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('garage.index') }}#create-vehicle">{{ __('workflow.garage') }}</a><a href="{{ route('components.index') }}#create-component">{{ __('workflow.components') }}</a><a href="{{ route('setups.index') }}">{{ __('workflow.setups') }}</a><a href="{{ route('sessions.index') }}#record-session">{{ __('workflow.sessions') }}</a></div>
+
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div><p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">CONFIGURATIONS</p><x-pitmetric.page-header :title="$it ? 'Configurazioni versionate' : 'Versioned configurations'" :description="$it ? 'Ogni versione fotografa i componenti montati. Quando una sessione la usa, resta immutabile.' : 'Each version snapshots installed components. Once used by a session it remains immutable.'" /></div>
+                <div><x-pitmetric.page-header :title="$it ? 'Configurazioni versionate' : 'Versioned configurations'" :description="$it ? 'Gestisci i componenti di ogni mezzo e conserva le versioni usate in pista.' : 'Manage each vehicle’s components and keep the versions used on track.'" /></div>
                 <x-crud-modal id="create-configuration" :title="$it ? 'Nuova configurazione' : 'New configuration'" :description="$it ? 'Scegli mezzo e componenti. Il salvataggio aggiorna anche i montaggi fisici del mezzo.' : 'Choose a vehicle and components. Saving also updates the physical installations on the vehicle.'" :trigger="$it ? '+ Nuova configurazione' : '+ New configuration'">
                     @can('team-write')<form method="POST" action="{{ route('configurations.store') }}" class="space-y-4">
                         @csrf

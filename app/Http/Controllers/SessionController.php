@@ -85,7 +85,7 @@ class SessionController extends Controller
                 ->orderBy('name')
                 ->get(),
             'layouts' => CircuitLayout::query()
-                ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+                ->whereHas('circuit', fn ($query) => $query->whereNull('circuits.deleted_at')->where('workspace_id', $workspace->getKey()))
                 ->with('circuit')
                 ->where('is_active', true)
                 ->orderBy('name')
@@ -102,6 +102,14 @@ class SessionController extends Controller
             'maintenanceStates' => $health['states'],
             'attentionSchedules' => $attentionSchedules,
         ]);
+    }
+
+    public function update(Request $request, Session $session): RedirectResponse
+    {
+        Gate::authorize('update', $session);
+        $session->update($request->validate(['notes' => ['nullable', 'string', 'max:4000']]));
+
+        return to_route('sessions.index')->with('status', __('Session notes updated. Recorded usage is unchanged.'));
     }
 
     public function store(
@@ -218,7 +226,7 @@ class SessionController extends Controller
             $layoutId = CircuitLayout::query()
                 ->whereKey((int) $validated['circuit_layout_id'])
                 ->where('is_active', true)
-                ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+                ->whereHas('circuit', fn ($query) => $query->whereNull('circuits.deleted_at')->where('workspace_id', $workspace->getKey()))
                 ->value('id');
 
             abort_if($layoutId === null, 404);

@@ -11,6 +11,7 @@ Route::middleware(['auth', 'verified', 'database.access'])
         Route::get('/export', [ControlCenterController::class, 'export'])->name('export');
         Route::post('/import', [ControlCenterController::class, 'import'])->name('import');
 
+        Route::put('/documents/{document}', [ControlCenterController::class, 'updateDocument'])->name('documents.update');
         Route::post('/documents', [ControlCenterController::class, 'storeDocument'])->name('documents.store');
         Route::get('/documents/{document}/download', [ControlCenterController::class, 'downloadDocument'])->name('documents.download');
         Route::delete('/documents/{document}', [ControlCenterController::class, 'destroyDocument'])->name('documents.destroy');

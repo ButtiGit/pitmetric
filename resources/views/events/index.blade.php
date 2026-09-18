@@ -3,10 +3,10 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
-            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('circuits.index') }}#create-circuit">{{ $it ? 'Circuiti' : 'Circuits' }}</a><a href="{{ route('garage.index') }}#create-vehicle">{{ __('workflow.garage') }}</a><a href="{{ route('configurations.index') }}#create-configuration">{{ __('workflow.configurations') }}</a></div>
+
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">RACE WEEKENDS</p>
+
                     <x-pitmetric.page-header :title="$it ? 'Eventi e weekend di gara' : 'Events and race weekends'" :description="$it ? 'Organizza circuito, piloti, mezzi, setup, sessioni, lavori, spese e note nello stesso spazio operativo.' : 'Organize circuit, drivers, vehicles, setups, sessions, work, expenses and notes in one operational workspace.'" />
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -67,6 +67,11 @@
  </form></x-crud-modal>@can('team-write')<form method="POST" action="{{ route('drivers.destroy', $driver) }}" onsubmit="return confirm(@js($it ? 'Archiviare il pilota? Le attività passate rimangono nello storico.' : 'Archive this driver? Past activity stays in history.'))">@csrf @method('DELETE')<button type="submit" class="pm-ghost-button">{{ $it ? 'Archivia' : 'Archive' }}</button></form>@endcan</div>@empty<p class="rounded-xl border border-dashed border-pm-border p-4 text-sm text-pm-muted">{{ $it ? 'Nessun pilota ancora.' : 'No drivers yet.' }}</p>@endforelse</div>
                 </aside>
             </section>
+            @if ($archivedEvents->isNotEmpty())
+                <details class="pm-panel pm-archive-list p-5"><summary>{{ $it ? 'Weekend archiviati' : 'Archived weekends' }} ({{ $archivedEvents->count() }})</summary>
+                    @foreach ($archivedEvents as $archivedEvent)<div class="pm-record-heading mt-3"><span>{{ $archivedEvent->name }}</span>@can('team-write')<form method="POST" action="{{ route('events.restore', $archivedEvent) }}">@csrf @method('PATCH')<button class="pm-row-action" type="submit">{{ __('crud.restore') }}</button></form>@endcan</div>@endforeach
+                </details>
+            @endif
         </div>
     </div>
 </x-layouts::app>

@@ -4,7 +4,7 @@
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7" data-pm-mobile-garage>
         <div class="mx-auto w-full max-w-[920px] space-y-4 sm:space-y-5">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">GARAGE</p>
+
                 <h1 class="mt-2 text-2xl font-black tracking-[-0.03em] text-pm-text sm:text-3xl">{{ __('garage.title') }}</h1>
             </div>
 

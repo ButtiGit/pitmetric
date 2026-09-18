@@ -1,28 +1,26 @@
 body:has([data-pm-workspace]) { overflow-x: clip; }
 
-[data-pm-workspace] .pm-workflow-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .35rem;
-    padding: .75rem 1rem;
-    border-bottom: 1px solid var(--pm-border);
-    background: var(--pm-surface);
-}
-[data-pm-workspace] .pm-workflow-nav a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 40px;
-    padding: .45rem .7rem;
-    border-radius: .5rem;
-    color: var(--pm-text-secondary);
-    font-size: .8rem;
-    font-weight: 600;
-    text-decoration: none;
-}
-[data-pm-workspace] .pm-workflow-nav a[aria-current="page"] {
-    background: var(--pm-accent);
-    color: #fff;
-}
+[data-pm-workspace] .pm-page-toolbar,
+[data-pm-workspace] .pm-record-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+[data-pm-workspace] .pm-record-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+[data-pm-workspace] .pm-row-action { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--pm-border); border-radius: .375rem; color: var(--pm-text); font-size: .8125rem; font-weight: 600; cursor: pointer; }
+[data-pm-workspace] .pm-row-action:hover { background: var(--pm-hover); border-color: var(--pm-border-strong); }
+[data-pm-workspace] .pm-row-action-danger { color: var(--pm-danger); }
+[data-pm-workspace] .pm-feedback { padding: .85rem 1rem; border: 1px solid var(--pm-border); border-radius: .5rem; font-size: .875rem; }
+[data-pm-workspace] .pm-feedback[role="alert"] { border-color: var(--pm-danger); color: var(--pm-danger); }
+[data-pm-workspace] .pm-archive-list summary { cursor: pointer; min-height: 44px; align-content: center; font-size: .875rem; color: var(--pm-text-secondary); }
+[data-pm-workspace] .pm-panel,
+[data-pm-workspace] .pm-stat-card { border-radius: .5rem; box-shadow: none; }
+[data-pm-workspace] .pm-race-button,
+[data-pm-workspace] .pm-ghost-button,
+[data-pm-workspace] .pm-danger-button { border-radius: .375rem; box-shadow: none; transform: none; min-height: 44px; font-weight: 600; }
+[data-pm-workspace] .pm-label { text-transform: none; letter-spacing: normal; font-size: .8125rem; }
+[data-pm-workspace] h1 { font-size: clamp(1.5rem, 3vw, 1.875rem); font-weight: 650; }
+[data-pm-workspace] h2,
+[data-pm-workspace] h3 { font-weight: 650; }
+[data-pm-workspace] [data-pitmetric-component="page-header"] { border-bottom: 0; padding-bottom: 0; }
+[data-pm-workspace] .pm-input { border-radius: .375rem; }
+
 [data-pm-workspace] a:focus-visible,
 [data-pm-workspace] button:focus-visible {
     outline: 2px solid var(--pm-accent);
@@ -37,23 +35,8 @@ body:has([data-pm-workspace]) { overflow-x: clip; }
 [data-pm-workspace] dialog { margin: auto; }
 [data-pm-workspace] dialog::backdrop { backdrop-filter: blur(3px); }
 [data-pm-workspace] dialog[open] { max-height: 92dvh; }
-[data-pm-workspace] .pm-next-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .75rem;
-    padding: .9rem 1rem;
-    border: 1px solid var(--pm-border);
-    border-left: 3px solid var(--pm-accent);
-    border-radius: .75rem;
-    background: var(--pm-surface);
-    font-size: .85rem;
-}
-[data-pm-workspace] .pm-next-actions a { color: var(--pm-accent); font-weight: 600; }
 @media (max-width: 639px) {
     [data-pm-workspace] { padding: .5rem; }
-    [data-pm-workspace] .pm-workflow-nav { gap: .15rem; padding: .5rem; }
-    [data-pm-workspace] .pm-workflow-nav a { font-size: .72rem; padding: .35rem .55rem; }
     [data-pm-workspace] dialog > div { padding: 1rem; max-height: 88dvh; }
 }
 
@@ -69,3 +52,6 @@ body:has([data-pm-workspace]) { overflow-x: clip; }
     [data-pm-workspace] [data-pm-responsive-table] td[data-label=""]::before,
     [data-pm-workspace] [data-pm-responsive-table] td[data-pm-empty-cell] { display: none; }
 }
+
+[data-pm-workspace] section[aria-labelledby^="circuit-"] > .pm-record-heading,
+[data-pm-workspace] section[aria-labelledby^="circuit-"] > div > .pm-record-heading { padding: 1.1rem 1.25rem; }

@@ -58,7 +58,7 @@ class Session extends Model
     /** @return BelongsTo<CircuitLayout, $this> */
     public function circuitLayout(): BelongsTo
     {
-        return $this->belongsTo(CircuitLayout::class);
+        return $this->belongsTo(CircuitLayout::class)->withTrashed();
     }
 
     /** @return HasMany<SessionUsageValue, $this> */
