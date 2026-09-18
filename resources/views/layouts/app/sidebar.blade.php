@@ -5,36 +5,91 @@
         <flux:sidebar sticky collapsible="mobile" class="pm-mobile-sidebar border-e border-[#242932] bg-[#111317]">
             <flux:sidebar.header class="border-b border-white/5 pb-4"><x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate /><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
 
+            @php
+                $activityOpen = request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
+                $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
+                $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
+                $managementOpen = request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*');
+                $studioOpen = request()->routeIs('studio.*');
+            @endphp
+
             <flux:sidebar.nav class="pt-4">
                 <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="calendar-days" :href="route('events.index')" :current="request()->routeIs('events.*')">{{ __('demo.nav.events') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="truck" :href="route('garage.index')" :current="request()->routeIs('garage.*')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="wrench-screwdriver" :href="route('components.index')" :current="request()->routeIs('components.*') || request()->routeIs('component-installations.*')">{{ __('demo.nav.components') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="squares-2x2" :href="route('configurations.index')" :current="request()->routeIs('configurations.*')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="adjustments-horizontal" :href="route('setups.index')" :current="request()->routeIs('setups.*')">{{ app()->getLocale() === 'it' ? 'Setup tecnici' : 'Technical setups' }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="map" :href="route('circuits.index')" :current="request()->routeIs('circuits.*')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="clock" :href="route('timing.index')" :current="request()->routeIs('timing.*')">{{ app()->getLocale() === 'it' ? 'Tempi' : 'Timing' }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="signal" :href="route('telemetry.index')" :current="request()->routeIs('telemetry.*')">{{ app()->getLocale() === 'it' ? 'Telemetria' : 'Telemetry' }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
-                    <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
 
-                    @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
-                        <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
-                        <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">Intelligence</flux:sidebar.item>
+                    <details class="group/sidebar-section mt-1" @if ($activityOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                            <flux:icon.calendar-days class="size-4 shrink-0" />
+                            <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Attività' : 'Activity' }}</span>
+                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                        </summary>
+                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            <flux:sidebar.item icon="calendar-days" :href="route('events.index')" :current="request()->routeIs('events.*')">{{ __('demo.nav.events') }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="map" :href="route('circuits.index')" :current="request()->routeIs('circuits.*')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
+                        </div>
+                    </details>
 
-                        @can('team-manage')
-                            <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
-                        @endcan
-                    @endif
+                    <details class="group/sidebar-section mt-1" @if ($vehicleOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                            <flux:icon.truck class="size-4 shrink-0" />
+                            <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Veicolo' : 'Vehicle' }}</span>
+                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                        </summary>
+                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            <flux:sidebar.item icon="truck" :href="route('garage.index')" :current="request()->routeIs('garage.*')">{{ __('demo.nav.garage') }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="wrench-screwdriver" :href="route('components.index')" :current="request()->routeIs('components.*') || request()->routeIs('component-installations.*')">{{ __('demo.nav.components') }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="squares-2x2" :href="route('configurations.index')" :current="request()->routeIs('configurations.*')">{{ __('demo.nav.configurations') }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="adjustments-horizontal" :href="route('setups.index')" :current="request()->routeIs('setups.*')">{{ app()->getLocale() === 'it' ? 'Setup tecnici' : 'Technical setups' }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
+                        </div>
+                    </details>
+
+                    <details class="group/sidebar-section mt-1" @if ($performanceOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                            <flux:icon.chart-bar class="size-4 shrink-0" />
+                            <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Performance' : 'Performance' }}</span>
+                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                        </summary>
+                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            <flux:sidebar.item icon="clock" :href="route('timing.index')" :current="request()->routeIs('timing.*')">{{ app()->getLocale() === 'it' ? 'Tempi' : 'Timing' }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="signal" :href="route('telemetry.index')" :current="request()->routeIs('telemetry.*')">{{ app()->getLocale() === 'it' ? 'Telemetria' : 'Telemetry' }}</flux:sidebar.item>
+                            @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
+                                <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">Intelligence</flux:sidebar.item>
+                            @endif
+                        </div>
+                    </details>
+
+                    <details class="group/sidebar-section mt-1" @if ($managementOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                            <flux:icon.folder class="size-4 shrink-0" />
+                            <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Gestione' : 'Management' }}</span>
+                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                        </summary>
+                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
+                            @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
+                                <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
+                                @can('team-manage')
+                                    <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
+                                @endcan
+                            @endif
+                        </div>
+                    </details>
                 </flux:sidebar.group>
 
                 @can('manage-updates')
-                    <flux:sidebar.group :heading="__('pitmetric.studio.eyebrow')" class="mt-4 grid gap-1">
-                        <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
-                        <flux:sidebar.item icon="users" :href="route('studio.users.index')" :current="request()->routeIs('studio.users.*')">{{ __('users.nav') }}</flux:sidebar.item>
-                    </flux:sidebar.group>
+                    <details class="group/sidebar-section mt-4" @if ($studioOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                            <flux:icon.cog-6-tooth class="size-4 shrink-0" />
+                            <span class="min-w-0 flex-1">{{ __('pitmetric.studio.eyebrow') }}</span>
+                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                        </summary>
+                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
+                            <flux:sidebar.item icon="users" :href="route('studio.users.index')" :current="request()->routeIs('studio.users.*')">{{ __('users.nav') }}</flux:sidebar.item>
+                        </div>
+                    </details>
                 @endcan
             </flux:sidebar.nav>
 
