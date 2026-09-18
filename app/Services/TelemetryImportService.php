@@ -261,11 +261,13 @@ class TelemetryImportService
 
             if (preg_match('/^\[(.+)]$/', $line, $matches) === 1) {
                 $section = strtolower(trim($matches[1]));
+
                 continue;
             }
 
             if ($section === 'comments' && count($comments) < 20) {
                 $comments[] = $line;
+
                 continue;
             }
 
@@ -274,6 +276,7 @@ class TelemetryImportService
                 foreach ($headers as $index => $header) {
                     $columnKeys[$index] = $this->canonicalKey($this->normalizeHeader($header));
                 }
+
                 continue;
             }
 
