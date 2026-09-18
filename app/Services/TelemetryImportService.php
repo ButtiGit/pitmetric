@@ -225,7 +225,7 @@ class TelemetryImportService
             'sample_count' => $sequence,
             'lap_count' => $lapCount,
             'duration_ms' => $lastElapsedMs,
-            'channel_keys' => array_values(array_keys($channelKeys)),
+            'channel_keys' => array_keys($channelKeys),
             'metadata' => [
                 'delimiter' => $delimiter === "\t" ? 'tab' : $delimiter,
                 'headers' => $rawHeaders,
@@ -364,7 +364,7 @@ class TelemetryImportService
             'sample_count' => $sequence,
             'lap_count' => $lapCount,
             'duration_ms' => $lastElapsedMs,
-            'channel_keys' => array_values(array_keys($channelKeys)),
+            'channel_keys' => array_keys($channelKeys),
             'metadata' => [
                 'headers' => $headers,
                 'comments' => $comments,
@@ -399,7 +399,12 @@ class TelemetryImportService
                 }
 
                 if ($score >= 2 && ($best === null || $score > $best['score'])) {
-                    $best = ['row' => $row, 'delimiter' => $delimiter, 'headers' => array_map('trim', $cells), 'score' => $score];
+                    $best = [
+                        'row' => $row,
+                        'delimiter' => $delimiter,
+                        'headers' => array_map(static fn (?string $cell): string => trim((string) $cell), $cells),
+                        'score' => $score,
+                    ];
                 }
             }
         }
@@ -619,16 +624,15 @@ class TelemetryImportService
             return null;
         }
 
-        $sign = $numeric < 0 ? -1 : 1;
-        $absolute = abs($numeric);
-        $degrees = floor($absolute / 100);
-        $minutes = $absolute - ($degrees * 100);
-        $decimal = ($degrees + ($minutes / 60)) * $sign;
+        $decimalDegrees = $numeric / 60;
 
-        return $longitude ? -$decimal : $decimal;
+        return $longitude ? -$decimalDegrees : $decimalDegrees;
     }
 
-    /** @param array<int, array{first:int,last:int,explicit:?int,sectors:array<int,int>}> $lapStats */
+    /**
+     * @param  array<int, array{first:int,last:int,explicit:?int,sectors:array<int,int>}>  $lapStats
+     * @param  array<string, mixed>  $values
+     */
     private function accumulateLap(array &$lapStats, int $lapNumber, int $elapsedMs, array $values): void
     {
         $lapStats[$lapNumber] ??= [
