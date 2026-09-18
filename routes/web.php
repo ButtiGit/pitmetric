@@ -15,6 +15,8 @@ use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TechnicalSetupController;
+use App\Http\Controllers\TelemetryController;
+use App\Http\Controllers\TimingController;
 use App\Http\Controllers\UpdateStudioController;
 use App\Http\Controllers\UserStudioController;
 use App\Http\Controllers\VehicleController;
@@ -83,6 +85,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('team.invitations.destroy');
         Route::patch('/team/members/{member}', [TeamController::class, 'updateMember'])->name('team.members.update');
 
+        Route::get('/timing', [TimingController::class, 'index'])->name('timing.index');
+        Route::get('/telemetry', [TelemetryController::class, 'index'])->name('telemetry.index');
+
         Route::get('/insights', [IntelligenceController::class, 'index'])->name('insights.index');
         Route::get('/insights/events/{raceEvent}', [IntelligenceController::class, 'weekendReport'])
             ->name('insights.events.report');
@@ -127,12 +132,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::post('/circuits', [CircuitController::class, 'store'])->name('circuits.store');
             Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
+            Route::post('/telemetry/import', [TelemetryController::class, 'store'])->name('telemetry.store');
 
             Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
             Route::post('/maintenance/work-orders', [MaintenanceController::class, 'storeWorkOrder'])
                 ->name('maintenance.work-orders.store');
-            Route::patch('/maintenance/work-orders/{maintenanceWorkOrder}', [MaintenanceController::class, 'updateWorkOrder'])
-                ->name('maintenance.work-orders.update');
+            Route::patch('/maintenance/work-orders/{maintenanceWorkOrder}', [MaintenanceController::class, 'updateWorkOrder'])->name('maintenance.work-orders.update');
             Route::post('/maintenance/work-orders/{maintenanceWorkOrder}/complete', [MaintenanceController::class, 'completeWorkOrder'])
                 ->name('maintenance.work-orders.complete');
             Route::post('/maintenance/{maintenanceSchedule}/complete', [MaintenanceController::class, 'complete'])
@@ -151,8 +156,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
         });
 });
 
