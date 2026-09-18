@@ -15,6 +15,8 @@
                     <flux:sidebar.item icon="adjustments-horizontal" :href="route('setups.index')" :current="request()->routeIs('setups.*')">{{ app()->getLocale() === 'it' ? 'Setup tecnici' : 'Technical setups' }}</flux:sidebar.item>
                     <flux:sidebar.item icon="map" :href="route('circuits.index')" :current="request()->routeIs('circuits.*')">{{ __('demo.nav.circuits') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="flag" :href="route('sessions.index')" :current="request()->routeIs('sessions.*')">{{ __('demo.nav.sessions') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="clock" :href="route('timing.index')" :current="request()->routeIs('timing.*')">{{ app()->getLocale() === 'it' ? 'Tempi' : 'Timing' }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="signal" :href="route('telemetry.index')" :current="request()->routeIs('telemetry.*')">{{ app()->getLocale() === 'it' ? 'Telemetria' : 'Telemetry' }}</flux:sidebar.item>
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('maintenance.index')" :current="request()->routeIs('maintenance.*')">{{ __('demo.nav.maintenance') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
 
