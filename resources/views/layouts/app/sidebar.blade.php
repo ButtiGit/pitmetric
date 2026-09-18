@@ -13,11 +13,11 @@
                 $studioOpen = request()->routeIs('studio.*');
             @endphp
 
-            <flux:sidebar.nav class="pt-4">
+            <flux:sidebar.nav class="min-h-0 flex-1 overflow-y-auto pt-4 pe-1 [scrollbar-width:thin]">
                 <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:sidebar.item>
 
-                    <details class="group/sidebar-section mt-1" @if ($activityOpen) open @endif>
+                    <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($activityOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
                             <flux:icon.calendar-days class="size-4 shrink-0" />
                             <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Attività' : 'Activity' }}</span>
@@ -30,7 +30,7 @@
                         </div>
                     </details>
 
-                    <details class="group/sidebar-section mt-1" @if ($vehicleOpen) open @endif>
+                    <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($vehicleOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
                             <flux:icon.truck class="size-4 shrink-0" />
                             <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Veicolo' : 'Vehicle' }}</span>
@@ -45,10 +45,10 @@
                         </div>
                     </details>
 
-                    <details class="group/sidebar-section mt-1" @if ($performanceOpen) open @endif>
+                    <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($performanceOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
                             <flux:icon.chart-bar class="size-4 shrink-0" />
-                            <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Performance' : 'Performance' }}</span>
+                            <span class="min-w-0 flex-1">Performance</span>
                             <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
                         </summary>
                         <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
@@ -60,7 +60,7 @@
                         </div>
                     </details>
 
-                    <details class="group/sidebar-section mt-1" @if ($managementOpen) open @endif>
+                    <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($managementOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
                             <flux:icon.folder class="size-4 shrink-0" />
                             <span class="min-w-0 flex-1">{{ app()->getLocale() === 'it' ? 'Gestione' : 'Management' }}</span>
@@ -76,33 +76,32 @@
                             @endif
                         </div>
                     </details>
-                </flux:sidebar.group>
 
-                @can('manage-updates')
-                    <details class="group/sidebar-section mt-4" @if ($studioOpen) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
-                            <flux:icon.cog-6-tooth class="size-4 shrink-0" />
-                            <span class="min-w-0 flex-1">{{ __('pitmetric.studio.eyebrow') }}</span>
-                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
-                        </summary>
-                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
-                            <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
-                            <flux:sidebar.item icon="users" :href="route('studio.users.index')" :current="request()->routeIs('studio.users.*')">{{ __('users.nav') }}</flux:sidebar.item>
-                        </div>
-                    </details>
-                @endcan
+                    @can('manage-updates')
+                        <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($studioOpen) open @endif>
+                            <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                                <flux:icon.cog-6-tooth class="size-4 shrink-0" />
+                                <span class="min-w-0 flex-1">{{ __('pitmetric.studio.eyebrow') }}</span>
+                                <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                            </summary>
+                            <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                                <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
+                                <flux:sidebar.item icon="users" :href="route('studio.users.index')" :current="request()->routeIs('studio.users.*')">{{ __('users.nav') }}</flux:sidebar.item>
+                            </div>
+                        </details>
+                    @endcan
+                </flux:sidebar.group>
             </flux:sidebar.nav>
 
-            <flux:spacer />
-            <flux:sidebar.nav class="border-t border-white/5 pt-4">
+            <flux:sidebar.nav class="shrink-0 border-t border-white/5 pt-4">
                 <flux:sidebar.item icon="envelope" :href="route('newsletter.edit')" :current="request()->routeIs('newsletter.edit')">{{ __('demo.nav.newsletter') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="globe-alt" :href="route('home')">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="newspaper" :href="route('updates.index')">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="user" :href="route('about')">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
             </flux:sidebar.nav>
 
-            <div class="mx-2 mb-3 mt-4 rounded-xl border border-white/8 bg-white/[0.02] p-1.5"><div class="grid grid-cols-2 gap-1.5">@foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)<form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="w-full rounded-lg px-2 py-2 font-mono text-xs font-semibold tracking-[0.08em] transition {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white shadow-sm' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200' }}">{{ $label }}</button></form>@endforeach</div></div>
-            <x-desktop-user-menu class="hidden border-t border-white/5 pt-3 lg:block" :name="auth()->user()->name" />
+            <div class="mx-2 mb-3 mt-4 shrink-0 rounded-xl border border-white/8 bg-white/[0.02] p-1.5"><div class="grid grid-cols-2 gap-1.5">@foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)<form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="w-full rounded-lg px-2 py-2 font-mono text-xs font-semibold tracking-[0.08em] transition {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white shadow-sm' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200' }}">{{ $label }}</button></form>@endforeach</div></div>
+            <x-desktop-user-menu class="hidden shrink-0 border-t border-white/5 pt-3 lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
         <flux:header data-pm-mobile-header class="pm-mobile-header sticky top-0 z-40 border-b border-white/5 bg-[#111317]/95 backdrop-blur-xl lg:hidden">
