@@ -93,6 +93,48 @@ it('imports csv telemetry into normalized samples and timing laps', function () 
     Storage::disk('local')->assertExists($import->storage_path);
 });
 
+it('imports racelogic vbo coordinates stored as total minutes', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, , , $session] = makeTelemetrySession($user);
+    $driver = Driver::query()->create([
+        'display_name' => 'VBOX Driver',
+        'status' => 'active',
+    ]);
+
+    $vbo = implode("\n", [
+        '[header]',
+        'File created for telemetry test',
+        '[column names]',
+        'time latitude longitude velocity heading lap',
+        '[data]',
+        '090000.00 3119.24579 58.82246 50.0 90.0 1',
+        '090001.00 3119.24589 58.82256 55.0 91.0 1',
+    ]);
+
+    $response = $this->post(route('telemetry.store'), [
+        'session_id' => $session->id,
+        'driver_id' => $driver->id,
+        'source_vendor' => 'vbox',
+        'telemetry_file' => UploadedFile::fake()->createWithContent('session.vbo', $vbo),
+    ]);
+
+    $response->assertSessionHasNoErrors();
+
+    $import = TelemetryImport::query()->firstOrFail();
+    $sample = TelemetrySample::query()->orderBy('sequence')->firstOrFail();
+
+    expect($import->source_format)->toBe('vbo')
+        ->and($import->sample_count)->toBe(2)
+        ->and($import->lap_count)->toBe(1)
+        ->and($sample->speed_kmh)->toBe(50.0);
+
+    $this->assertEqualsWithDelta(51.9874298333, $sample->latitude, 0.0000001);
+    $this->assertEqualsWithDelta(-0.9803743333, $sample->longitude, 0.0000001);
+});
+
 it('filters timing by driver without leaking other workspace data', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $this->actingAs($user);
