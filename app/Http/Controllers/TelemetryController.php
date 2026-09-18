@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\TelemetryImportService;
 use App\Services\WorkspaceContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -188,43 +189,43 @@ class TelemetryController extends Controller
         $sampleCount = max(1, (int) $telemetryImport->sample_count);
         $stride = max(1, (int) ceil($sampleCount / 1800));
 
-        $points = TelemetrySample::query()
-            ->where('telemetry_import_id', $telemetryImport->getKey())
-            ->whereRaw('sequence % ? = 0', [$stride])
-            ->orderBy('sequence')
-            ->limit(2000)
-            ->get(['sequence', 'lap_number', 'elapsed_ms', 'distance_meters', 'latitude', 'longitude', 'speed_kmh', 'channels'])
-            ->map(function (TelemetrySample $sample): array {
-                $channels = $sample->channels;
-
-                return [
-                    'sequence' => (int) $sample->sequence,
-                    'lap' => $sample->lap_number === null ? null : (int) $sample->lap_number,
-                    'time' => (int) $sample->elapsed_ms,
-                    'distance' => $sample->distance_meters === null ? null : (float) $sample->distance_meters,
-                    'lat' => $sample->latitude === null ? null : (float) $sample->latitude,
-                    'lon' => $sample->longitude === null ? null : (float) $sample->longitude,
-                    'speed_kmh' => $sample->speed_kmh === null ? null : (float) $sample->speed_kmh,
-                    'channels' => is_array($channels) ? $channels : [],
-                ];
-            })
-            ->values()
-            ->all();
+        $points = array_values(
+            TelemetrySample::query()
+                ->where('telemetry_import_id', $telemetryImport->getKey())
+                ->whereRaw('sequence % ? = 0', [$stride])
+                ->orderBy('sequence')
+                ->limit(2000)
+                ->get(['sequence', 'lap_number', 'elapsed_ms', 'distance_meters', 'latitude', 'longitude', 'speed_kmh', 'channels'])
+                ->map(function (TelemetrySample $sample): array {
+                    return [
+                        'sequence' => (int) $sample->sequence,
+                        'lap' => $sample->lap_number === null ? null : (int) $sample->lap_number,
+                        'time' => (int) $sample->elapsed_ms,
+                        'distance' => $sample->distance_meters === null ? null : (float) $sample->distance_meters,
+                        'lat' => $sample->latitude === null ? null : (float) $sample->latitude,
+                        'lon' => $sample->longitude === null ? null : (float) $sample->longitude,
+                        'speed_kmh' => $sample->speed_kmh === null ? null : (float) $sample->speed_kmh,
+                        'channels' => $this->arrayAttribute($sample, 'channels'),
+                    ];
+                })
+                ->all(),
+        );
 
         $driverRelation = $telemetryImport->getRelation('driver');
         $vehicleRelation = $telemetryImport->getRelation('vehicle');
         $driver = $driverRelation instanceof Driver ? $driverRelation->display_name : __('Unknown driver');
         $vehicle = $vehicleRelation instanceof Vehicle ? $vehicleRelation->name : __('Unknown vehicle');
 
-        $laps = $telemetryImport->laps
-            ->sortBy('lap_number')
-            ->map(fn (TimingLap $lap): array => [
-                'number' => (int) $lap->lap_number,
-                'time_ms' => (int) $lap->lap_time_ms,
-                'sectors_ms' => is_array($lap->sector_times_ms) ? $lap->sector_times_ms : [],
-            ])
-            ->values()
-            ->all();
+        $laps = array_values(
+            $telemetryImport->laps
+                ->sortBy('lap_number')
+                ->map(fn (TimingLap $lap): array => [
+                    'number' => (int) $lap->lap_number,
+                    'time_ms' => (int) $lap->lap_time_ms,
+                    'sectors_ms' => $this->arrayAttribute($lap, 'sector_times_ms'),
+                ])
+                ->all(),
+        );
 
         return [
             'id' => (int) $telemetryImport->getKey(),
@@ -238,12 +239,7 @@ class TelemetryController extends Controller
     /** @return list<string> */
     private function channelKeysFor(TelemetryImport $telemetryImport): array
     {
-        $channelKeys = $telemetryImport->channel_keys;
-
-        if (! is_array($channelKeys)) {
-            return [];
-        }
-
+        $channelKeys = $this->arrayAttribute($telemetryImport, 'channel_keys');
         $normalized = [];
 
         foreach ($channelKeys as $channelKey) {
@@ -255,5 +251,23 @@ class TelemetryController extends Controller
         }
 
         return $normalized;
+    }
+
+    /** @return array<mixed> */
+    private function arrayAttribute(Model $model, string $key): array
+    {
+        $value = $model->getAttribute($key);
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (! is_string($value) || $value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }
