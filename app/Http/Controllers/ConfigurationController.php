@@ -76,6 +76,7 @@ class ConfigurationController extends Controller
 
         $vehicle = Vehicle::query()
             ->where('workspace_id', $workspace->getKey())
+            ->where('status', 'active')
             ->findOrFail($vehicleId);
 
         DB::transaction(function () use ($validated, $vehicle, $user, $versionService, $componentIds, $costService): void {
@@ -130,24 +131,37 @@ class ConfigurationController extends Controller
 
         $componentIds = array_values(array_map('intval', $validated['component_ids'] ?? []));
 
-        $version = $versionService->create(
-            $configuration,
-            $user,
-            $componentIds,
-            $validated['notes'] ?? null,
-        );
+        DB::transaction(function () use ($configuration, $user, $componentIds, $validated, $versionService, $costService): void {
+            $version = $versionService->create(
+                $configuration,
+                $user,
+                $componentIds,
+                $validated['notes'] ?? null,
+            );
 
-        $costService->record(
-            $user,
-            isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
-            'setup',
-            __('Configuration update').': '.$configuration->name.' · v'.$version->version_number,
-            'configuration_version',
-            (int) $version->getKey(),
-            now(),
-        );
+            $costService->record(
+                $user,
+                isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+                'setup',
+                __('Configuration update').': '.$configuration->name.' · v'.$version->version_number,
+                'configuration_version',
+                (int) $version->getKey(),
+                now(),
+            );
+        });
 
         return to_route('configurations.index')->with('status', __('New configuration version created.'));
+    }
+
+    public function update(Request $request, Configuration $configuration): RedirectResponse
+    {
+        Gate::authorize('update', $configuration);
+        $configuration->update($request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ]));
+
+        return to_route('configurations.index')->with('status', __('Configuration updated.'));
     }
 
     public function destroy(Configuration $configuration): RedirectResponse

@@ -24,13 +24,13 @@ class MaintenanceRecord extends Model
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
     {
-        return $this->belongsTo(RaceEvent::class, 'event_id');
+        return $this->belongsTo(RaceEvent::class, 'event_id')->withTrashed();
     }
 
     /** @return BelongsTo<Component, $this> */
     public function component(): BelongsTo
     {
-        return $this->belongsTo(Component::class);
+        return $this->belongsTo(Component::class)->withTrashed();
     }
 
     /** @return BelongsTo<MaintenanceSchedule, $this> */

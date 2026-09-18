@@ -10,7 +10,9 @@ use App\Services\OperationCostService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class VehicleController extends Controller
@@ -71,17 +73,19 @@ class VehicleController extends Controller
         $purchaseCost = isset($validated['purchase_cost']) ? (float) $validated['purchase_cost'] : null;
         unset($validated['purchase_cost']);
 
-        $vehicle = Vehicle::create($validated);
+        DB::transaction(function () use ($validated, $costService, $user, $purchaseCost): void {
+            $vehicle = Vehicle::create($validated);
 
-        $costService->record(
-            $user,
-            $purchaseCost,
-            'vehicle',
-            __('Vehicle acquisition').': '.$vehicle->name,
-            'vehicle',
-            (int) $vehicle->getKey(),
-            now(),
-        );
+            $costService->record(
+                $user,
+                $purchaseCost,
+                'vehicle',
+                __('Vehicle acquisition').': '.$vehicle->name,
+                'vehicle',
+                (int) $vehicle->getKey(),
+                now(),
+            );
+        });
 
         return to_route('garage.index')->with('status', __('garage.messages.created'));
     }
@@ -96,6 +100,12 @@ class VehicleController extends Controller
     public function destroy(Vehicle $vehicle): RedirectResponse
     {
         Gate::authorize('delete', $vehicle);
+        if ($vehicle->componentInstallations()->whereNull('removed_at')->exists()) {
+            throw ValidationException::withMessages([
+                'vehicle' => __('Remove the installed components before archiving this vehicle.'),
+            ]);
+        }
+
         $vehicle->delete();
 
         return to_route('garage.index')->with('status', __('garage.messages.deleted'));

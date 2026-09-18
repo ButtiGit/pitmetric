@@ -36,7 +36,7 @@
                         :description="$it ? 'Pianifica un intervento su un piano esistente e assegnalo al team.' : 'Plan work against an existing schedule and assign it to the team.'"
                         :trigger="$it ? '+ Lavoro' : '+ Work order'"
                     >
-                        <form method="POST" action="{{ route('maintenance.work-orders.store') }}" class="grid gap-4 md:grid-cols-2">
+                        @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.store') }}" class="grid gap-4 md:grid-cols-2">
                             @csrf
                             <label class="grid gap-2 md:col-span-2">
                                 <span class="pm-label">{{ $it ? 'Piano manutenzione' : 'Maintenance schedule' }}</span>
@@ -81,7 +81,7 @@
                             <div class="md:col-span-2 flex justify-end">
                                 <button class="pm-race-button" type="submit" @disabled($schedules->isEmpty())>{{ $it ? 'Aggiungi al board' : 'Add to board' }}</button>
                             </div>
-                        </form>
+                        </form>@endcan
                     </x-crud-modal>
 
                     <x-crud-modal
@@ -91,7 +91,7 @@
                         :trigger="$it ? '+ Piano' : '+ Schedule'"
                         trigger-class="pm-ghost-button"
                     >
-                        <form method="POST" action="{{ route('maintenance.store') }}" class="grid gap-4 md:grid-cols-2">
+                        @can('team-write')<form method="POST" action="{{ route('maintenance.store') }}" class="grid gap-4 md:grid-cols-2">
                             @csrf
                             <label class="grid gap-2 md:col-span-2">
                                 <span class="pm-label">{{ $it ? 'Componente / metrica' : 'Component / metric' }}</span>
@@ -123,7 +123,7 @@
                             <div class="md:col-span-2 flex justify-end">
                                 <button class="pm-race-button" type="submit" @disabled($trackers->isEmpty())>{{ $it ? 'Crea piano' : 'Create schedule' }}</button>
                             </div>
-                        </form>
+                        </form>@endcan
                     </x-crud-modal>
                 </div>
             </div>
@@ -250,7 +250,7 @@
                                                 :trigger="$it ? 'Aggiorna' : 'Update'"
                                                 trigger-class="pm-ghost-button"
                                             >
-                                                <form method="POST" action="{{ route('maintenance.work-orders.update', $workOrder) }}" class="grid gap-4 md:grid-cols-2">
+                                                @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.update', $workOrder) }}" class="grid gap-4 md:grid-cols-2">
                                                     @csrf
                                                     @method('PATCH')
                                                     <label class="grid gap-2 md:col-span-2">
@@ -294,7 +294,7 @@
                                                     <div class="md:col-span-2 flex justify-end">
                                                         <button class="pm-race-button" type="submit">{{ $it ? 'Salva' : 'Save' }}</button>
                                                     </div>
-                                                </form>
+                                                </form>@endcan
                                             </x-crud-modal>
 
                                             <x-crud-modal
@@ -303,7 +303,7 @@
                                                 :description="$workOrder->schedule->tracker->component->name.' · '.$workOrder->title"
                                                 :trigger="$it ? 'Completa' : 'Complete'"
                                             >
-                                                <form method="POST" action="{{ route('maintenance.work-orders.complete', $workOrder) }}" class="grid gap-4 sm:grid-cols-2">
+                                                @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.complete', $workOrder) }}" class="grid gap-4 sm:grid-cols-2">
                                                     @csrf
                                                     <label class="grid gap-2">
                                                         <span class="pm-label">{{ $it ? 'Data e ora' : 'Date and time' }}</span>
@@ -325,7 +325,7 @@
                                                     <div class="sm:col-span-2 flex justify-end">
                                                         <button class="pm-race-button" type="submit">{{ $it ? 'Completa e registra' : 'Complete and record' }}</button>
                                                     </div>
-                                                </form>
+                                                </form>@endcan
                                             </x-crud-modal>
                                         </div>
                                     </article>
@@ -395,7 +395,7 @@
                                     :trigger="$it ? 'Completa direttamente' : 'Complete directly'"
                                     trigger-class="pm-ghost-button"
                                 >
-                                    <form method="POST" action="{{ route('maintenance.complete', $schedule) }}" class="grid gap-4 sm:grid-cols-2">
+                                    @can('team-write')<form method="POST" action="{{ route('maintenance.complete', $schedule) }}" class="grid gap-4 sm:grid-cols-2">
                                         @csrf
                                         <label class="grid gap-2">
                                             <span class="pm-label">{{ $it ? 'Data e ora' : 'Date and time' }}</span>
@@ -417,7 +417,7 @@
                                         <div class="sm:col-span-2 flex justify-end">
                                             <button class="pm-race-button" type="submit">{{ $it ? 'Completa e registra' : 'Complete and record' }}</button>
                                         </div>
-                                    </form>
+                                    </form>@endcan
                                 </x-crud-modal>
                             </div>
                         </article>

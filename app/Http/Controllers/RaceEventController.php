@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RaceEventController extends Controller
@@ -76,6 +77,7 @@ class RaceEventController extends Controller
 
         $layout = CircuitLayout::query()
             ->whereKey((int) $validated['circuit_layout_id'])
+            ->where('is_active', true)
             ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
             ->firstOrFail();
 
@@ -174,7 +176,7 @@ class RaceEventController extends Controller
             'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(),
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
             'versions' => ConfigurationVersion::query()
-                ->whereHas('configuration', fn ($query) => $query->where('workspace_id', $workspace->getKey())->where('status', 'active'))
+                ->whereHas('configuration', fn ($query) => $query->whereNull('configurations.deleted_at')->where('status', 'active')->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))->where('workspace_id', $workspace->getKey()))
                 ->with(['configuration.vehicle', 'components'])
                 ->orderByDesc('id')
                 ->get(),
@@ -190,6 +192,32 @@ class RaceEventController extends Controller
             'attentionMaintenance' => $attentionMaintenance,
             'nextScheduleItem' => $nextScheduleItem,
         ]);
+    }
+
+    public function update(Request $request, RaceEvent $raceEvent): RedirectResponse
+    {
+        Gate::authorize('update', $raceEvent);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:140'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'championship' => ['nullable', 'string', 'max:120'],
+            'round_label' => ['nullable', 'string', 'max:80'],
+            'notes' => ['nullable', 'string', 'max:4000'],
+        ]);
+        $start = Carbon::parse($validated['start_date'])->startOfDay();
+        $end = Carbon::parse($validated['end_date'])->endOfDay();
+
+        if ($raceEvent->sessions()->where(fn ($query) => $query->where('started_at', '<', $start)->orWhere('started_at', '>', $end))->exists()
+            || $raceEvent->scheduleItems()->where(fn ($query) => $query->where('starts_at', '<', $start)->orWhere('starts_at', '>', $end))->exists()) {
+            throw ValidationException::withMessages([
+                'start_date' => __('Keep the dates of existing sessions and scheduled activities inside the weekend.'),
+            ]);
+        }
+
+        $raceEvent->update($validated);
+
+        return to_route('events.show', $raceEvent)->with('status', __('Race weekend updated.'));
     }
 
     public function updateStatus(Request $request, RaceEvent $raceEvent): RedirectResponse

@@ -14,13 +14,14 @@ class ConfigurationVersion extends Model
     /** @return BelongsTo<Configuration, $this> */
     public function configuration(): BelongsTo
     {
-        return $this->belongsTo(Configuration::class);
+        return $this->belongsTo(Configuration::class)->withTrashed();
     }
 
     /** @return BelongsToMany<Component, $this> */
     public function components(): BelongsToMany
     {
         return $this->belongsToMany(Component::class, 'configuration_version_components')
+            ->withTrashed()
             ->withPivot(['position_or_role', 'notes'])
             ->withTimestamps();
     }

@@ -7,6 +7,7 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
+            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('components.index') }}#create-component">{{ __('workflow.components') }}</a></div>
             <section class="pm-panel p-5 sm:p-6">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -27,7 +28,7 @@
                             :description="$it ? 'Scegli il tipo: PitMetric userà automaticamente la silhouette corrispondente nel Garage.' : 'Choose the type: PitMetric will automatically use the matching silhouette in the Garage.'"
                             :trigger="$it ? '+ Aggiungi mezzo' : '+ Add vehicle'"
                         >
-                            <form method="POST" action="{{ route('garage.store') }}" class="grid gap-4 md:grid-cols-2">
+                            @can('team-write')<form method="POST" action="{{ route('garage.store') }}" class="grid gap-4 md:grid-cols-2">
                                 @csrf
                                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ __('garage.fields.name') }}</span><input class="pm-input" name="name" value="{{ old('name') }}" required maxlength="100"></label>
                                 <label class="grid gap-2">
@@ -43,7 +44,7 @@
                                 <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo acquisto (€)' : 'Acquisition cost (€)' }}</span><input class="pm-input" name="purchase_cost" type="number" min="0" max="10000000" step="0.01" value="{{ old('purchase_cost') }}"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · viene registrato automaticamente nei Costi' : 'Optional · automatically recorded in Expenses' }}</span></label>
                                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ __('garage.fields.notes') }}</span><textarea class="pm-input min-h-24" name="notes" maxlength="2000">{{ old('notes') }}</textarea></label>
                                 <div class="md:col-span-2 flex justify-end"><button class="pm-race-button" type="submit">{{ __('garage.create.submit') }}</button></div>
-                            </form>
+                            </form>@endcan
                         </x-crud-modal>
                     </div>
                 </div>
@@ -65,7 +66,7 @@
                 <div class="grid gap-5 xl:grid-cols-2">
                     @foreach ($vehicles as $vehicle)
                         @php($activeInstallations = $vehicle->componentInstallations)
-                        <article class="pm-panel group relative isolate min-h-[350px] overflow-hidden p-0 transition duration-300 hover:-translate-y-1 hover:border-pm-accent/40 hover:shadow-xl focus-within:border-pm-accent/40 focus-within:shadow-xl">
+                        <article id="vehicle-{{ $vehicle->id }}" class="pm-panel group relative isolate min-h-[350px] overflow-hidden p-0 transition duration-300 hover:-translate-y-1 hover:border-pm-accent/40 hover:shadow-xl focus-within:border-pm-accent/40 focus-within:shadow-xl">
                             <div class="pointer-events-none absolute inset-0 overflow-hidden">
                                 <div class="absolute -left-14 top-1/2 w-[78%] -translate-y-1/2 text-pm-accent opacity-[0.14] transition duration-500 group-hover:translate-x-2 group-hover:scale-[1.03] group-hover:opacity-[0.22]">
                                     <x-pitmetric.vehicle-silhouette :type="$vehicle->category" />
@@ -106,7 +107,7 @@
                                         </div>
                                         <div class="flex shrink-0 items-center gap-2">
                                             <x-crud-modal id="edit-vehicle-{{ $vehicle->id }}" :title="$it ? 'Modifica mezzo' : 'Edit vehicle'" :trigger="__('garage.edit.toggle')" trigger-class="pm-ghost-button">
-                                                <form method="POST" action="{{ route('garage.update', $vehicle) }}" class="grid gap-4 sm:grid-cols-2">
+                                                @can('team-write')<form method="POST" action="{{ route('garage.update', $vehicle) }}" class="grid gap-4 sm:grid-cols-2">
                                                     @csrf @method('PUT')
                                                     <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ __('garage.fields.name') }}</span><input class="pm-input" name="name" value="{{ $vehicle->name }}" required maxlength="100"></label>
                                                     <label class="grid gap-2"><span class="pm-label">{{ __('garage.fields.category') }}</span><select class="pm-input" name="category" required>@foreach ($categoryLabels as $value => $label)<option value="{{ $value }}" @selected($vehicle->category === $value)>{{ $label }}</option>@endforeach</select><span class="text-xs text-pm-muted">{{ $it ? 'Aggiorna anche la silhouette della card.' : 'Also updates the card silhouette.' }}</span></label>
@@ -117,10 +118,10 @@
                                                     <label class="grid gap-2"><span class="pm-label">{{ __('garage.fields.identifier') }}</span><input class="pm-input" name="identifier" value="{{ $vehicle->identifier }}" maxlength="100"></label>
                                                     <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ __('garage.fields.notes') }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000">{{ $vehicle->notes }}</textarea></label>
                                                     <div class="sm:col-span-2 flex justify-end"><button class="pm-race-button" type="submit">{{ __('garage.edit.submit') }}</button></div>
-                                                </form>
+                                                </form>@endcan
                                             </x-crud-modal>
 
-                                            <form method="POST" action="{{ route('garage.destroy', $vehicle) }}" onsubmit="return confirm(@js(__('garage.delete.confirm')))" >@csrf @method('DELETE')<button class="pm-danger-button" type="submit">{{ __('garage.delete.submit') }}</button></form>
+                                            @can('team-write')<form method="POST" action="{{ route('garage.destroy', $vehicle) }}" onsubmit="return confirm(@js(__('garage.delete.confirm')))" >@csrf @method('DELETE')<button class="pm-danger-button" type="submit">{{ __('garage.delete.submit') }}</button></form>@endcan
                                         </div>
                                     </div>
 

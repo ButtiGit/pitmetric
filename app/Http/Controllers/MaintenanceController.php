@@ -39,7 +39,7 @@ class MaintenanceController extends Controller
         $workspace = $workspaceContext->personal($user);
 
         $trackers = ComponentTracker::query()
-            ->whereHas('component', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+            ->whereHas('component', fn ($query) => $query->whereNull('components.deleted_at')->where('status', 'active')->where('workspace_id', $workspace->getKey()))
             ->with(['component.type', 'metric'])
             ->orderBy('component_id')
             ->get();
@@ -105,7 +105,7 @@ class MaintenanceController extends Controller
 
         $tracker = ComponentTracker::query()
             ->whereKey($validated['component_tracker_id'])
-            ->whereHas('component', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+            ->whereHas('component', fn ($query) => $query->whereNull('components.deleted_at')->where('status', 'active')->where('workspace_id', $workspace->getKey()))
             ->with('metric')
             ->firstOrFail();
 

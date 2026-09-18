@@ -136,6 +136,21 @@ class ComponentController extends Controller
         return to_route('components.index')->with('status', __('Component created.'));
     }
 
+    public function update(Request $request, Component $component): RedirectResponse
+    {
+        Gate::authorize('update', $component);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'manufacturer' => ['nullable', 'string', 'max:100'],
+            'model' => ['nullable', 'string', 'max:100'],
+            'serial_number' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $component->update($validated);
+
+        return to_route('components.index')->with('status', __('Component updated.'));
+    }
+
     public function destroy(Component $component): RedirectResponse
     {
         Gate::authorize('delete', $component);

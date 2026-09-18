@@ -55,8 +55,8 @@ class SessionController extends Controller
             ])
             ->latest('started_at')
             ->latest('id')
-            ->limit(50)
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
         $schedules = MaintenanceSchedule::query()
             ->with(['tracker.component', 'tracker.metric'])
@@ -73,12 +73,13 @@ class SessionController extends Controller
 
         return view('sessions.index', [
             'versions' => ConfigurationVersion::query()
-                ->whereHas('configuration', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
+                ->whereHas('configuration', fn ($query) => $query->whereNull('configurations.deleted_at')->where('status', 'active')->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))->where('workspace_id', $workspace->getKey()))
                 ->with(['configuration.vehicle', 'components'])
                 ->orderByDesc('id')
                 ->get(),
             'setups' => TechnicalSetup::query()
                 ->with('vehicle')
+                ->whereHas('vehicle', fn ($query) => $query->whereNull('vehicles.deleted_at')->where('status', 'active'))
                 ->where('status', 'active')
                 ->orderBy('vehicle_id')
                 ->orderBy('name')
@@ -119,7 +120,7 @@ class SessionController extends Controller
         $workspace = $workspaceContext->personal($user);
 
         $validated = $request->validate([
-            'event_id' => ['nullable', 'integer', 'required_with:event_entry_id'],
+            'event_id' => ['nullable', 'integer', 'required_with:event_entry_id,schedule_item_id'],
             'event_entry_id' => ['nullable', 'integer', 'required_with:event_id'],
             'schedule_item_id' => ['nullable', 'integer'],
             'configuration_version_id' => ['required', 'integer'],
@@ -185,7 +186,7 @@ class SessionController extends Controller
         $version = ConfigurationVersion::query()
             ->whereKey((int) $validated['configuration_version_id'])
             ->whereHas('configuration', function ($query) use ($workspace, $eventEntry): void {
-                $query->where('workspace_id', $workspace->getKey());
+                $query->whereNull('configurations.deleted_at')->where('status', 'active')->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))->where('workspace_id', $workspace->getKey());
 
                 if ($eventEntry instanceof EventEntry) {
                     $query->where('vehicle_id', $eventEntry->vehicle_id);
@@ -216,6 +217,7 @@ class SessionController extends Controller
         if ($layoutId === null && ! empty($validated['circuit_layout_id'])) {
             $layoutId = CircuitLayout::query()
                 ->whereKey((int) $validated['circuit_layout_id'])
+                ->where('is_active', true)
                 ->whereHas('circuit', fn ($query) => $query->where('workspace_id', $workspace->getKey()))
                 ->value('id');
 
@@ -223,6 +225,16 @@ class SessionController extends Controller
         }
 
         $session = DB::transaction(function () use ($validated, $version, $layoutId, $user, $finalizeSessionService, $snapshotService, $technicalSetup, $raceEvent, $eventEntry, $scheduleItem): Session {
+            if ($scheduleItem instanceof EventScheduleItem) {
+                $scheduleItem = EventScheduleItem::query()->whereKey($scheduleItem->getKey())->lockForUpdate()->firstOrFail();
+
+                if ($scheduleItem->session_id !== null) {
+                    throw ValidationException::withMessages([
+                        'schedule_item_id' => __('This scheduled session has already been recorded.'),
+                    ]);
+                }
+            }
+
             $session = Session::create([
                 'event_id' => $raceEvent?->getKey(),
                 'event_entry_id' => $eventEntry?->getKey(),

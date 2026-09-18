@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ExpenseController extends Controller
@@ -59,7 +60,7 @@ class ExpenseController extends Controller
         $workspaceContext->personal($user);
 
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'gt:0', 'max:1000000'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2', 'max:1000000'],
             'category' => ['required', 'string', 'max:80'],
             'description' => ['required', 'string', 'max:180'],
             'occurred_at' => ['required', 'date'],
@@ -75,6 +76,32 @@ class ExpenseController extends Controller
         ]);
 
         return to_route('expenses.index')->with('status', __('Expense recorded.'));
+    }
+
+    public function update(Request $request, Expense $expense): RedirectResponse
+    {
+        Gate::authorize('update', $expense);
+
+        if ($expense->related_type !== null) {
+            throw ValidationException::withMessages([
+                'expense' => __('Linked operational costs cannot be edited independently from their source record.'),
+            ]);
+        }
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2', 'max:1000000'],
+            'category' => ['required', 'string', 'max:80'],
+            'description' => ['required', 'string', 'max:180'],
+            'occurred_at' => ['required', 'date'],
+        ]);
+        $expense->update([
+            'amount_cents' => (int) round(((float) $validated['amount']) * 100),
+            'category' => $validated['category'],
+            'description' => $validated['description'],
+            'occurred_at' => Carbon::parse($validated['occurred_at']),
+        ]);
+
+        return to_route('expenses.index')->with('status', __('Expense updated.'));
     }
 
     public function destroy(Expense $expense): RedirectResponse

@@ -39,13 +39,13 @@ class TelemetryImport extends Model
     /** @return BelongsTo<Driver, $this> */
     public function driver(): BelongsTo
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(Driver::class)->withTrashed();
     }
 
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<CircuitLayout, $this> */

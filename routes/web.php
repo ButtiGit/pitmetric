@@ -99,6 +99,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:team-write')->group(function () {
             Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
             Route::patch('/events/{raceEvent}/status', [RaceEventController::class, 'updateStatus'])->name('events.status');
+            Route::put('/drivers/{driver}', [RaceEventOperationsController::class, 'updateDriver'])->name('drivers.update');
+            Route::delete('/drivers/{driver}', [RaceEventOperationsController::class, 'destroyDriver'])->name('drivers.destroy');
+            Route::put('/events/{raceEvent}', [RaceEventController::class, 'update'])->name('events.update');
             Route::post('/drivers', [RaceEventOperationsController::class, 'storeDriver'])->name('drivers.store');
             Route::post('/events/{raceEvent}/entries', [RaceEventOperationsController::class, 'storeEntry'])->name('events.entries.store');
             Route::post('/events/{raceEvent}/schedule', [RaceEventOperationsController::class, 'storeScheduleItem'])->name('events.schedule.store');
@@ -113,6 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/garage/{vehicle}', [VehicleController::class, 'update'])->name('garage.update');
             Route::delete('/garage/{vehicle}', [VehicleController::class, 'destroy'])->name('garage.destroy');
 
+            Route::put('/components/{component}', [ComponentController::class, 'update'])->name('components.update');
             Route::post('/components', [ComponentController::class, 'store'])->name('components.store');
             Route::delete('/components/{component}', [ComponentController::class, 'destroy'])->name('components.destroy');
             Route::post('/component-installations', [ComponentInstallationController::class, 'store'])
@@ -120,6 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/component-installations/{componentInstallation}/remove', [ComponentInstallationController::class, 'remove'])
                 ->name('component-installations.remove');
 
+            Route::put('/configurations/{configuration}', [ConfigurationController::class, 'update'])->name('configurations.update');
             Route::post('/configurations', [ConfigurationController::class, 'store'])->name('configurations.store');
             Route::post('/configurations/{configuration}/versions', [ConfigurationController::class, 'storeVersion'])
                 ->name('configurations.versions.store');
@@ -130,6 +135,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/setups/{technicalSetup}', [TechnicalSetupController::class, 'update'])->name('setups.update');
             Route::delete('/setups/{technicalSetup}', [TechnicalSetupController::class, 'destroy'])->name('setups.destroy');
 
+            Route::put('/circuits/{circuit}', [CircuitController::class, 'update'])->name('circuits.update');
+            Route::post('/circuits/{circuit}/layouts', [CircuitController::class, 'storeLayout'])->name('circuits.layouts.store');
+            Route::put('/circuits/{circuit}/layouts/{circuitLayout}', [CircuitController::class, 'updateLayout'])->name('circuits.layouts.update');
             Route::post('/circuits', [CircuitController::class, 'store'])->name('circuits.store');
             Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
             Route::post('/telemetry/import', [TelemetryController::class, 'store'])->name('telemetry.store');
@@ -143,6 +151,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/maintenance/{maintenanceSchedule}/complete', [MaintenanceController::class, 'complete'])
                 ->name('maintenance.complete');
 
+            Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
             Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
             Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
         });

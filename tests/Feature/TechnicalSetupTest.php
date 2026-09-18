@@ -8,7 +8,6 @@ use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\CreateConfigurationVersionService;
-use LogicException;
 
 it('creates technical setups and records their optional work cost', function () {
     $user = User::factory()->withDatabaseAccess()->create();

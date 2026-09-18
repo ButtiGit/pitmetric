@@ -13,7 +13,7 @@ class ComponentTracker extends Model
     /** @return BelongsTo<Component, $this> */
     public function component(): BelongsTo
     {
-        return $this->belongsTo(Component::class);
+        return $this->belongsTo(Component::class)->withTrashed();
     }
 
     /** @return BelongsTo<UsageMetricType, $this> */

@@ -102,19 +102,24 @@ class ComponentInstallationController extends Controller
 
         $removedAt = Carbon::parse($validated['removed_at']);
 
-        if ($componentInstallation->removed_at !== null) {
-            throw ValidationException::withMessages([
-                'removed_at' => __('This component installation is already closed.'),
-            ]);
-        }
-
-        if ($removedAt->lt($componentInstallation->installed_at)) {
-            throw ValidationException::withMessages([
-                'removed_at' => __('Removal time cannot be earlier than installation time.'),
-            ]);
-        }
-
         DB::transaction(function () use ($componentInstallation, $removedAt, $validated, $user, $costService): void {
+            $componentInstallation = ComponentInstallation::query()
+                ->whereKey($componentInstallation->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($componentInstallation->removed_at !== null) {
+                throw ValidationException::withMessages([
+                    'removed_at' => __('This component installation is already closed.'),
+                ]);
+            }
+
+            if ($removedAt->lt($componentInstallation->installed_at)) {
+                throw ValidationException::withMessages([
+                    'removed_at' => __('Removal time cannot be earlier than installation time.'),
+                ]);
+            }
+
             $componentInstallation->update(['removed_at' => $removedAt]);
             $componentInstallation->loadMissing(['component', 'vehicle']);
 

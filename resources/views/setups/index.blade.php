@@ -24,11 +24,11 @@
 
                 @if ($canWrite)
                     <x-crud-modal id="create-technical-setup" :title="$it ? 'Nuovo setup tecnico' : 'New technical setup'" :description="$it ? 'Inserisci solo i parametri che hanno senso per il tuo mezzo. I campi lasciati vuoti non vengono salvati.' : 'Enter only the parameters that make sense for your vehicle. Empty fields are not stored.'" :trigger="$it ? '+ Nuovo setup' : '+ New setup'" size="max-w-5xl">
-                        <form method="POST" action="{{ route('setups.store') }}" class="space-y-5">
+                        @can('team-write')<form method="POST" action="{{ route('setups.store') }}" class="space-y-5">
                             @csrf
                             @include('setups._fields', ['setup' => null])
                             <div class="flex justify-end"><button class="pm-race-button" type="submit" @disabled($vehicles->isEmpty())>{{ $it ? 'Salva setup' : 'Save setup' }}</button></div>
-                        </form>
+                        </form>@endcan
                     </x-crud-modal>
                 @endif
             </div>
@@ -95,17 +95,17 @@
                         @if ($canWrite)
                             <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-pm-border pt-4">
                                 <x-crud-modal id="edit-technical-setup-{{ $setup->id }}" :title="$it ? 'Modifica setup tecnico' : 'Edit technical setup'" :description="$it ? 'Le sessioni già registrate manterranno i loro snapshot originali.' : 'Existing sessions keep their original snapshots.'" :trigger="$it ? 'Modifica' : 'Edit'" trigger-class="pm-ghost-button" size="max-w-5xl">
-                                    <form method="POST" action="{{ route('setups.update', $setup) }}" class="space-y-5">
+                                    @can('team-write')<form method="POST" action="{{ route('setups.update', $setup) }}" class="space-y-5">
                                         @csrf @method('PUT')
                                         @include('setups._fields', ['setup' => $setup])
                                         <div class="flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Salva nuova regolazione' : 'Save adjustments' }}</button></div>
-                                    </form>
+                                    </form>@endcan
                                 </x-crud-modal>
 
-                                <form method="POST" action="{{ route('setups.destroy', $setup) }}" onsubmit="return confirm(@js($it ? 'Archiviare questo setup? Gli snapshot delle sessioni resteranno intatti.' : 'Archive this setup? Session snapshots remain intact.'))">
+                                @can('team-write')<form method="POST" action="{{ route('setups.destroy', $setup) }}" onsubmit="return confirm(@js($it ? 'Archiviare questo setup? Gli snapshot delle sessioni resteranno intatti.' : 'Archive this setup? Session snapshots remain intact.'))">
                                     @csrf @method('DELETE')
                                     <button class="pm-ghost-button text-pm-danger" type="submit">{{ $it ? 'Archivia' : 'Archive' }}</button>
-                                </form>
+                                </form>@endcan
                             </div>
                         @endif
                     </article>

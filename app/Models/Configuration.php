@@ -17,7 +17,7 @@ class Configuration extends Model
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return HasMany<ConfigurationVersion, $this> */

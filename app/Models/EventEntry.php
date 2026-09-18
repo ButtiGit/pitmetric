@@ -23,19 +23,19 @@ class EventEntry extends Model
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
     {
-        return $this->belongsTo(RaceEvent::class, 'event_id');
+        return $this->belongsTo(RaceEvent::class, 'event_id')->withTrashed();
     }
 
     /** @return BelongsTo<Driver, $this> */
     public function driver(): BelongsTo
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(Driver::class)->withTrashed();
     }
 
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<ConfigurationVersion, $this> */

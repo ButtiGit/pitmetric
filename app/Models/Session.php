@@ -34,7 +34,7 @@ class Session extends Model
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo
     {
-        return $this->belongsTo(RaceEvent::class, 'event_id');
+        return $this->belongsTo(RaceEvent::class, 'event_id')->withTrashed();
     }
 
     /** @return BelongsTo<EventEntry, $this> */
@@ -46,7 +46,7 @@ class Session extends Model
     /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehicle::class);
+        return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
     /** @return BelongsTo<ConfigurationVersion, $this> */

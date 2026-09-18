@@ -9,19 +9,19 @@
 
         if ($databaseAccessEnabled && $domainReady) {
             if ($vehicleCount === 0) {
-                $nextUrl = route('demo.garage');
+                $nextUrl = route('garage.index');
                 $nextLabel = $it ? 'Aggiungi il primo mezzo' : 'Add your first vehicle';
                 $nextCopy = $it ? 'Il flusso parte dal mezzo su cui installerai componenti e configurazioni.' : 'The workflow starts with the vehicle that will receive components and configurations.';
             } elseif ($componentCount === 0) {
-                $nextUrl = route('demo.components');
+                $nextUrl = route('components.index');
                 $nextLabel = $it ? 'Aggiungi componenti' : 'Add components';
                 $nextCopy = $it ? 'Inserisci almeno un componente tracciato prima di costruire una configurazione reale.' : 'Add at least one tracked component before building a real configuration.';
             } elseif ($configurationCount === 0) {
-                $nextUrl = route('demo.configurations');
+                $nextUrl = route('configurations.index');
                 $nextLabel = $it ? 'Crea configurazione' : 'Create configuration';
                 $nextCopy = $it ? 'Collega componenti e mezzo in una configurazione versionata.' : 'Connect components and vehicle in a versioned configuration.';
             } elseif ($maintenanceSummary['overdue'] > 0) {
-                $nextUrl = route('demo.maintenance');
+                $nextUrl = route('maintenance.index');
                 $nextLabel = $it ? 'Gestisci manutenzione scaduta' : 'Handle overdue maintenance';
                 $nextCopy = $it ? 'Hai almeno un intervento oltre il limite. Risolvilo prima della prossima uscita.' : 'At least one service is beyond its limit. Resolve it before the next outing.';
             } elseif ($eventsReady && $focusEvent) {
@@ -39,7 +39,7 @@
                     ? 'La base tecnica è pronta. Crea il prossimo evento e usa il weekend come contenitore del lavoro in pista.'
                     : 'The technical base is ready. Create the next event and use the weekend as the container for trackside work.';
             } else {
-                $nextUrl = route('demo.sessions');
+                $nextUrl = route('sessions.index');
                 $nextLabel = $it ? 'Registra sessione' : 'Record session';
                 $nextCopy = $it ? 'Il core è disponibile mentre il modulo eventi completa il deploy.' : 'The core is available while the events module finishes deploying.';
             }
@@ -128,14 +128,14 @@
                             <x-pitmetric.status-badge :label="$maintenanceSummary['overdue'] > 0 ? ($it ? 'Scaduta' : 'Overdue') : ($maintenanceSummary['due_soon'] > 0 ? ($it ? 'In scadenza' : 'Due soon') : 'OK')" :variant="$maintenanceSummary['overdue'] > 0 ? 'danger' : ($maintenanceSummary['due_soon'] > 0 ? 'warning' : 'success')" />
                         </div>
                         <div class="mt-5 grid grid-cols-3 gap-2 text-center"><div class="rounded-xl border border-pm-border bg-pm-subtle p-3"><p class="text-2xl font-black text-pm-danger">{{ $maintenanceSummary['overdue'] }}</p><p class="mt-1 text-[10px] uppercase text-pm-muted">Overdue</p></div><div class="rounded-xl border border-pm-border bg-pm-subtle p-3"><p class="text-2xl font-black text-pm-warning">{{ $maintenanceSummary['due_soon'] }}</p><p class="mt-1 text-[10px] uppercase text-pm-muted">Due soon</p></div><div class="rounded-xl border border-pm-border bg-pm-subtle p-3"><p class="text-2xl font-black text-pm-success">{{ $maintenanceSummary['ok'] }}</p><p class="mt-1 text-[10px] uppercase text-pm-muted">OK</p></div></div>
-                        <a href="{{ route('demo.maintenance') }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Apri manutenzione' : 'Open maintenance' }}</a>
+                        <a href="{{ route('maintenance.index') }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Apri manutenzione' : 'Open maintenance' }}</a>
                     </article>
 
                     <article class="pm-panel p-5 sm:p-6">
                         <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Spesa del mese' : 'This month spend' }}</p>
                         <p class="mt-3 text-3xl font-black text-pm-text">€ {{ number_format($monthExpenseCents / 100, 2, ',', '.') }}</p>
                         <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ $it ? 'Include spese manuali e costi collegati automaticamente a componenti, sessioni e manutenzione.' : 'Includes manual costs plus component, session and maintenance costs linked automatically.' }}</p>
-                        <a href="{{ route('demo.expenses') }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Analizza i costi' : 'Review costs' }}</a>
+                        <a href="{{ route('expenses.index') }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Analizza i costi' : 'Review costs' }}</a>
                     </article>
 
                     <article class="pm-panel p-5 sm:p-6">
@@ -147,7 +147,7 @@
                             @if ($lastSession->raceEvent)
                                 <a href="{{ route('events.show', $lastSession->raceEvent) }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Apri il weekend' : 'Open weekend' }}</a>
                             @else
-                                <a href="{{ route('demo.sessions') }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Vai alle sessioni' : 'Open sessions' }}</a>
+                                <a href="{{ route('sessions.index') }}" class="mt-4 inline-flex text-sm font-bold text-pm-accent hover:underline">{{ $it ? 'Vai alle sessioni' : 'Open sessions' }}</a>
                             @endif
                         @else
                             <h2 class="mt-3 text-lg font-black text-pm-text">{{ $it ? 'Ancora nessuna sessione' : 'No session yet' }}</h2>
@@ -161,11 +161,11 @@
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-accent">WORKFLOW</p><h2 class="mt-2 text-xl font-black text-pm-text">{{ $it ? 'Prontezza operativa' : 'Operational readiness' }}</h2></div><p class="text-sm text-pm-text-secondary">{{ $it ? 'Prepara la base tecnica una volta, poi lavora per weekend.' : 'Prepare the technical base once, then operate by weekend.' }}</p></div>
                     <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         @foreach ([
-                            [$vehicleCount > 0, 'demo.garage', $it ? '1. Mezzo' : '1. Vehicle', $it ? 'Base del programma' : 'Program base'],
-                            [$componentCount > 0, 'demo.components', $it ? '2. Componenti' : '2. Components', $it ? 'Parti con utilizzo tracciato' : 'Usage-tracked parts'],
-                            [$configurationCount > 0, 'demo.configurations', $it ? '3. Configurazione' : '3. Configuration', $it ? 'Build versionata' : 'Versioned build'],
+                            [$vehicleCount > 0, 'garage.index', $it ? '1. Mezzo' : '1. Vehicle', $it ? 'Base del programma' : 'Program base'],
+                            [$componentCount > 0, 'components.index', $it ? '2. Componenti' : '2. Components', $it ? 'Parti con utilizzo tracciato' : 'Usage-tracked parts'],
+                            [$configurationCount > 0, 'configurations.index', $it ? '3. Configurazione' : '3. Configuration', $it ? 'Build versionata' : 'Versioned build'],
                             [$eventsReady && $eventCount > 0, 'events.index', $it ? '4. Weekend' : '4. Weekend', $it ? 'Contenitore operativo' : 'Operational container'],
-                            [$sessionCount > 0, 'demo.sessions', $it ? '5. Sessione' : '5. Session', $it ? 'Uso reale propagato' : 'Real usage propagated'],
+                            [$sessionCount > 0, 'sessions.index', $it ? '5. Sessione' : '5. Session', $it ? 'Uso reale propagato' : 'Real usage propagated'],
                         ] as [$done, $routeName, $title, $copy])
                             <a href="{{ route($routeName) }}" class="rounded-xl border {{ $done ? 'border-pm-success/25 bg-pm-success-subtle' : 'border-pm-border bg-pm-subtle' }} p-4 transition hover:border-pm-border-strong"><div class="flex items-center justify-between gap-3"><p class="font-bold text-pm-text">{{ $title }}</p><span class="text-[10px] font-black uppercase tracking-[0.1em] {{ $done ? 'text-pm-success' : 'text-pm-warning' }}">{{ $done ? ($it ? 'Pronto' : 'Ready') : ($it ? 'Manca' : 'Missing') }}</span></div><p class="mt-2 text-xs text-pm-text-secondary">{{ $copy }}</p></a>
                         @endforeach
@@ -176,13 +176,13 @@
             <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 @foreach ([
                     ['events.index', $it ? 'Weekend gara' : 'Race weekends', $it ? 'Piloti, mezzi, sessioni, lavori e costi' : 'Drivers, vehicles, sessions, work and costs'],
-                    ['demo.garage', 'Garage', $it ? 'Gestisci i tuoi mezzi' : 'Manage your vehicles'],
-                    ['demo.components', $it ? 'Componenti' : 'Components', $it ? 'Traccia utilizzo, acquisto e usura' : 'Track usage, purchase and wear'],
-                    ['demo.configurations', $it ? 'Configurazioni' : 'Configurations', $it ? 'Versiona build e componenti' : 'Version builds and components'],
-                    ['demo.sessions', $it ? 'Sessioni' : 'Sessions', $it ? 'Consulta anche le attività fuori evento' : 'Review standalone activity too'],
-                    ['demo.circuits', $it ? 'Circuiti' : 'Circuits', $it ? 'Gestisci circuiti e layout' : 'Manage circuits and layouts'],
-                    ['demo.maintenance', $it ? 'Manutenzione' : 'Maintenance', $it ? 'Intervalli, alert e storico' : 'Schedules, alerts and history'],
-                    ['demo.expenses', $it ? 'Spese' : 'Expenses', $it ? 'Controlla il costo reale' : 'Track real cost'],
+                    ['garage.index', 'Garage', $it ? 'Gestisci i tuoi mezzi' : 'Manage your vehicles'],
+                    ['components.index', $it ? 'Componenti' : 'Components', $it ? 'Traccia utilizzo, acquisto e usura' : 'Track usage, purchase and wear'],
+                    ['configurations.index', $it ? 'Configurazioni' : 'Configurations', $it ? 'Versiona build e componenti' : 'Version builds and components'],
+                    ['sessions.index', $it ? 'Sessioni' : 'Sessions', $it ? 'Consulta anche le attività fuori evento' : 'Review standalone activity too'],
+                    ['circuits.index', $it ? 'Circuiti' : 'Circuits', $it ? 'Gestisci circuiti e layout' : 'Manage circuits and layouts'],
+                    ['maintenance.index', $it ? 'Manutenzione' : 'Maintenance', $it ? 'Intervalli, alert e storico' : 'Schedules, alerts and history'],
+                    ['expenses.index', $it ? 'Spese' : 'Expenses', $it ? 'Controlla il costo reale' : 'Track real cost'],
                 ] as [$routeName, $title, $subtitle])
                     <a href="{{ route($routeName) }}" class="group rounded-xl border border-pm-border bg-pm-surface p-4 transition hover:border-pm-border-strong hover:bg-pm-hover sm:p-5"><div class="flex items-center justify-between gap-3"><h2 class="min-w-0 font-bold text-pm-text">{{ $title }}</h2><span class="h-px w-5 shrink-0 bg-pm-border-strong transition-all group-hover:w-8 group-hover:bg-pm-accent"></span></div><p class="mt-2 text-sm text-pm-text-secondary">{{ $subtitle }}</p></a>
                 @endforeach

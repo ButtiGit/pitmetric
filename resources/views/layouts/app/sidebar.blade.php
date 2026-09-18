@@ -3,7 +3,7 @@
     <head>@include('partials.head')</head>
     <body class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
         <flux:sidebar sticky collapsible="mobile" class="pm-mobile-sidebar border-e border-[#242932] bg-[#111317]">
-            <flux:sidebar.header class="border-b border-white/5 pb-4"><x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate /><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
+            <flux:sidebar.header class="border-b border-white/5 pb-4"><a href="{{ route('dashboard') }}" wire:navigate aria-label="PitMetric"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-8 w-auto max-w-44"></a><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
 
             @php
                 $activityOpen = request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');

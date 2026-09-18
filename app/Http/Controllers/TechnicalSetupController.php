@@ -9,6 +9,7 @@ use App\Services\OperationCostService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -60,24 +61,26 @@ class TechnicalSetupController extends Controller
             ->where('workspace_id', $workspace->getKey())
             ->findOrFail((int) $validated['vehicle_id']);
 
-        $setup = TechnicalSetup::create([
-            'vehicle_id' => $vehicle->getKey(),
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'values' => $this->valuesFrom($validated),
-            'status' => 'active',
-            'created_by' => $user->getKey(),
-        ]);
+        DB::transaction(function () use ($vehicle, $validated, $user, $costService): void {
+            $setup = TechnicalSetup::create([
+                'vehicle_id' => $vehicle->getKey(),
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'values' => $this->valuesFrom($validated),
+                'status' => 'active',
+                'created_by' => $user->getKey(),
+            ]);
 
-        $costService->record(
-            $user,
-            isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
-            'setup',
-            __('Technical setup preparation').': '.$vehicle->name.' · '.$setup->name,
-            'technical_setup',
-            (int) $setup->getKey(),
-            now(),
-        );
+            $costService->record(
+                $user,
+                isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+                'setup',
+                __('Technical setup preparation').': '.$vehicle->name.' · '.$setup->name,
+                'technical_setup',
+                (int) $setup->getKey(),
+                now(),
+            );
+        });
 
         return to_route('setups.index')->with('status', __('Technical setup created.'));
     }
@@ -96,21 +99,24 @@ class TechnicalSetupController extends Controller
         }
 
         $validated = $request->validate($this->rules(includeVehicle: false));
-        $technicalSetup->update([
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'values' => $this->valuesFrom($validated),
-        ]);
+        DB::transaction(function () use ($technicalSetup, $validated, $user, $costService): void {
+            $technicalSetup->update([
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'values' => $this->valuesFrom($validated),
+            ]);
 
-        $costService->record(
-            $user,
-            isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
-            'setup',
-            __('Technical setup adjustment').': '.$technicalSetup->vehicle->name.' · '.$technicalSetup->name,
-            'technical_setup',
-            (int) $technicalSetup->getKey(),
-            now(),
-        );
+            $costService->record(
+                $user,
+                isset($validated['operation_cost']) ? (float) $validated['operation_cost'] : null,
+                'setup',
+                __('Technical setup adjustment').': '.$technicalSetup->vehicle->name.' · '.$technicalSetup->name,
+                'technical_setup',
+                (int) $technicalSetup->getKey(),
+                now(),
+                append: true,
+            );
+        });
 
         return to_route('setups.index')->with('status', __('Technical setup updated. Existing session snapshots were not changed.'));
     }

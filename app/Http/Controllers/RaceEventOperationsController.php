@@ -17,6 +17,7 @@ use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -41,6 +42,27 @@ class RaceEventOperationsController extends Controller
         return to_route('events.index')->with('status', __('Driver added.'));
     }
 
+    public function updateDriver(Request $request, Driver $driver): RedirectResponse
+    {
+        Gate::authorize('update', $driver);
+        $driver->update($request->validate([
+            'display_name' => ['required', 'string', 'max:120'],
+            'racing_number' => ['nullable', 'string', 'max:20'],
+            'licence_reference' => ['nullable', 'string', 'max:80'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]));
+
+        return to_route('events.index')->with('status', __('Driver updated.'));
+    }
+
+    public function destroyDriver(Driver $driver): RedirectResponse
+    {
+        Gate::authorize('delete', $driver);
+        $driver->delete();
+
+        return to_route('events.index')->with('status', __('Driver archived. History preserved.'));
+    }
+
     public function storeEntry(
         Request $request,
         RaceEvent $raceEvent,
@@ -63,30 +85,32 @@ class RaceEventOperationsController extends Controller
         $vehicle = Vehicle::query()->whereKey((int) $validated['vehicle_id'])->firstOrFail();
         $version = ConfigurationVersion::query()
             ->whereKey((int) $validated['configuration_version_id'])
-            ->whereHas('configuration', fn ($query) => $query
+            ->whereHas('configuration', fn ($query) => $query->whereNull('configurations.deleted_at')->where('status', 'active')->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))
                 ->where('workspace_id', $workspace->getKey())
                 ->where('vehicle_id', $vehicle->getKey()))
             ->firstOrFail();
 
-        $entry = EventEntry::create([
-            'event_id' => $raceEvent->getKey(),
-            'driver_id' => $driver->getKey(),
-            'vehicle_id' => $vehicle->getKey(),
-            'configuration_version_id' => $version->getKey(),
-            'entry_number' => $validated['entry_number'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        DB::transaction(function () use ($raceEvent, $driver, $vehicle, $version, $validated, $costService, $user): void {
+            $entry = EventEntry::create([
+                'event_id' => $raceEvent->getKey(),
+                'driver_id' => $driver->getKey(),
+                'vehicle_id' => $vehicle->getKey(),
+                'configuration_version_id' => $version->getKey(),
+                'entry_number' => $validated['entry_number'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]);
 
-        $costService->record(
-            $user,
-            isset($validated['entry_cost']) ? (float) $validated['entry_cost'] : null,
-            'event_entry',
-            __('Event entry').': '.$raceEvent->name.' · '.$driver->display_name,
-            'event_entry',
-            (int) $entry->getKey(),
-            Carbon::parse($raceEvent->start_date)->startOfDay(),
-            (int) $raceEvent->getKey(),
-        );
+            $costService->record(
+                $user,
+                isset($validated['entry_cost']) ? (float) $validated['entry_cost'] : null,
+                'event_entry',
+                __('Event entry').': '.$raceEvent->name.' · '.$driver->display_name,
+                'event_entry',
+                (int) $entry->getKey(),
+                Carbon::parse($raceEvent->start_date)->startOfDay(),
+                (int) $raceEvent->getKey(),
+            );
+        });
 
         return to_route('events.show', $raceEvent)->with('status', __('Event entry added.'));
     }

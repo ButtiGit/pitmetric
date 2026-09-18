@@ -56,5 +56,20 @@
   "System": "Sistema",
   "Manage your profile and account settings": "Gestisci il profilo e le impostazioni dell'account",
   "Manage your password and security settings": "Gestisci password e impostazioni di sicurezza",
-  "Manage your appearance settings": "Gestisci le impostazioni dell'aspetto"
+  "Manage your appearance settings": "Gestisci le impostazioni dell'aspetto",
+  "Component updated.": "Componente aggiornato.",
+  "Configuration updated.": "Configurazione aggiornata.",
+  "Expense updated.": "Spesa aggiornata.",
+  "Circuit updated.": "Circuito aggiornato.",
+  "Layout created.": "Layout creato.",
+  "Layout updated.": "Layout aggiornato.",
+  "Driver updated.": "Pilota aggiornato.",
+  "Driver archived. History preserved.": "Pilota archiviato. Lo storico è stato conservato.",
+  "Race weekend updated.": "Weekend aggiornato.",
+  "Remove the installed components before archiving this vehicle.": "Rimuovi i componenti montati prima di archiviare questo mezzo.",
+  "Remove components from their current vehicle before using them in another configuration.": "Rimuovi i componenti dal mezzo attuale prima di usarli nella configurazione di un altro mezzo.",
+  "Linked operational costs cannot be edited independently from their source record.": "I costi collegati a un’attività non possono essere modificati separatamente dall’operazione che li ha generati.",
+  "This layout is used in history. Add a new layout to change its length.": "Questo layout è già utilizzato nello storico. Aggiungi un nuovo layout per cambiare la lunghezza.",
+  "Keep the dates of existing sessions and scheduled activities inside the weekend.": "Le date del weekend devono includere tutte le sessioni e le attività già programmate.",
+  "This vehicle is archived. Choose an active vehicle to create a configuration version.": "Questo mezzo è archiviato. Scegli un mezzo attivo per creare una versione della configurazione."
 }

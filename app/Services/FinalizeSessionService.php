@@ -134,7 +134,7 @@ class FinalizeSessionService
     {
         $distance = (int) ($session->distance_override_meters ?? 0);
 
-        if ($distance === 0 && $session->circuitLayout !== null && $session->completed_laps !== null) {
+        if ($session->distance_override_meters === null && $session->circuitLayout !== null && $session->completed_laps !== null) {
             $distance = $session->circuitLayout->length_meters * $session->completed_laps;
         }
 

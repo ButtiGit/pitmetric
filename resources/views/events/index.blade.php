@@ -3,6 +3,7 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
+            <div class="pm-next-actions"><span class="font-semibold text-pm-muted">{{ __('workflow.next') }}</span><a href="{{ route('circuits.index') }}#create-circuit">{{ $it ? 'Circuiti' : 'Circuits' }}</a><a href="{{ route('garage.index') }}#create-vehicle">{{ __('workflow.garage') }}</a><a href="{{ route('configurations.index') }}#create-configuration">{{ __('workflow.configurations') }}</a></div>
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">RACE WEEKENDS</p>
@@ -10,7 +11,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <x-crud-modal id="create-event" :title="$it ? 'Nuovo weekend' : 'New race weekend'" :description="$it ? 'Il layout scelto diventa il circuito predefinito delle sessioni dell’evento.' : 'The selected layout becomes the default circuit for event sessions.'" :trigger="$it ? '+ Weekend' : '+ Weekend'" size="max-w-4xl">
-                        <form method="POST" action="{{ route('events.store') }}" class="grid gap-4 md:grid-cols-2">
+                        @can('team-write')<form method="POST" action="{{ route('events.store') }}" class="grid gap-4 md:grid-cols-2">
                             @csrf
                             <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Nome evento' : 'Event name' }}</span><input class="pm-input" name="name" maxlength="140" required value="{{ old('name') }}"></label>
                             <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Circuito / layout' : 'Circuit / layout' }}</span><select class="pm-input" name="circuit_layout_id" required><option value="">{{ $it ? 'Seleziona layout' : 'Select layout' }}</option>@foreach ($layouts as $layout)<option value="{{ $layout->id }}" @selected((string) old('circuit_layout_id') === (string) $layout->id)>{{ $layout->circuit->name }} · {{ $layout->name }} · {{ number_format($layout->length_meters, 0, ',', '.') }} m</option>@endforeach</select></label>
@@ -20,18 +21,18 @@
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Round / tappa' : 'Round' }}</span><input class="pm-input" name="round_label" maxlength="80" value="{{ old('round_label') }}"></label>
                             <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Note iniziali' : 'Initial notes' }}</span><textarea class="pm-input min-h-24" name="notes" maxlength="4000">{{ old('notes') }}</textarea></label>
                             <div class="md:col-span-2 flex justify-end"><button class="pm-race-button" type="submit" @disabled($layouts->isEmpty())>{{ $it ? 'Crea evento' : 'Create event' }}</button></div>
-                        </form>
+                        </form>@endcan
                     </x-crud-modal>
 
                     <x-crud-modal id="create-driver" :title="$it ? 'Aggiungi pilota' : 'Add driver'" :description="$it ? 'Il pilota viene creato una volta e poi riutilizzato nei weekend.' : 'Create the driver once and reuse them across weekends.'" :trigger="$it ? '+ Pilota' : '+ Driver'" trigger-class="pm-ghost-button">
-                        <form method="POST" action="{{ route('drivers.store') }}" class="grid gap-4 sm:grid-cols-2">
+                        @can('team-write')<form method="POST" action="{{ route('drivers.store') }}" class="grid gap-4 sm:grid-cols-2">
                             @csrf
                             <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Nome pilota' : 'Driver name' }}</span><input class="pm-input" name="display_name" maxlength="120" required></label>
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Numero' : 'Number' }}</span><input class="pm-input" name="racing_number" maxlength="20"></label>
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Licenza' : 'Licence' }}</span><input class="pm-input" name="licence_reference" maxlength="80"></label>
                             <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000"></textarea></label>
                             <div class="sm:col-span-2 flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Aggiungi pilota' : 'Add driver' }}</button></div>
-                        </form>
+                        </form>@endcan
                     </x-crud-modal>
                 </div>
             </div>
@@ -59,7 +60,11 @@
                 <aside class="pm-panel p-5 sm:p-6">
                     <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'PILOTI' : 'DRIVERS' }}</p>
                     <h2 class="mt-2 text-lg font-black text-pm-text">{{ $it ? 'Catalogo piloti' : 'Driver roster' }}</h2>
-                    <div class="mt-5 space-y-2">@forelse ($drivers as $driver)<div class="flex items-center justify-between gap-3 rounded-xl border border-pm-border bg-pm-subtle px-3 py-3"><div class="min-w-0"><p class="truncate font-bold text-pm-text">{{ $driver->display_name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $driver->licence_reference ?: ($it ? 'Licenza non indicata' : 'No licence reference') }}</p></div><span class="rounded-lg border border-pm-border px-2 py-1 font-mono text-xs font-bold text-pm-text">{{ $driver->racing_number ?: '--' }}</span></div>@empty<p class="rounded-xl border border-dashed border-pm-border p-4 text-sm text-pm-muted">{{ $it ? 'Nessun pilota ancora.' : 'No drivers yet.' }}</p>@endforelse</div>
+                    <div class="mt-5 space-y-2">@forelse ($drivers as $driver)<div class="flex items-center justify-between gap-3 rounded-xl border border-pm-border bg-pm-subtle px-3 py-3"><div class="min-w-0"><p class="truncate font-bold text-pm-text">{{ $driver->display_name }}</p><p class="mt-1 text-xs text-pm-muted">{{ $driver->licence_reference ?: ($it ? 'Licenza non indicata' : 'No licence reference') }}</p></div><span class="rounded-lg border border-pm-border px-2 py-1 font-mono text-xs font-bold text-pm-text">{{ $driver->racing_number ?: '--' }}</span></div><div class="mb-3 flex flex-wrap gap-2"><x-crud-modal id="edit-driver-{{ $driver->id }}" :title="$it ? 'Modifica pilota' : 'Edit driver'" :trigger="$it ? 'Modifica pilota' : 'Edit driver'" trigger-class="pm-ghost-button">
+ <form method="POST" action="{{ route('drivers.update', $driver) }}" class="grid gap-4 sm:grid-cols-2">@csrf @method('PUT')
+ <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome pilota' : 'Driver name' }}</span><input class="pm-input" name="display_name" type="text" value="{{ $driver->display_name }}" required maxlength="120"></label><label class="grid gap-2"><span class="pm-label">{{ $it ? 'Numero' : 'Number' }}</span><input class="pm-input" name="racing_number" type="text" value="{{ $driver->racing_number }}" maxlength="20"></label><label class="grid gap-2"><span class="pm-label">{{ $it ? 'Licenza' : 'Licence' }}</span><input class="pm-input" name="licence_reference" type="text" value="{{ $driver->licence_reference }}" maxlength="80"></label><label class="grid gap-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000">{{ $driver->notes }}</textarea></label>
+ <div class="sm:col-span-2 flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Salva modifiche' : 'Save changes' }}</button></div>
+ </form></x-crud-modal>@can('team-write')<form method="POST" action="{{ route('drivers.destroy', $driver) }}" onsubmit="return confirm(@js($it ? 'Archiviare il pilota? Le attività passate rimangono nello storico.' : 'Archive this driver? Past activity stays in history.'))">@csrf @method('DELETE')<button type="submit" class="pm-ghost-button">{{ $it ? 'Archivia' : 'Archive' }}</button></form>@endcan</div>@empty<p class="rounded-xl border border-dashed border-pm-border p-4 text-sm text-pm-muted">{{ $it ? 'Nessun pilota ancora.' : 'No drivers yet.' }}</p>@endforelse</div>
                 </aside>
             </section>
         </div>

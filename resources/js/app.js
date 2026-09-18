@@ -12,3 +12,5 @@ import './form-controls-composite';
 import './form-control-guard';
 import './pitmetric-demo';
 import './public-site';
+import '../css/workspace.css';
+import './workspace-forms';

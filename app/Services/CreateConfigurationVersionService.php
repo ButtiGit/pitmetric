@@ -27,16 +27,35 @@ class CreateConfigurationVersionService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if (! $lockedConfiguration->vehicle()->whereNull('vehicles.deleted_at')->where('status', 'active')->exists()) {
+                throw ValidationException::withMessages([
+                    'configuration' => __('This vehicle is archived. Choose an active vehicle to create a configuration version.'),
+                ]);
+            }
+
             $componentIds = array_values(array_unique(array_map('intval', $componentIds)));
 
             $components = Component::query()
                 ->where('workspace_id', $lockedConfiguration->workspace_id)
                 ->whereIn('id', $componentIds)
+                ->where('status', 'active')
+                ->orderBy('id')
+                ->lockForUpdate()
                 ->get();
 
             if ($components->count() !== count($componentIds)) {
                 throw ValidationException::withMessages([
                     'component_ids' => __('One or more selected components are unavailable.'),
+                ]);
+            }
+
+            if (ComponentInstallation::query()
+                ->whereIn('component_id', $componentIds)
+                ->whereNull('removed_at')
+                ->where('vehicle_id', '!=', $lockedConfiguration->vehicle_id)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    'component_ids' => __('Remove components from their current vehicle before using them in another configuration.'),
                 ]);
             }
 

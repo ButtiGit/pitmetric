@@ -4,8 +4,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 
-beforeEach(function () {});
-
 test('security settings page can be rendered', function () {
     $user = User::factory()->create();
 
@@ -40,7 +38,22 @@ test('security settings page renders without two factor when feature is disabled
         ->assertDontSee('Two-factor authentication');
 });
 
-test('two factor authentication disabled when confirmation abandoned between requests', function () {});
+test('a rejected password change clears sensitive fields and keeps the existing password', function () {
+    $user = User::factory()->create(['password' => Hash::make('original-password')]);
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.security')
+        ->set('current_password', 'original-password')
+        ->set('password', 'new-password')
+        ->set('password_confirmation', 'different-password')
+        ->call('updatePassword')
+        ->assertHasErrors(['password'])
+        ->assertSet('current_password', '')
+        ->assertSet('password', '')
+        ->assertSet('password_confirmation', '');
+
+    expect(Hash::check('original-password', $user->fresh()->password))->toBeTrue();
+});
 
 test('password can be updated', function () {
     $user = User::factory()->create([

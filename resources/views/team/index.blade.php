@@ -19,7 +19,7 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div><p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">TEAM</p><x-pitmetric.page-header :title="$it ? 'Team e accessi' : 'Team and access'" :description="$it ? 'Seleziona il team operativo, invita collaboratori e assegna permessi senza uscire dal contesto in cui stai lavorando.' : 'Select the active team, invite collaborators and assign permissions without leaving the page you are working on.'" /></div>
                 <div class="flex flex-wrap gap-2">
-                    <x-crud-modal id="create-team" :title="$it ? 'Nuovo team' : 'New team'" :description="$it ? 'Crea un ambiente separato. Diventerai owner del nuovo team.' : 'Create a separate workspace. You will become its owner.'" :trigger="$it ? '+ Team' : '+ Team'">
+                    <x-crud-modal id="create-team" :permission="null" :title="$it ? 'Nuovo team' : 'New team'" :description="$it ? 'Crea un ambiente separato. Diventerai owner del nuovo team.' : 'Create a separate workspace. You will become its owner.'" :trigger="$it ? '+ Team' : '+ Team'">
                         <form method="POST" action="{{ route('team.store') }}" class="grid gap-4">@csrf<label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome team' : 'Team name' }}</span><input class="pm-input" name="name" required maxlength="120" placeholder="Butti Racing"></label><div class="flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Crea e seleziona' : 'Create and select' }}</button></div></form>
                     </x-crud-modal>
                     @if ($canManage)
