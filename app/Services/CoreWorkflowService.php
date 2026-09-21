@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\Configuration;
 use App\Models\MaintenanceSchedule;
 use App\Models\RaceEvent;
@@ -25,15 +25,13 @@ class CoreWorkflowService
             ->where('status', 'active')
             ->exists();
 
-        $componentsReady = $vehicleReady && Component::query()
-            ->where('status', 'active')
+        $componentsReady = $vehicleReady && ComponentInstallation::query()
+            ->whereNull('removed_at')
+            ->whereHas('vehicle', fn ($query) => $query->whereNull('vehicles.deleted_at')->where('status', 'active'))
+            ->whereHas('component', fn ($query) => $query->whereNull('components.deleted_at')->where('status', 'active'))
             ->exists();
 
-        $configurationReady = $componentsReady && Configuration::query()
-            ->where('status', 'active')
-            ->whereHas('vehicle', fn ($query) => $query->whereNull('vehicles.deleted_at')->where('status', 'active'))
-            ->whereHas('versions.components')
-            ->exists();
+        $configurationReady = $componentsReady && $this->hasAlignedConfiguration();
 
         $eventReady = $configurationReady && $eventsReady && RaceEvent::query()->exists();
 
@@ -82,5 +80,45 @@ class CoreWorkflowService
                 && $usageReady
                 && $maintenanceReady,
         ];
+    }
+
+    private function hasAlignedConfiguration(): bool
+    {
+        $configurations = Configuration::query()
+            ->where('status', 'active')
+            ->whereHas('vehicle', fn ($query) => $query->whereNull('vehicles.deleted_at')->where('status', 'active'))
+            ->with([
+                'vehicle.componentInstallations' => fn ($query) => $query->whereNull('removed_at'),
+                'versions' => fn ($query) => $query->orderByDesc('version_number')->with('components:id'),
+            ])
+            ->get();
+
+        return $configurations->contains(function (Configuration $configuration): bool {
+            $latest = $configuration->versions->first();
+
+            if ($latest === null) {
+                return false;
+            }
+
+            $physicalIds = $configuration->vehicle->componentInstallations
+                ->pluck('component_id')
+                ->map(static fn ($id): int => (int) $id)
+                ->sort()
+                ->values()
+                ->all();
+
+            if ($physicalIds === []) {
+                return false;
+            }
+
+            $snapshotIds = $latest->components
+                ->pluck('id')
+                ->map(static fn ($id): int => (int) $id)
+                ->sort()
+                ->values()
+                ->all();
+
+            return $physicalIds === $snapshotIds;
+        });
     }
 }
