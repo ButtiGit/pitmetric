@@ -41,7 +41,7 @@ test('core workflow only advances when each operational dependency is real', fun
         'is_active' => true,
     ]);
 
-    expect($this->workflow->snapshot(false)['next']['stage'])->toBe('configuration');
+    expect($this->workflow->snapshot(false)['next']['stage'])->toBe('components');
 
     ComponentInstallation::create([
         'vehicle_id' => $vehicle->id,
@@ -49,6 +49,8 @@ test('core workflow only advances when each operational dependency is real', fun
         'created_by' => $this->operator->id,
         'installed_at' => now(),
     ]);
+
+    expect($this->workflow->snapshot(false)['next']['stage'])->toBe('configuration');
 
     $configuration = Configuration::create([
         'vehicle_id' => $vehicle->id,
@@ -92,6 +94,33 @@ test('core workflow only advances when each operational dependency is real', fun
     expect($snapshot['complete'])->toBeTrue()
         ->and($snapshot['steps']['maintenance']['complete'])->toBeTrue()
         ->and($snapshot['next']['stage'])->toBe('session');
+});
+
+test('changing the physical build makes configuration the next required step again', function () {
+    $workspace = $this->operator->workspaces()->firstOrFail();
+    $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id]);
+    $type = ComponentType::create(['name' => 'Engine']);
+    $engine = Component::create(['component_type_id' => $type->id, 'name' => 'Engine A', 'status' => 'active']);
+    $radiator = Component::create(['component_type_id' => $type->id, 'name' => 'Radiator A', 'status' => 'active']);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $engine->id,
+        'created_by' => $this->operator->id,
+        'installed_at' => now(),
+    ]);
+    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Race build', 'status' => 'active']);
+    app(CreateConfigurationVersionService::class)->create($configuration, $this->operator, [$engine->id]);
+
+    expect($this->workflow->snapshot(false)['next']['stage'])->toBe('session');
+
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $radiator->id,
+        'created_by' => $this->operator->id,
+        'installed_at' => now(),
+    ]);
+
+    expect($this->workflow->snapshot(false)['next']['stage'])->toBe('configuration');
 });
 
 test('race weekend is required before session when the event module is available', function () {
