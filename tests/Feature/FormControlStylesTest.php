@@ -4,7 +4,7 @@ test('app form controls are native first and keep the PitMetric visual system', 
     $css = file_get_contents(resource_path('css/forms.css'));
 
     expect($css)
-        ->toContain("select.pm-input:not([multiple]):not([size])")
+        ->toContain('select.pm-input:not([multiple]):not([size])')
         ->toContain("input.pm-input[type='date']")
         ->toContain("input.pm-input[type='time']")
         ->toContain("input.pm-input[type='datetime-local']")
