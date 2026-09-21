@@ -1,18 +1,8 @@
-import '../css/form-controls.css';
-import '../css/form-control-popovers.css';
-import '../css/form-control-guard.css';
-import '../css/form-controls-composite.css';
+import '../css/forms.css';
 import '../css/mobile.css';
-import '../css/public-site.css';
-import '../css/home-editorial.css';
-import '../css/public-polish.css';
-import '../css/public-simplify.css';
 import '../css/onboarding.css';
-import './form-controls';
-import './form-controls-composite';
-import './form-control-guard';
-import './pitmetric-demo';
-import './public-site';
-import './onboarding';
 import '../css/workspace.css';
+
+import './pitmetric-demo';
+import './onboarding';
 import './workspace-forms';
