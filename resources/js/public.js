@@ -1,3 +1,4 @@
+import '../css/public.css';
 import './public-site';
 
 function readCookie(name) {
