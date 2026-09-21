@@ -94,7 +94,7 @@
                             @endif
 
                             @if (! $loop->last)
-                                <span class="text-xs text-pm-muted" aria-hidden="true">→</span>
+                                <span class="text-xs text-pm-muted" aria-hidden="true">&rarr;</span>
                             @endif
                         </li>
                     @endforeach
