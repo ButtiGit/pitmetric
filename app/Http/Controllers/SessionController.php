@@ -58,6 +58,21 @@ class SessionController extends Controller
             ->paginate(25)
             ->withQueryString();
 
+        $versions = ConfigurationVersion::query()
+            ->whereHas('configuration', fn ($query) => $query
+                ->whereNull('configurations.deleted_at')
+                ->where('status', 'active')
+                ->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))
+                ->where('workspace_id', $workspace->getKey()))
+            ->with([
+                'configuration.vehicle.componentInstallations' => fn ($query) => $query->whereNull('removed_at'),
+                'components',
+            ])
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn (ConfigurationVersion $version): bool => $this->versionMatchesPhysicalState($version))
+            ->values();
+
         $schedules = MaintenanceSchedule::query()
             ->with(['tracker.component', 'tracker.metric'])
             ->where('is_active', true)
@@ -70,13 +85,15 @@ class SessionController extends Controller
             return in_array($status, ['due_soon', 'overdue'], true);
         });
         $lastSession = $sessions->first();
+        $requestedVersionId = $request->integer('configuration_version_id');
+        $defaultVersionId = $versions->contains(fn (ConfigurationVersion $version): bool => $version->getKey() === $requestedVersionId)
+            ? $requestedVersionId
+            : ($versions->contains(fn (ConfigurationVersion $version): bool => $version->getKey() === $lastSession?->configuration_version_id)
+                ? $lastSession?->configuration_version_id
+                : $versions->first()?->getKey());
 
         return view('sessions.index', [
-            'versions' => ConfigurationVersion::query()
-                ->whereHas('configuration', fn ($query) => $query->whereNull('configurations.deleted_at')->where('status', 'active')->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))->where('workspace_id', $workspace->getKey()))
-                ->with(['configuration.vehicle', 'components'])
-                ->orderByDesc('id')
-                ->get(),
+            'versions' => $versions,
             'setups' => TechnicalSetup::query()
                 ->with('vehicle')
                 ->whereHas('vehicle', fn ($query) => $query->whereNull('vehicles.deleted_at')->where('status', 'active'))
@@ -92,7 +109,7 @@ class SessionController extends Controller
                 ->get(),
             'sessions' => $sessions,
             'defaults' => [
-                'configuration_version_id' => $lastSession?->configuration_version_id,
+                'configuration_version_id' => $defaultVersionId,
                 'technical_setup_id' => $lastSession?->setupSnapshot?->technical_setup_id,
                 'circuit_layout_id' => $lastSession?->circuit_layout_id,
                 'session_type' => $lastSession->session_type ?? 'practice',
@@ -194,14 +211,26 @@ class SessionController extends Controller
         $version = ConfigurationVersion::query()
             ->whereKey((int) $validated['configuration_version_id'])
             ->whereHas('configuration', function ($query) use ($workspace, $eventEntry): void {
-                $query->whereNull('configurations.deleted_at')->where('status', 'active')->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))->where('workspace_id', $workspace->getKey());
+                $query->whereNull('configurations.deleted_at')
+                    ->where('status', 'active')
+                    ->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))
+                    ->where('workspace_id', $workspace->getKey());
 
                 if ($eventEntry instanceof EventEntry) {
                     $query->where('vehicle_id', $eventEntry->vehicle_id);
                 }
             })
-            ->with('configuration.vehicle')
+            ->with([
+                'configuration.vehicle.componentInstallations' => fn ($query) => $query->whereNull('removed_at'),
+                'components',
+            ])
             ->firstOrFail();
+
+        if (! $this->versionMatchesPhysicalState($version)) {
+            throw ValidationException::withMessages([
+                'configuration_version_id' => __('The selected configuration is no longer aligned with the vehicle. Capture a new configuration version before recording the session.'),
+            ]);
+        }
 
         $technicalSetup = null;
 
@@ -314,6 +343,29 @@ class SessionController extends Controller
         return to_route('sessions.index', ['recorded' => $session->getKey()])
             ->with('status', __('Session recorded, usage updated and immutable setup snapshot captured.'))
             ->with('maintenance_attention', $health['summary']['attention']);
+    }
+
+    private function versionMatchesPhysicalState(ConfigurationVersion $version): bool
+    {
+        $physicalIds = $version->configuration->vehicle->componentInstallations
+            ->pluck('component_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($physicalIds === []) {
+            return false;
+        }
+
+        $snapshotIds = $version->components
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->sort()
+            ->values()
+            ->all();
+
+        return $physicalIds === $snapshotIds;
     }
 
     private function hasDatabaseAccess(User $user): bool

@@ -2,6 +2,7 @@
 
 use App\Models\Circuit;
 use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\ComponentType;
 use App\Models\Configuration;
 use App\Models\Driver;
@@ -43,6 +44,12 @@ it('runs a race weekend through Trackside schedule sessions work notes and linke
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'Kart 27']);
     $type = ComponentType::create(['name' => 'Engine']);
     $component = Component::create(['component_type_id' => $type->id, 'name' => 'Engine 27', 'status' => 'active']);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
     $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Busca race', 'status' => 'active']);
     $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, [$component->id]);
     $circuit = Circuit::create(['name' => 'Busca Kart Planet']);
@@ -168,10 +175,25 @@ it('rejects sessions and scheduled activities outside the weekend and entries wi
 
     $vehicleA = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'Kart A']);
     $vehicleB = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'Kart B']);
+    $type = ComponentType::create(['name' => 'Weekend component']);
+    $componentA = Component::create(['component_type_id' => $type->id, 'name' => 'Component A', 'status' => 'active']);
+    $componentB = Component::create(['component_type_id' => $type->id, 'name' => 'Component B', 'status' => 'active']);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicleA->id,
+        'component_id' => $componentA->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicleB->id,
+        'component_id' => $componentB->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
     $configurationA = Configuration::create(['vehicle_id' => $vehicleA->id, 'name' => 'Setup A', 'status' => 'active']);
     $configurationB = Configuration::create(['vehicle_id' => $vehicleB->id, 'name' => 'Setup B', 'status' => 'active']);
-    $versionA = app(CreateConfigurationVersionService::class)->create($configurationA, $user, []);
-    $versionB = app(CreateConfigurationVersionService::class)->create($configurationB, $user, []);
+    $versionA = app(CreateConfigurationVersionService::class)->create($configurationA, $user, [$componentA->id]);
+    $versionB = app(CreateConfigurationVersionService::class)->create($configurationB, $user, [$componentB->id]);
     $circuit = Circuit::create(['name' => 'Test Circuit']);
     $layout = $circuit->layouts()->create(['name' => 'Race', 'length_meters' => 1000, 'is_active' => true]);
     $driver = Driver::create(['display_name' => 'Driver Test', 'status' => 'active']);

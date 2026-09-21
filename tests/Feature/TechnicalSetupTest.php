@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
 use App\Models\Configuration;
 use App\Models\Expense;
 use App\Models\Session;
@@ -8,6 +11,29 @@ use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\CreateConfigurationVersionService;
+
+function createTechnicalSetupPhysicalVersion(User $user, Vehicle $vehicle, string $configurationName): mixed
+{
+    $type = ComponentType::query()->firstOrCreate(['name' => 'Setup test component']);
+    $component = Component::create([
+        'component_type_id' => $type->id,
+        'name' => $configurationName.' component',
+        'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
+    $configuration = Configuration::create([
+        'vehicle_id' => $vehicle->id,
+        'name' => $configurationName,
+        'status' => 'active',
+    ]);
+
+    return app(CreateConfigurationVersionService::class)->create($configuration, $user, [$component->id]);
+}
 
 it('creates technical setups and records their optional work cost', function () {
     $user = User::factory()->withDatabaseAccess()->create();
@@ -46,12 +72,7 @@ it('captures an immutable copy of the technical setup when a session is recorded
     $this->actingAs($user);
 
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'Formula #7']);
-    $configuration = Configuration::create([
-        'vehicle_id' => $vehicle->id,
-        'name' => 'Race build',
-        'status' => 'active',
-    ]);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, []);
+    $version = createTechnicalSetupPhysicalVersion($user, $vehicle, 'Race build');
     $setup = TechnicalSetup::create([
         'vehicle_id' => $vehicle->id,
         'name' => 'Qualifying setup',
@@ -107,12 +128,7 @@ it('automatically snapshots the latest active setup when none is selected', func
     $this->actingAs($user);
 
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id]);
-    $configuration = Configuration::create([
-        'vehicle_id' => $vehicle->id,
-        'name' => 'Baseline build',
-        'status' => 'active',
-    ]);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, []);
+    $version = createTechnicalSetupPhysicalVersion($user, $vehicle, 'Baseline build');
 
     TechnicalSetup::create([
         'vehicle_id' => $vehicle->id,
@@ -149,12 +165,7 @@ it('does not allow a setup snapshot to be changed after capture', function () {
     $this->actingAs($user);
 
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id]);
-    $configuration = Configuration::create([
-        'vehicle_id' => $vehicle->id,
-        'name' => 'Immutable build',
-        'status' => 'active',
-    ]);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, []);
+    $version = createTechnicalSetupPhysicalVersion($user, $vehicle, 'Immutable build');
 
     $this->post(route('sessions.store'), [
         'configuration_version_id' => $version->id,

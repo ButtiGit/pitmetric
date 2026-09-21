@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Circuit;
+use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
 use App\Models\Configuration;
 use App\Models\Driver;
 use App\Models\EventEntry;
@@ -12,14 +15,32 @@ use App\Models\Vehicle;
 use App\Services\CreateConfigurationVersionService;
 use App\Services\PerformanceIntelligenceService;
 
+function createIntelligencePhysicalVersion(User $user, Vehicle $vehicle, string $configurationName): mixed
+{
+    $type = ComponentType::query()->firstOrCreate(['name' => 'Intelligence component']);
+    $component = Component::create([
+        'component_type_id' => $type->id,
+        'name' => $configurationName.' component',
+        'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
+    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => $configurationName, 'status' => 'active']);
+
+    return app(CreateConfigurationVersionService::class)->create($configuration, $user, [$component->id]);
+}
+
 it('turns finalized session history and expenses into safe operational intelligence', function () {
     $user = User::factory()->withDatabaseAccess()->create(['email_verified_at' => now()]);
     $workspace = $user->workspaces()->firstOrFail();
     $this->actingAs($user);
 
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'Kart Intelligence']);
-    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Race package', 'status' => 'active']);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, []);
+    $version = createIntelligencePhysicalVersion($user, $vehicle, 'Race package');
     $circuit = Circuit::create(['name' => 'Intelligence Circuit']);
     $layout = $circuit->layouts()->create(['name' => 'Main', 'length_meters' => 1200, 'is_active' => true]);
     $driver = Driver::create(['display_name' => 'Driver Intelligence', 'racing_number' => '27', 'status' => 'active']);
@@ -119,8 +140,7 @@ it('renders intelligence comparisons and an exportable weekend report', function
     $this->actingAs($user);
 
     $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'Report Kart']);
-    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Report package', 'status' => 'active']);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, []);
+    $version = createIntelligencePhysicalVersion($user, $vehicle, 'Report package');
     $circuit = Circuit::create(['name' => 'Report Circuit']);
     $layout = $circuit->layouts()->create(['name' => 'GP', 'length_meters' => 1000, 'is_active' => true]);
     $driver = Driver::create(['display_name' => 'Report Driver', 'status' => 'active']);

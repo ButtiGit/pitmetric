@@ -32,6 +32,12 @@ it('finalizes a session once and propagates calculated usage idempotently', func
         'usage_metric_type_id' => $distanceMetric->id,
         'is_active' => true,
     ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
 
     $configuration = Configuration::create([
         'vehicle_id' => $vehicle->id,
@@ -82,6 +88,12 @@ it('refuses to finalize a session when the physical vehicle no longer matches th
         'component_type_id' => $type->id,
         'name' => 'Chain replacement',
         'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $configuredComponent->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
     ]);
 
     $configuration = Configuration::create([
@@ -134,6 +146,12 @@ it('keeps an event entry aligned with the configuration actually used by its lat
         'name' => 'Radiator B',
         'status' => 'active',
     ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $engine->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
 
     $configuration = Configuration::create([
         'vehicle_id' => $vehicle->id,
@@ -141,6 +159,13 @@ it('keeps an event entry aligned with the configuration actually used by its lat
         'status' => 'active',
     ]);
     $versionOne = app(CreateConfigurationVersionService::class)->create($configuration, $user, [$engine->id]);
+
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $radiator->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
     $versionTwo = app(CreateConfigurationVersionService::class)->create($configuration, $user, [$engine->id, $radiator->id]);
 
     $event = RaceEvent::create([

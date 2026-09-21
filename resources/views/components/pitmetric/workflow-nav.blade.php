@@ -72,7 +72,7 @@
 @endphp
 
 @if ($showCoreWorkflow)
-    <section class="mx-4 mt-4 rounded-2xl border border-pm-border bg-pm-panel/90 p-3 shadow-sm sm:mx-6 lg:mx-8" aria-label="{{ __('workflow.navigation') }}">
+    <section data-pm-workflow-nav class="mx-4 mt-4 rounded-2xl border border-pm-border bg-pm-panel/90 p-3 shadow-sm sm:mx-6 lg:mx-8" aria-label="{{ __('workflow.navigation') }}">
         <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div class="min-w-0">
                 <p class="text-[10px] font-black uppercase tracking-[0.14em] text-pm-accent">{{ __('workflow.core_flow') }}</p>

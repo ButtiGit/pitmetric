@@ -2,6 +2,7 @@
 
 use App\Models\Circuit;
 use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\ComponentTracker;
 use App\Models\ComponentType;
 use App\Models\Configuration;
@@ -22,11 +23,17 @@ beforeEach(function () {
     $this->vehicle = Vehicle::factory()->create(['workspace_id' => $this->operator->workspaces()->firstOrFail()->id]);
     $type = ComponentType::create(['name' => 'Engine']);
     $this->component = Component::create(['name' => 'Engine A', 'component_type_id' => $type->id, 'status' => 'active']);
+    ComponentInstallation::create([
+        'vehicle_id' => $this->vehicle->id,
+        'component_id' => $this->component->id,
+        'created_by' => $this->operator->id,
+        'installed_at' => now(),
+    ]);
     $this->configuration = Configuration::create(['vehicle_id' => $this->vehicle->id, 'name' => 'Race build', 'status' => 'active']);
     $this->version = app(CreateConfigurationVersionService::class)->create($this->configuration, $this->operator, [$this->component->id]);
 });
 
-test('a physical component cannot be installed on two vehicles by configuration changes', function () {
+test('a configuration cannot claim a component that is not physically installed on its vehicle', function () {
     $otherVehicle = Vehicle::factory()->create(['workspace_id' => $this->vehicle->workspace_id]);
     $other = Configuration::create(['vehicle_id' => $otherVehicle->id, 'name' => 'Other build', 'status' => 'active']);
     expect(fn () => app(CreateConfigurationVersionService::class)->create($other, $this->operator, [$this->component->id]))->toThrow(ValidationException::class);
@@ -76,10 +83,11 @@ test('vehicle creation rolls back when its cost cannot be saved', function () {
     expect(Vehicle::query()->count())->toBe($before);
 });
 
-test('versions and installations roll back when a configuration cost fails', function () {
+test('configuration version rolls back when its cost fails without changing physical state', function () {
     $this->mock(OperationCostService::class)->shouldReceive('record')->once()->andThrow(new RuntimeException('Simulated cost failure'));
-    $this->post(route('configurations.versions.store', $this->configuration), ['component_ids' => [], 'operation_cost' => 10])->assertServerError();
-    expect($this->configuration->versions()->count())->toBe(1)->and($this->component->fresh()->activeInstallation)->not->toBeNull();
+    $this->post(route('configurations.versions.store', $this->configuration), ['operation_cost' => 10])->assertServerError();
+    expect($this->configuration->versions()->count())->toBe(1)
+        ->and($this->component->fresh()->activeInstallation)->not->toBeNull();
 });
 
 test('technical setup adjustments preserve previous preparation costs', function () {
@@ -113,13 +121,14 @@ test('session pagination keeps older records reachable', function () {
 
 test('archived vehicles cannot receive new configuration versions', function () {
     $this->vehicle->delete();
-    expect(fn () => app(CreateConfigurationVersionService::class)->create($this->configuration, $this->operator, []))->toThrow(ValidationException::class);
+    expect(fn () => app(CreateConfigurationVersionService::class)->create($this->configuration, $this->operator, [$this->component->id]))->toThrow(ValidationException::class);
     expect($this->configuration->versions()->count())->toBe(1);
 });
 
 test('archived components are excluded from new maintenance schedules', function () {
     $metric = UsageMetricType::query()->where('key', 'runtime')->firstOrFail();
     $tracker = ComponentTracker::create(['component_id' => $this->component->id, 'usage_metric_type_id' => $metric->id, 'is_active' => true]);
+    $this->component->activeInstallation->update(['removed_at' => now()]);
     $this->component->delete();
     $this->post(route('maintenance.store'), ['component_tracker_id' => $tracker->id, 'name' => 'New schedule', 'interval_display' => 10])->assertNotFound();
 });
