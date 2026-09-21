@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\ComponentTracker;
-use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
 use App\Models\User;
-use App\Models\Workspace;
 use App\Services\CompleteMaintenanceService;
-use App\Services\MaintenanceHealthService;
+use App\Services\MaintenancePageService;
+use App\Services\MaintenanceValueService;
+use App\Services\MaintenanceWorkOrderService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,8 +21,11 @@ use Illuminate\View\View;
 
 class MaintenanceController extends Controller
 {
-    public function index(Request $request, WorkspaceContext $workspaceContext, MaintenanceHealthService $healthService): View
-    {
+    public function index(
+        Request $request,
+        WorkspaceContext $workspaceContext,
+        MaintenancePageService $pageService,
+    ): View {
         $user = $request->user();
 
         if (! $user instanceof User) {
@@ -39,64 +42,16 @@ class MaintenanceController extends Controller
 
         $workspace = $workspaceContext->personal($user);
 
-        $trackers = ComponentTracker::query()
-            ->whereHas('component', fn ($query) => $query->whereNull('components.deleted_at')->where('status', 'active')->where('workspace_id', $workspace->getKey()))
-            ->with(['component.type', 'metric'])
-            ->orderBy('component_id')
-            ->get();
-
-        $schedules = MaintenanceSchedule::query()
-            ->with(['tracker.component', 'tracker.metric'])
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        $health = $healthService->snapshot($schedules);
-
-        $workOrders = MaintenanceWorkOrder::query()
-            ->with(['schedule.tracker.component', 'schedule.tracker.metric', 'assignee'])
-            ->whereIn('status', MaintenanceWorkOrder::OPEN_STATUSES)
-            ->orderByRaw("CASE priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 ELSE 4 END")
-            ->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('due_at')
-            ->orderBy('created_at')
-            ->get();
-
-        return view('maintenance.index', [
-            'trackers' => $trackers,
-            'schedules' => $schedules,
-            'archivedSchedules' => MaintenanceSchedule::query()->with(['tracker.component', 'tracker.metric'])->where('is_active', false)->orderBy('name')->get(),
-            'states' => $health['states'],
-            'summary' => $health['summary'],
-            'workOrders' => $workOrders,
-            'workSummary' => [
-                'open' => $workOrders->count(),
-                'in_progress' => $workOrders->where('status', 'in_progress')->count(),
-                'blocked' => $workOrders->where('status', 'blocked')->count(),
-            ],
-            'activeWorkOrderScheduleIds' => $workOrders->pluck('maintenance_schedule_id')->all(),
-            'members' => $workspace->users()
-                ->wherePivot('status', 'active')
-                ->orderBy('name')
-                ->get(),
-            'records' => MaintenanceRecord::query()
-                ->with(['component', 'schedule.tracker.metric'])
-                ->latest('performed_at')
-                ->limit(25)
-                ->get(),
-        ]);
+        return view('maintenance.index', $pageService->data($workspace));
     }
 
-    public function store(Request $request, WorkspaceContext $workspaceContext): RedirectResponse
-    {
-        $user = $request->user();
-
-        if (! $user instanceof User) {
-            abort(401);
-        }
-
+    public function store(
+        Request $request,
+        WorkspaceContext $workspaceContext,
+        MaintenanceValueService $valueService,
+    ): RedirectResponse {
+        $user = $this->authenticatedUser($request);
         $workspace = $workspaceContext->personal($user);
-
         $validated = $request->validate([
             'component_tracker_id' => ['required', 'integer'],
             'name' => ['required', 'string', 'max:120'],
@@ -111,7 +66,7 @@ class MaintenanceController extends Controller
             ->with('metric')
             ->firstOrFail();
 
-        $interval = $this->toStorageValue($tracker, (float) $validated['interval_display']);
+        $interval = $valueService->toStorageValue($tracker, (float) $validated['interval_display']);
         if ($interval < 1) {
             throw ValidationException::withMessages(['interval_display' => __('The interval must be at least one tracked unit.')]);
         }
@@ -121,7 +76,7 @@ class MaintenanceController extends Controller
             'name' => $validated['name'],
             'interval_value' => $interval,
             'warning_value' => isset($validated['warning_display'])
-                ? $this->toStorageValue($tracker, (float) $validated['warning_display'])
+                ? $valueService->toStorageValue($tracker, (float) $validated['warning_display'])
                 : null,
             'is_active' => true,
             'notes' => $validated['notes'] ?? null,
@@ -130,8 +85,11 @@ class MaintenanceController extends Controller
         return to_route('maintenance.index')->with('status', __('Maintenance schedule created.'));
     }
 
-    public function update(Request $request, MaintenanceSchedule $maintenanceSchedule): RedirectResponse
-    {
+    public function update(
+        Request $request,
+        MaintenanceSchedule $maintenanceSchedule,
+        MaintenanceValueService $valueService,
+    ): RedirectResponse {
         Gate::authorize('update', $maintenanceSchedule);
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -139,14 +97,18 @@ class MaintenanceController extends Controller
             'warning_display' => ['nullable', 'numeric', 'min:0', 'lte:interval_display'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
-        $interval = $this->toStorageValue($maintenanceSchedule->tracker, (float) $validated['interval_display']);
+
+        $interval = $valueService->toStorageValue($maintenanceSchedule->tracker, (float) $validated['interval_display']);
         if ($interval < 1) {
             throw ValidationException::withMessages(['interval_display' => __('The interval must be at least one tracked unit.')]);
         }
+
         $maintenanceSchedule->update([
             'name' => $validated['name'],
             'interval_value' => $interval,
-            'warning_value' => isset($validated['warning_display']) ? $this->toStorageValue($maintenanceSchedule->tracker, (float) $validated['warning_display']) : null,
+            'warning_value' => isset($validated['warning_display'])
+                ? $valueService->toStorageValue($maintenanceSchedule->tracker, (float) $validated['warning_display'])
+                : null,
             'notes' => $validated['notes'] ?? null,
         ]);
 
@@ -158,8 +120,13 @@ class MaintenanceController extends Controller
         Gate::authorize('delete', $maintenanceSchedule);
         DB::transaction(function () use ($maintenanceSchedule): void {
             $schedule = MaintenanceSchedule::query()->whereKey($maintenanceSchedule->getKey())->lockForUpdate()->firstOrFail();
-            if (MaintenanceWorkOrder::query()->where('maintenance_schedule_id', $schedule->getKey())->whereIn('status', MaintenanceWorkOrder::OPEN_STATUSES)->exists()) {
-                throw ValidationException::withMessages(['schedule' => __('Complete or cancel the open work order before archiving this schedule.')]);
+            if (MaintenanceWorkOrder::query()
+                ->where('maintenance_schedule_id', $schedule->getKey())
+                ->whereIn('status', MaintenanceWorkOrder::OPEN_STATUSES)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    'schedule' => __('Complete or cancel the open work order before archiving this schedule.'),
+                ]);
             }
             $schedule->update(['is_active' => false]);
         });
@@ -175,26 +142,23 @@ class MaintenanceController extends Controller
         return to_route('maintenance.index')->with('status', __('Maintenance schedule restored.'));
     }
 
-    public function destroyWorkOrder(MaintenanceWorkOrder $maintenanceWorkOrder): RedirectResponse
-    {
+    public function destroyWorkOrder(
+        MaintenanceWorkOrder $maintenanceWorkOrder,
+        MaintenanceWorkOrderService $workOrderService,
+    ): RedirectResponse {
         Gate::authorize('delete', $maintenanceWorkOrder);
-        DB::transaction(function () use ($maintenanceWorkOrder): void {
-            MaintenanceSchedule::query()->whereKey($maintenanceWorkOrder->maintenance_schedule_id)->lockForUpdate()->firstOrFail();
-            $order = MaintenanceWorkOrder::query()->whereKey($maintenanceWorkOrder->getKey())->lockForUpdate()->firstOrFail();
-            if ($order->maintenance_record_id !== null || $order->status === 'completed') {
-                throw ValidationException::withMessages(['work_order' => __('Completed maintenance must remain in history.')]);
-            }
-            $order->update(['status' => 'cancelled']);
-        });
+        $workOrderService->cancel($maintenanceWorkOrder);
 
         return to_route('maintenance.index')->with('status', __('Maintenance work order cancelled.'));
     }
 
-    public function storeWorkOrder(Request $request, WorkspaceContext $workspaceContext): RedirectResponse
-    {
+    public function storeWorkOrder(
+        Request $request,
+        WorkspaceContext $workspaceContext,
+        MaintenanceWorkOrderService $workOrderService,
+    ): RedirectResponse {
         $user = $this->authenticatedUser($request);
         $workspace = $workspaceContext->personal($user);
-
         $validated = $request->validate([
             'maintenance_schedule_id' => ['required', 'integer'],
             'title' => ['required', 'string', 'max:180'],
@@ -204,35 +168,7 @@ class MaintenanceController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($validated, $workspace, $user): void {
-            $schedule = MaintenanceSchedule::query()
-                ->whereKey($validated['maintenance_schedule_id'])
-                ->where('is_active', true)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if (MaintenanceWorkOrder::query()
-                ->where('maintenance_schedule_id', $schedule->getKey())
-                ->whereIn('status', MaintenanceWorkOrder::OPEN_STATUSES)
-                ->exists()) {
-                throw ValidationException::withMessages([
-                    'maintenance_schedule_id' => __('This maintenance schedule already has an open work order.'),
-                ]);
-            }
-
-            $assignedTo = $this->activeAssigneeId($workspace, $validated['assigned_to'] ?? null);
-
-            MaintenanceWorkOrder::create([
-                'maintenance_schedule_id' => $schedule->getKey(),
-                'assigned_to' => $assignedTo,
-                'title' => $validated['title'],
-                'priority' => $validated['priority'],
-                'status' => 'todo',
-                'due_at' => isset($validated['due_at']) ? Carbon::parse($validated['due_at']) : null,
-                'created_by' => $user->getKey(),
-                'notes' => $validated['notes'] ?? null,
-            ]);
-        });
+        $workOrderService->create($workspace, $user, $validated);
 
         return to_route('maintenance.index')->with('status', __('Maintenance work order added to the board.'));
     }
@@ -241,18 +177,11 @@ class MaintenanceController extends Controller
         Request $request,
         MaintenanceWorkOrder $maintenanceWorkOrder,
         WorkspaceContext $workspaceContext,
+        MaintenanceWorkOrderService $workOrderService,
     ): RedirectResponse {
         Gate::authorize('update', $maintenanceWorkOrder);
-
-        if (! in_array($maintenanceWorkOrder->status, MaintenanceWorkOrder::OPEN_STATUSES, true)) {
-            throw ValidationException::withMessages([
-                'status' => __('Closed maintenance work orders cannot be changed.'),
-            ]);
-        }
-
         $user = $this->authenticatedUser($request);
         $workspace = $workspaceContext->personal($user);
-
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:180'],
             'assigned_to' => ['nullable', 'integer'],
@@ -262,29 +191,7 @@ class MaintenanceController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $assignedTo = $this->activeAssigneeId($workspace, $validated['assigned_to'] ?? null);
-        DB::transaction(function () use ($maintenanceWorkOrder, $validated, $assignedTo): void {
-            MaintenanceSchedule::query()->whereKey($maintenanceWorkOrder->maintenance_schedule_id)->lockForUpdate()->firstOrFail();
-            $order = MaintenanceWorkOrder::query()->whereKey($maintenanceWorkOrder->getKey())->lockForUpdate()->firstOrFail();
-            if (! in_array($order->status, MaintenanceWorkOrder::OPEN_STATUSES, true)) {
-                throw ValidationException::withMessages(['status' => __('Closed maintenance work orders cannot be changed.')]);
-            }
-            $startedAt = $order->started_at;
-
-            if ($validated['status'] === 'in_progress' && $startedAt === null) {
-                $startedAt = now();
-            }
-
-            $order->update([
-                'title' => $validated['title'],
-                'assigned_to' => $assignedTo,
-                'priority' => $validated['priority'],
-                'status' => $validated['status'],
-                'due_at' => isset($validated['due_at']) ? Carbon::parse($validated['due_at']) : null,
-                'started_at' => $startedAt,
-                'notes' => $validated['notes'] ?? null,
-            ]);
-        });
+        $workOrderService->update($maintenanceWorkOrder, $workspace, $validated);
 
         return to_route('maintenance.index')->with('status', __('Maintenance work order updated.'));
     }
@@ -304,7 +211,6 @@ class MaintenanceController extends Controller
 
         $user = $this->authenticatedUser($request);
         $validated = $this->validatedCompletion($request);
-
         $schedule = $maintenanceWorkOrder->schedule()->firstOrFail();
         Gate::authorize('update', $schedule);
 
@@ -321,10 +227,12 @@ class MaintenanceController extends Controller
         return to_route('maintenance.index')->with('status', __('Maintenance completed, work order closed and cost linked to expenses.'));
     }
 
-    public function complete(Request $request, MaintenanceSchedule $maintenanceSchedule, CompleteMaintenanceService $maintenanceService): RedirectResponse
-    {
+    public function complete(
+        Request $request,
+        MaintenanceSchedule $maintenanceSchedule,
+        CompleteMaintenanceService $maintenanceService,
+    ): RedirectResponse {
         Gate::authorize('update', $maintenanceSchedule);
-
         $user = $this->authenticatedUser($request);
         $validated = $this->validatedCompletion($request);
 
@@ -353,27 +261,6 @@ class MaintenanceController extends Controller
         ]);
     }
 
-    private function activeAssigneeId(Workspace $workspace, mixed $assignedTo): ?int
-    {
-        if ($assignedTo === null || $assignedTo === '') {
-            return null;
-        }
-
-        $assigneeId = (int) $assignedTo;
-        $exists = $workspace->users()
-            ->where('users.id', $assigneeId)
-            ->wherePivot('status', 'active')
-            ->exists();
-
-        if (! $exists) {
-            throw ValidationException::withMessages([
-                'assigned_to' => __('The assignee must be an active member of the current team.'),
-            ]);
-        }
-
-        return $assigneeId;
-    }
-
     private function authenticatedUser(Request $request): User
     {
         $user = $request->user();
@@ -383,15 +270,6 @@ class MaintenanceController extends Controller
         }
 
         return $user;
-    }
-
-    private function toStorageValue(ComponentTracker $tracker, float $value): int
-    {
-        return match ($tracker->metric->key) {
-            'distance' => (int) round($value * 1000),
-            'runtime' => (int) round($value * 3600),
-            default => (int) round($value),
-        };
     }
 
     private function hasDatabaseAccess(User $user): bool
