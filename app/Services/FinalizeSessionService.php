@@ -135,8 +135,10 @@ class FinalizeSessionService
 
     private function assertConfigurationMatchesPhysicalState(Session $session): void
     {
-        $configuredComponentIds = $session->configurationVersion->components
-            ->modelKeys();
+        $configuredComponentIds = array_values(array_map(
+            'intval',
+            $session->configurationVersion->components->modelKeys(),
+        ));
         sort($configuredComponentIds);
 
         $installedComponentIds = ComponentInstallation::query()
