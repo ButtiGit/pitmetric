@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\Configuration;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -35,12 +35,30 @@ class ConfigurationController extends Controller
 
         $workspaceContext->personal($user);
 
+        $vehicles = Vehicle::query()
+            ->where('status', 'active')
+            ->with([
+                'componentInstallations' => fn ($query) => $query
+                    ->whereNull('removed_at')
+                    ->with('component.type')
+                    ->orderBy('position_or_role')
+                    ->orderBy('installed_at'),
+            ])
+            ->withCount([
+                'componentInstallations as active_components_count' => fn ($query) => $query->whereNull('removed_at'),
+            ])
+            ->orderBy('name')
+            ->get();
+
         return view('configurations.index', [
-            'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
-            'components' => Component::query()->with('type')->where('status', 'active')->orderBy('name')->get(),
+            'vehicles' => $vehicles,
             'configurations' => Configuration::query()
                 ->with([
-                    'vehicle',
+                    'vehicle.componentInstallations' => fn ($query) => $query
+                        ->whereNull('removed_at')
+                        ->with('component.type')
+                        ->orderBy('position_or_role')
+                        ->orderBy('installed_at'),
                     'versions' => fn ($query) => $query->latest('version_number')->with('components.type'),
                 ])
                 ->orderBy('name')
@@ -66,18 +84,14 @@ class ConfigurationController extends Controller
             'vehicle_id' => ['required', 'integer'],
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'component_ids' => ['nullable', 'array'],
-            'component_ids.*' => ['integer'],
             'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ]);
-
-        $vehicleId = (int) $validated['vehicle_id'];
-        $componentIds = array_values(array_map('intval', $validated['component_ids'] ?? []));
 
         $vehicle = Vehicle::query()
             ->where('workspace_id', $workspace->getKey())
             ->where('status', 'active')
-            ->findOrFail($vehicleId);
+            ->findOrFail((int) $validated['vehicle_id']);
+        $componentIds = $this->activeComponentIds($vehicle);
 
         DB::transaction(function () use ($validated, $vehicle, $user, $versionService, $componentIds, $costService): void {
             $configuration = Configuration::create([
@@ -105,7 +119,7 @@ class ConfigurationController extends Controller
             );
         });
 
-        return to_route('configurations.index')->with('status', __('Configuration created.'));
+        return to_route('configurations.index')->with('status', __('Configuration created from the vehicle current physical state.'));
     }
 
     public function storeVersion(
@@ -123,13 +137,15 @@ class ConfigurationController extends Controller
         }
 
         $validated = $request->validate([
-            'component_ids' => ['nullable', 'array'],
-            'component_ids.*' => ['integer'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ]);
 
-        $componentIds = array_values(array_map('intval', $validated['component_ids'] ?? []));
+        $vehicle = $configuration->vehicle()
+            ->whereNull('vehicles.deleted_at')
+            ->where('status', 'active')
+            ->firstOrFail();
+        $componentIds = $this->activeComponentIds($vehicle);
 
         DB::transaction(function () use ($configuration, $user, $componentIds, $validated, $versionService, $costService): void {
             $version = $versionService->create(
@@ -150,7 +166,7 @@ class ConfigurationController extends Controller
             );
         });
 
-        return to_route('configurations.index')->with('status', __('New configuration version created.'));
+        return to_route('configurations.index')->with('status', __('New configuration version captured from the vehicle current physical state.'));
     }
 
     public function update(Request $request, Configuration $configuration): RedirectResponse
@@ -170,6 +186,19 @@ class ConfigurationController extends Controller
         $configuration->delete();
 
         return to_route('configurations.index')->with('status', __('Configuration archived.'));
+    }
+
+    /** @return list<int> */
+    private function activeComponentIds(Vehicle $vehicle): array
+    {
+        return ComponentInstallation::query()
+            ->where('vehicle_id', $vehicle->getKey())
+            ->whereNull('removed_at')
+            ->pluck('component_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->sort()
+            ->values()
+            ->all();
     }
 
     private function hasDatabaseAccess(User $user): bool
