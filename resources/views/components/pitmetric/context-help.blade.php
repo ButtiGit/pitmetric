@@ -10,6 +10,8 @@
         request()->routeIs('sessions.*') => 'sessions',
         request()->routeIs('maintenance.*') => 'maintenance',
         request()->routeIs('expenses.*') => 'expenses',
+        request()->routeIs('timing.*') => 'timing',
+        request()->routeIs('telemetry.*') => 'telemetry',
         request()->routeIs('team.*') => 'team',
         request()->routeIs('insights.*') => 'insights',
         request()->routeIs('control-center.*') => 'control_center',
@@ -20,13 +22,41 @@
     };
 
     $tourCopy = $context === null ? [] : [
-        'labels' => __('help.tour.labels'),
+        'labels' => [
+            'dialog' => __('help.tour.labels.dialog'),
+            'step' => __('help.tour.labels.step'),
+            'close' => __('help.tour.labels.close'),
+            'skip' => __('help.tour.labels.skip'),
+            'back' => __('help.tour.labels.back'),
+            'next' => __('help.tour.labels.next'),
+            'done' => __('help.tour.labels.done'),
+        ],
         'page' => [
             'title' => __('help.titles.'.$context),
             'description' => __('help.pages.'.$context),
-            ...__('help.tour.page'),
+            'workflow_title' => __('help.tour.page.workflow_title'),
+            'workflow_body' => __('help.tour.page.workflow_body'),
+            'action_title' => __('help.tour.page.action_title'),
+            'action_body' => __('help.tour.page.action_body'),
+            'detail_title' => __('help.tour.page.detail_title'),
+            'detail_body' => __('help.tour.page.detail_body'),
+            'help_title' => __('help.tour.page.help_title'),
+            'help_body' => __('help.tour.page.help_body'),
         ],
-        'full' => __('help.tour.full'),
+        'full' => [
+            'next_title' => __('help.tour.full.next_title'),
+            'next_body' => __('help.tour.full.next_body'),
+            'workflow_title' => __('help.tour.full.workflow_title'),
+            'workflow_body' => __('help.tour.full.workflow_body'),
+            'navigation_title' => __('help.tour.full.navigation_title'),
+            'navigation_body' => __('help.tour.full.navigation_body'),
+            'status_title' => __('help.tour.full.status_title'),
+            'status_body' => __('help.tour.full.status_body'),
+            'event_title' => __('help.tour.full.event_title'),
+            'event_body' => __('help.tour.full.event_body'),
+            'help_title' => __('help.tour.full.help_title'),
+            'help_body' => __('help.tour.full.help_body'),
+        ],
     ];
 @endphp
 
