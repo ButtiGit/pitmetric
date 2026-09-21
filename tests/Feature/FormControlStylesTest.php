@@ -50,6 +50,6 @@ test('workspace form javascript is limited to application behavior rather than r
         ->toContain('data-pm-submitting')
         ->toContain("document.addEventListener('livewire:navigated'")
         ->not->toContain('MutationObserver')
-        ->not->toContain('createElement(\'select\')')
-        ->not->toContain('createElement(\'input\')');
+        ->not->toContain('pm-custom-control')
+        ->not->toContain('data-pm-enhanced');
 });
