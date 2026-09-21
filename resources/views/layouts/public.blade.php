@@ -14,7 +14,7 @@
     <link rel="canonical" href="{{ url()->current() }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @fonts
-    @vite(['resources/css/public.css', 'resources/js/public.js'])
+    @vite('resources/js/public.js')
 </head>
 <body class="pm-public-site min-h-screen bg-[#07090c] text-zinc-100 antialiased selection:bg-[#E10600] selection:text-white">
     <div data-pm-scroll-progress class="pm-scroll-progress" aria-hidden="true"></div>
