@@ -1,3 +1,4 @@
+import '../css/app.css';
 import '../css/forms.css';
 import '../css/mobile.css';
 import '../css/onboarding.css';
