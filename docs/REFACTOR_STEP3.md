@@ -7,12 +7,21 @@ This pass keeps routes and external service APIs stable while splitting large fi
 - `SessionController` delegates page data to `SessionPageService` and recording to `RecordSessionService`.
 - `MaintenanceController` delegates page data, value conversion and work-order transitions to focused services.
 - `RaceEventOperationsController` delegates entry, schedule, task and note workflows to dedicated services.
-- `DataHubService` remains the public facade while export and import live in `WorkspaceBackupExporter` and `WorkspaceBackupImporter`.
-- `TelemetryImportService` remains the file/transaction coordinator while CSV/VBO parsing, value normalization and timing aggregation are separated.
+- `DataHubService` remains the public facade while export and import live in `WorkspaceBackupExporter` and `WorkspaceBackupImporter`; the shared table set lives in `WorkspaceBackupTableRegistry`.
+- `TelemetryImportService` remains the file/transaction coordinator while CSV/VBO parsing, value normalization and timing aggregation are separated into dedicated services.
 
-## Next view split in this branch
+## Blade boundaries
 
-- `resources/views/events/show.blade.php`
-- `resources/views/maintenance/index.blade.php`
+- `resources/views/events/show.blade.php` is now a composition shell over:
+  - `events/partials/overview.blade.php`
+  - `events/partials/trackside.blade.php`
+  - `events/partials/operations-sidebar.blade.php`
+  - `events/partials/mobile-actions.blade.php`
+- `resources/views/maintenance/index.blade.php` is now a composition shell over:
+  - `maintenance/partials/overview.blade.php`
+  - `maintenance/partials/workboard.blade.php`
+  - `maintenance/partials/health-history.blade.php`
 
-The goal is composition through Blade partials without changing routes, forms, permissions or workflow semantics.
+## Guardrails
+
+The refactor intentionally does not change routes, form contracts, authorization gates, public service APIs or core workflow semantics. Existing feature coverage plus `RefactorBoundaryTest` remain the regression guard while later passes can split the newly isolated modules further if they grow again.
