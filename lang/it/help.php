@@ -2,6 +2,48 @@
 
 return [
     'open' => 'Aiuto per questa pagina',
+    'guide' => [
+        'eyebrow' => 'Guida PitMetric',
+        'page_tour' => 'Tour di questa pagina',
+        'page_tour_hint' => 'Contestuale',
+        'full_tour' => 'Tour completo di PitMetric',
+        'full_tour_hint' => 'Flusso core',
+    ],
+    'tour' => [
+        'labels' => [
+            'dialog' => 'Tour guidato PitMetric',
+            'step' => 'Passo :current di :total',
+            'close' => 'Chiudi tour',
+            'skip' => 'Salta',
+            'back' => 'Indietro',
+            'next' => 'Avanti',
+            'done' => 'Fine',
+        ],
+        'page' => [
+            'workflow_title' => 'Dove si trova questa pagina nel flusso',
+            'workflow_body' => 'Il flusso core mostra cosa deve essere realmente pronto prima di proseguire e quale fase richiede attenzione adesso.',
+            'action_title' => 'Azione principale',
+            'action_body' => 'Questa è l’azione utile più immediata disponibile nella schermata. Parti da qui quando non sai quale operazione eseguire.',
+            'detail_title' => 'Area di lavoro',
+            'detail_body' => 'Qui trovi record, stato e controlli principali della sezione. PitMetric mantiene lo storico visibile mentre ti guida sul lavoro corrente.',
+            'help_title' => 'Vuoi rivedere la guida?',
+            'help_body' => 'Il pulsante con il punto interrogativo resta disponibile in ogni pagina supportata del gestionale. Da qui puoi rifare il tour della pagina o quello completo.',
+        ],
+        'full' => [
+            'next_title' => 'PitMetric ti dice cosa fare adesso',
+            'next_body' => 'La dashboard non è solo un elenco di moduli. Legge lo stato operativo reale del workspace e indica la prossima azione concreta.',
+            'workflow_title' => 'Un’unica catena operativa',
+            'workflow_body' => 'Il percorso core è Mezzo → Componenti → Configurazione → Weekend → Sessione → Utilizzo → Manutenzione. Un passaggio è completo solo quando i dati sottostanti sono davvero pronti.',
+            'navigation_title' => 'Tutto il resto rimane a un clic',
+            'navigation_body' => 'La sidebar porta ad attività, veicolo, performance e gestione. Il workflow ti dice quando usarli; la sidebar ti dice dove trovarli.',
+            'status_title' => 'Stato a colpo d’occhio',
+            'status_body' => 'Questi numeri servono per capire il workspace, non sono il traguardo. Per far avanzare il lavoro segui sempre la scheda della prossima azione.',
+            'event_title' => 'Lavora per weekend',
+            'event_body' => 'Quando la base tecnica è pronta, il weekend attivo o successivo diventa il contenitore operativo per entry, sessioni, task, note e costi.',
+            'help_title' => 'La guida non scompare mai',
+            'help_body' => 'Apri in qualsiasi momento questo pulsante con il punto interrogativo per rifare il tour della pagina corrente o ricominciare quello completo di PitMetric.',
+        ],
+    ],
     'titles' => [
         'dashboard' => 'Aiuto Dashboard',
         'events' => 'Aiuto Eventi',
