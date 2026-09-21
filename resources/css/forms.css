@@ -1,0 +1,175 @@
+/* Native-first form controls for the authenticated PitMetric UI.
+ * Keep browser semantics, validation and accessibility intact; CSS supplies the visual system.
+ */
+
+.pitmetric-app .pm-input,
+.pitmetric-app input[type='date'],
+.pitmetric-app input[type='time'],
+.pitmetric-app input[type='datetime-local'],
+.pitmetric-app input[type='month'],
+.pitmetric-app input[type='week'],
+.pitmetric-app input[type='number'],
+.pitmetric-app input[type='search'],
+.pitmetric-app select,
+.pitmetric-app textarea {
+    color-scheme: light;
+}
+
+.dark .pitmetric-app .pm-input,
+.dark .pitmetric-app input[type='date'],
+.dark .pitmetric-app input[type='time'],
+.dark .pitmetric-app input[type='datetime-local'],
+.dark .pitmetric-app input[type='month'],
+.dark .pitmetric-app input[type='week'],
+.dark .pitmetric-app input[type='number'],
+.dark .pitmetric-app input[type='search'],
+.dark .pitmetric-app select,
+.dark .pitmetric-app textarea {
+    color-scheme: dark;
+}
+
+.pitmetric-app .pm-input,
+.pitmetric-app select.pm-input,
+.pitmetric-app textarea.pm-input {
+    min-height: 2.75rem;
+    border: 1px solid var(--pm-border, #d7dce2);
+    border-radius: .75rem;
+    background-color: var(--pm-surface, #fff);
+    color: var(--pm-text, #15191f);
+    font: inherit;
+    line-height: 1.35;
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.pitmetric-app textarea.pm-input {
+    min-height: 5.5rem;
+    resize: vertical;
+}
+
+.pitmetric-app .pm-input:hover:not(:disabled) {
+    border-color: var(--pm-border-strong, #aab2bd);
+}
+
+.pitmetric-app .pm-input:focus,
+.pitmetric-app .pm-input:focus-visible {
+    border-color: var(--pm-focus, #e10600);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pm-focus, #e10600) 16%, transparent);
+}
+
+.pitmetric-app .pm-input:disabled,
+.pitmetric-app .pm-input[readonly] {
+    cursor: not-allowed;
+    border-color: var(--pm-border, #d7dce2);
+    background: var(--pm-disabled-surface, #e4e7eb);
+    color: var(--pm-disabled-text, #59626e);
+    opacity: .78;
+}
+
+.pitmetric-app .pm-input[aria-invalid='true'],
+.pitmetric-app .pm-input:invalid:not(:placeholder-shown) {
+    border-color: var(--pm-danger, #9d2e2e);
+}
+
+.pitmetric-app .pm-input::placeholder {
+    color: var(--pm-muted, #727c8a);
+    opacity: 1;
+}
+
+/* Single selects get a lightweight PitMetric chevron; multiple/size selects stay fully native. */
+.pitmetric-app select.pm-input:not([multiple]):not([size]) {
+    appearance: none;
+    padding-right: 2.65rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 20 20' fill='none' stroke='%23727c8a' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 8 3.5 3.5L13.5 8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .8rem center;
+    background-size: 1.1rem;
+}
+
+.dark .pitmetric-app select.pm-input:not([multiple]):not([size]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 20 20' fill='none' stroke='%23a9b1bd' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 8 3.5 3.5L13.5 8'/%3E%3C/svg%3E");
+}
+
+.pitmetric-app select.pm-input[multiple],
+.pitmetric-app select.pm-input[size] {
+    min-height: 7rem;
+    padding: .45rem;
+}
+
+.pitmetric-app select.pm-input option {
+    background: var(--pm-surface, #fff);
+    color: var(--pm-text, #15191f);
+}
+
+.pitmetric-app select.pm-input option:checked {
+    background: var(--pm-selected, #ffe7e6);
+    color: var(--pm-text, #15191f);
+}
+
+/* Keep the browser's reliable date/time picker, only tune its presentation. */
+.pitmetric-app input.pm-input[type='date'],
+.pitmetric-app input.pm-input[type='time'],
+.pitmetric-app input.pm-input[type='datetime-local'],
+.pitmetric-app input.pm-input[type='month'],
+.pitmetric-app input.pm-input[type='week'] {
+    min-width: 0;
+    padding-right: .75rem;
+}
+
+.pitmetric-app input.pm-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: .72;
+    transition: opacity 150ms ease;
+}
+
+.pitmetric-app input.pm-input:hover::-webkit-calendar-picker-indicator,
+.pitmetric-app input.pm-input:focus::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
+.pitmetric-app input[type='number'].pm-input {
+    font-variant-numeric: tabular-nums;
+}
+
+.pitmetric-app input[type='checkbox'],
+.pitmetric-app input[type='radio'] {
+    accent-color: var(--pm-accent, #e10600);
+}
+
+.pitmetric-app input[type='range'] {
+    accent-color: var(--pm-accent, #e10600);
+}
+
+.pitmetric-app input[type='range']::-webkit-slider-thumb {
+    cursor: grab;
+}
+
+.pitmetric-app input[type='file'].pm-input {
+    padding: .38rem;
+}
+
+.pitmetric-app input[type='file'].pm-input::file-selector-button {
+    margin-right: .75rem;
+    border: 0;
+    border-radius: .55rem;
+    background: var(--pm-subtle, #f0f2f4);
+    padding: .58rem .75rem;
+    color: var(--pm-text, #15191f);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pitmetric-app input[type='color'].pm-input {
+    width: 4.25rem;
+    min-height: 2.75rem;
+    padding: .3rem;
+    cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pitmetric-app .pm-input,
+    .pitmetric-app input.pm-input::-webkit-calendar-picker-indicator {
+        transition: none;
+    }
+}
