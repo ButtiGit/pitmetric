@@ -2,6 +2,8 @@
 
 use App\Models\Circuit;
 use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
 use App\Models\Configuration;
 use App\Models\Document;
 use App\Models\Driver;
@@ -22,6 +24,25 @@ use App\Services\OperationCostService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+
+function createManagementPhysicalVersion(User $user, Vehicle $vehicle, string $name = 'Build'): mixed
+{
+    $type = ComponentType::query()->firstOrCreate(['name' => 'Management test component']);
+    $component = Component::create([
+        'component_type_id' => $type->id,
+        'name' => $name.' component '.$vehicle->id,
+        'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
+    ]);
+    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => $name, 'status' => 'active']);
+
+    return app(CreateConfigurationVersionService::class)->create($configuration, $user, [$component->id]);
+}
 
 beforeEach(function () {
     $this->operator = User::factory()->withDatabaseAccess()->create();
@@ -90,8 +111,7 @@ test('a failed task cost rolls back its completion', function () {
 test('entries without history can be corrected and removed', function () {
     $vehicle = Vehicle::factory()->create(['workspace_id' => $this->operator->workspaces()->firstOrFail()->id]);
     $driver = Driver::create(['display_name' => 'Driver']);
-    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Build', 'status' => 'active']);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $this->operator, []);
+    $version = createManagementPhysicalVersion($this->operator, $vehicle);
     $entry = EventEntry::create(['event_id' => $this->event->id, 'driver_id' => $driver->id, 'vehicle_id' => $vehicle->id, 'configuration_version_id' => $version->id]);
     $this->get(route('events.show', $this->event))->assertSuccessful()->assertSee('edit-entry-'.$entry->id);
     $this->put(route('events.entries.update', $entry), ['entry_number' => '27', 'notes' => 'Corrected'])->assertSessionHasNoErrors();
@@ -142,8 +162,7 @@ test('maintenance intervals cannot round to zero or have a warning larger than t
 
 test('session notes can change without rewriting finalized usage', function () {
     $vehicle = Vehicle::factory()->create(['workspace_id' => $this->operator->workspaces()->firstOrFail()->id]);
-    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Build', 'status' => 'active']);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $this->operator, []);
+    $version = createManagementPhysicalVersion($this->operator, $vehicle);
     $this->post(route('sessions.store'), ['configuration_version_id' => $version->id, 'session_type' => 'test', 'started_at' => now()->toDateTimeString(), 'duration_minutes' => 10])->assertSessionHasNoErrors();
     $session = Session::query()->firstOrFail();
     $this->put(route('sessions.update', $session), ['notes' => 'New notes', 'duration_seconds' => 1, 'status' => 'draft'])->assertSessionHasNoErrors();
@@ -168,8 +187,7 @@ test('telemetry removal deletes imported children and source file', function () 
     Storage::fake('local');
     Storage::disk('local')->put('telemetry/test.csv', 'time,speed');
     $vehicle = Vehicle::factory()->create(['workspace_id' => $this->operator->workspaces()->firstOrFail()->id]);
-    $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Build', 'status' => 'active']);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $this->operator, []);
+    $version = createManagementPhysicalVersion($this->operator, $vehicle);
     $this->post(route('sessions.store'), ['configuration_version_id' => $version->id, 'session_type' => 'test', 'started_at' => now()->toDateTimeString(), 'duration_minutes' => 10])->assertSessionHasNoErrors();
     $session = Session::query()->firstOrFail();
     $import = TelemetryImport::create(['session_id' => $session->id, 'vehicle_id' => $vehicle->id, 'source_vendor' => 'generic', 'source_format' => 'csv', 'original_filename' => 'test.csv', 'storage_path' => 'telemetry/test.csv', 'sha256' => str_repeat('a', 64), 'imported_by' => $this->operator->id, 'imported_at' => now(), 'sample_count' => 1, 'lap_count' => 0]);
