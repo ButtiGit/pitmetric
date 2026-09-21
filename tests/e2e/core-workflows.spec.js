@@ -26,18 +26,20 @@ async function selectOptionContaining(select, text) {
     await select.selectOption(value);
 }
 
-test.describe('PitMetric vital workflows', () => {
-    test.describe.configure({ mode: 'serial' });
+test('five vital workflows', async ({ page }, testInfo) => {
+    const suffix = surfaceName(testInfo);
+    const vehicleName = `E2E ${suffix} Vehicle`;
+    const buildName = `E2E ${suffix} Build`;
+    const sessionNote = `E2E ${suffix} finalized session`;
+    const scheduleName = `E2E ${suffix} Chain Service`;
+    const workTitle = `E2E ${suffix} Chain Inspection`;
 
-    test('login', async ({ page }) => {
+    await test.step('login', async () => {
         await login(page);
         await expect(page.locator('body')).toContainText(/PitMetric/i);
     });
 
-    test('vehicle creation', async ({ page }, testInfo) => {
-        const vehicleName = `E2E ${surfaceName(testInfo)} Vehicle`;
-
-        await login(page);
+    await test.step('vehicle creation', async () => {
         await page.goto('/garage');
         await openModal(page, /Add vehicle/i);
 
@@ -52,10 +54,7 @@ test.describe('PitMetric vital workflows', () => {
         await expect(page.getByText(vehicleName, { exact: true })).toBeVisible();
     });
 
-    test('configuration creation', async ({ page }, testInfo) => {
-        const buildName = `E2E ${surfaceName(testInfo)} Build`;
-
-        await login(page);
+    await test.step('configuration creation', async () => {
         await page.goto('/configurations');
         await openModal(page, /New configuration/i);
 
@@ -70,11 +69,7 @@ test.describe('PitMetric vital workflows', () => {
         await expect(page.locator('body')).toContainText(BASELINE_VEHICLE);
     });
 
-    test('session recording finalizes usage', async ({ page }, testInfo) => {
-        const buildName = `E2E ${surfaceName(testInfo)} Build`;
-        const sessionNote = `E2E ${surfaceName(testInfo)} finalized session`;
-
-        await login(page);
+    await test.step('session recording and finalization', async () => {
         await page.goto('/sessions');
         await openModal(page, /Record session/i);
 
@@ -95,12 +90,7 @@ test.describe('PitMetric vital workflows', () => {
         await expect(recorded).toContainText(BASELINE_VEHICLE);
     });
 
-    test('maintenance schedule, work order and completion', async ({ page }, testInfo) => {
-        const suffix = surfaceName(testInfo);
-        const scheduleName = `E2E ${suffix} Chain Service`;
-        const workTitle = `E2E ${suffix} Chain Inspection`;
-
-        await login(page);
+    await test.step('maintenance schedule, work order and completion', async () => {
         await page.goto('/maintenance');
         await openModal(page, /\+ Schedule/i);
 
@@ -131,7 +121,8 @@ test.describe('PitMetric vital workflows', () => {
         await completionForm.locator('button[type="submit"]').click();
 
         await expect(page).toHaveURL(/\/maintenance$/);
-        await expect(page.locator('body')).toContainText(scheduleName);
-        await expect(page.locator('body')).not.toContainText(workTitle);
+        await expect(page.getByText('Maintenance completed, work order closed and cost linked to expenses.')).toBeVisible();
+        await expect(workCard).toBeHidden();
+        await expect(page.getByText(workTitle, { exact: false }).last()).toBeVisible();
     });
 });
