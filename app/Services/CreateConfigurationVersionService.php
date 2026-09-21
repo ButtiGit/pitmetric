@@ -13,6 +13,9 @@ use Illuminate\Validation\ValidationException;
 class CreateConfigurationVersionService
 {
     /**
+     * Create an immutable configuration snapshot from the vehicle's current
+     * physical component state.
+     *
      * @param  list<int>  $componentIds
      */
     public function create(
@@ -34,28 +37,41 @@ class CreateConfigurationVersionService
             }
 
             $componentIds = array_values(array_unique(array_map('intval', $componentIds)));
+            sort($componentIds);
+
+            $installedComponentIds = ComponentInstallation::query()
+                ->where('vehicle_id', $lockedConfiguration->vehicle_id)
+                ->whereNull('removed_at')
+                ->lockForUpdate()
+                ->pluck('component_id')
+                ->map(static fn ($id): int => (int) $id)
+                ->sort()
+                ->values()
+                ->all();
+
+            if ($installedComponentIds === []) {
+                throw ValidationException::withMessages([
+                    'components' => __('Install at least one component on the vehicle before creating a configuration version.'),
+                ]);
+            }
+
+            if ($componentIds !== $installedComponentIds) {
+                throw ValidationException::withMessages([
+                    'components' => __('A configuration version must match the components currently installed on the vehicle. Update the physical components first, then create a new configuration version.'),
+                ]);
+            }
 
             $components = Component::query()
                 ->where('workspace_id', $lockedConfiguration->workspace_id)
-                ->whereIn('id', $componentIds)
+                ->whereIn('id', $installedComponentIds)
                 ->where('status', 'active')
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
 
-            if ($components->count() !== count($componentIds)) {
+            if ($components->count() !== count($installedComponentIds)) {
                 throw ValidationException::withMessages([
-                    'component_ids' => __('One or more selected components are unavailable.'),
-                ]);
-            }
-
-            if (ComponentInstallation::query()
-                ->whereIn('component_id', $componentIds)
-                ->whereNull('removed_at')
-                ->where('vehicle_id', '!=', $lockedConfiguration->vehicle_id)
-                ->exists()) {
-                throw ValidationException::withMessages([
-                    'component_ids' => __('Remove components from their current vehicle before using them in another configuration.'),
+                    'components' => __('One or more installed components are unavailable. Fix the vehicle physical state before creating a configuration version.'),
                 ]);
             }
 
@@ -67,48 +83,9 @@ class CreateConfigurationVersionService
                 'notes' => $notes,
             ]);
 
-            if ($componentIds !== []) {
-                $version->components()->attach($componentIds);
-            }
-
-            $this->syncInstallations($lockedConfiguration, $user, $componentIds);
+            $version->components()->attach($installedComponentIds);
 
             return $version->load('components.trackers.metric');
         });
-    }
-
-    /**
-     * @param  list<int>  $componentIds
-     */
-    private function syncInstallations(Configuration $configuration, User $user, array $componentIds): void
-    {
-        $active = ComponentInstallation::query()
-            ->where('vehicle_id', $configuration->vehicle_id)
-            ->whereNull('removed_at')
-            ->lockForUpdate()
-            ->get();
-
-        $selected = collect($componentIds);
-        $now = now();
-
-        foreach ($active as $installation) {
-            if (! $selected->contains($installation->component_id)) {
-                $installation->update(['removed_at' => $now]);
-            }
-        }
-
-        $activeComponentIds = $active
-            ->whereNull('removed_at')
-            ->pluck('component_id')
-            ->map(fn ($id): int => (int) $id);
-
-        foreach ($selected->diff($activeComponentIds) as $componentId) {
-            ComponentInstallation::create([
-                'vehicle_id' => $configuration->vehicle_id,
-                'component_id' => (int) $componentId,
-                'created_by' => $user->getKey(),
-                'installed_at' => $now,
-            ]);
-        }
     }
 }
