@@ -151,7 +151,7 @@ const buildPageTour = (guide, copy) => {
 };
 
 const buildFullTour = (guide, copy) => {
-    const sidebar = firstVisible('[data-pm-tour-sidebar]', '[data-pm-tour-mobile-header]');
+    const sidebar = firstVisible('[data-pm-tour-sidebar]', '.pm-mobile-sidebar', '[data-pm-mobile-header]');
     const nextAction = firstVisible('[data-pm-dashboard-next]', '[data-demo-dashboard] h1');
     const workflow = firstVisible('[data-pm-dashboard-workflow]', '[data-pm-workflow-nav]');
     const stats = firstVisible('[data-pm-dashboard-stats]');
@@ -421,7 +421,7 @@ const bindDocumentListeners = () => {
     document.addEventListener('click', (event) => {
         const guide = document.querySelector('[data-pm-guide]');
 
-        if (!guide || guide.contains(event.target)) {
+        if (!guide || !(event.target instanceof Node) || guide.contains(event.target)) {
             return;
         }
 
