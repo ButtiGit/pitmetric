@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\ComponentInstallation;
 use App\Models\ComponentTracker;
 use App\Models\ComponentUsageEntry;
+use App\Models\EventEntry;
 use App\Models\Session;
 use App\Models\SessionUsageValue;
 use App\Models\UsageBatch;
@@ -46,6 +48,8 @@ class FinalizeSessionService
                     'configuration_version_id' => __('The selected configuration does not belong to this vehicle.'),
                 ]);
             }
+
+            $this->assertConfigurationMatchesPhysicalState($lockedSession);
 
             $metrics = $this->calculateMetrics($lockedSession);
             $metricTypes = UsageMetricType::query()
@@ -114,6 +118,8 @@ class FinalizeSessionService
                 $lockedSession->configurationVersion->update(['locked_at' => now()]);
             }
 
+            $this->syncEventEntryConfiguration($lockedSession);
+
             $lockedSession->update([
                 'status' => 'finalized',
                 'finalized_at' => now(),
@@ -125,6 +131,59 @@ class FinalizeSessionService
                 'usageValues.metric',
             ]) ?? $lockedSession;
         });
+    }
+
+    private function assertConfigurationMatchesPhysicalState(Session $session): void
+    {
+        $configuredComponentIds = array_values(array_map(
+            'intval',
+            $session->configurationVersion->components->modelKeys(),
+        ));
+        sort($configuredComponentIds);
+
+        $installedComponentIds = ComponentInstallation::query()
+            ->where('vehicle_id', $session->vehicle_id)
+            ->whereNull('removed_at')
+            ->lockForUpdate()
+            ->pluck('component_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($configuredComponentIds === $installedComponentIds) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'configuration_version_id' => __('The vehicle components changed after this configuration was created. Create a new configuration version before recording the session so usage is assigned to the components actually installed.'),
+        ]);
+    }
+
+    private function syncEventEntryConfiguration(Session $session): void
+    {
+        if ($session->event_entry_id === null) {
+            return;
+        }
+
+        $entry = EventEntry::query()
+            ->whereKey($session->event_entry_id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ((int) $entry->vehicle_id !== (int) $session->vehicle_id) {
+            throw ValidationException::withMessages([
+                'event_entry_id' => __('The event entry vehicle does not match the recorded session.'),
+            ]);
+        }
+
+        if ((int) $entry->configuration_version_id === (int) $session->configuration_version_id) {
+            return;
+        }
+
+        $entry->update([
+            'configuration_version_id' => $session->configuration_version_id,
+        ]);
     }
 
     /**
