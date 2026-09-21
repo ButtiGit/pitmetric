@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\ComponentTracker;
 use App\Models\ComponentType;
 use App\Models\Configuration;
@@ -41,6 +42,13 @@ test('core workflow only advances when each operational dependency is real', fun
     ]);
 
     expect($this->workflow->snapshot(false)['next']['stage'])->toBe('configuration');
+
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $this->operator->id,
+        'installed_at' => now(),
+    ]);
 
     $configuration = Configuration::create([
         'vehicle_id' => $vehicle->id,
@@ -94,6 +102,12 @@ test('race weekend is required before session when the event module is available
         'component_type_id' => $type->id,
         'name' => 'Chassis A',
         'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $this->operator->id,
+        'installed_at' => now(),
     ]);
     $configuration = Configuration::create([
         'vehicle_id' => $vehicle->id,
