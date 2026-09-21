@@ -2,6 +2,48 @@
 
 return [
     'open' => 'Help for this page',
+    'guide' => [
+        'eyebrow' => 'PitMetric guide',
+        'page_tour' => 'Tour this page',
+        'page_tour_hint' => 'Contextual',
+        'full_tour' => 'Full PitMetric tour',
+        'full_tour_hint' => 'Core workflow',
+    ],
+    'tour' => [
+        'labels' => [
+            'dialog' => 'PitMetric guided tour',
+            'step' => 'Step :current of :total',
+            'close' => 'Close tour',
+            'skip' => 'Skip',
+            'back' => 'Back',
+            'next' => 'Next',
+            'done' => 'Finish',
+        ],
+        'page' => [
+            'workflow_title' => 'Where this page sits',
+            'workflow_body' => 'The core workflow shows what must be ready before you move on and which stage needs attention next.',
+            'action_title' => 'Main action',
+            'action_body' => 'This is the quickest useful action available on this screen. Start here when you are not sure what to do next.',
+            'detail_title' => 'Working area',
+            'detail_body' => 'The main records, status and controls for this section live here. PitMetric keeps historical data visible while guiding current work.',
+            'help_title' => 'Need the guide again?',
+            'help_body' => 'The question-mark button stays available on every supported manager page. Use it to replay this page tour or the complete product tour.',
+        ],
+        'full' => [
+            'next_title' => 'PitMetric gives you the next action',
+            'next_body' => 'The dashboard is not just a list of modules. It reads the real operational state of your workspace and points to the next concrete step.',
+            'workflow_title' => 'One operational chain',
+            'workflow_body' => 'The core path is Vehicle → Components → Configuration → Weekend → Session → Usage → Maintenance. A step is complete only when its underlying data is truly ready.',
+            'navigation_title' => 'Everything else stays one click away',
+            'navigation_body' => 'Use the sidebar to reach activity, vehicle, performance and management tools. The workflow tells you when to use them; the sidebar tells you where they are.',
+            'status_title' => 'Status at a glance',
+            'status_body' => 'These counters are context, not the goal. Use them to understand the workspace, then follow the next-action card to keep work moving.',
+            'event_title' => 'Operate by weekend',
+            'event_body' => 'Once the technical base is ready, the active or next race weekend becomes the operational container for entries, sessions, tasks, notes and costs.',
+            'help_title' => 'Your guide never disappears',
+            'help_body' => 'Open this question-mark button at any time to replay the tour for the current page or restart the complete PitMetric tour.',
+        ],
+    ],
     'titles' => [
         'dashboard' => 'Dashboard help',
         'events' => 'Events help',
