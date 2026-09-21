@@ -14,7 +14,7 @@
     <link rel="canonical" href="{{ url()->current() }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @fonts
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/public.css', 'resources/js/public.js'])
 </head>
 <body class="pm-public-site min-h-screen bg-[#07090c] text-zinc-100 antialiased selection:bg-[#E10600] selection:text-white">
     <div data-pm-scroll-progress class="pm-scroll-progress" aria-hidden="true"></div>
@@ -87,31 +87,5 @@
     <div data-cookie-banner class="fixed inset-x-4 bottom-4 z-[60] hidden max-w-3xl border border-white/10 bg-[#0d1014]/95 p-5 shadow-2xl backdrop-blur-xl md:left-1/2 md:right-auto md:w-[calc(100%-2rem)] md:-translate-x-1/2">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><h2 class="font-bold text-white">{{ __('pitmetric.cookies.title') }}</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{{ __('pitmetric.cookies.copy') }} <a href="{{ route('cookies') }}" class="text-[#ff4d49] underline underline-offset-4">{{ __('pitmetric.cookies.settings') }}</a></p></div><div class="flex shrink-0 flex-wrap gap-2"><button type="button" data-cookie-choice="necessary" class="border border-white/15 px-4 py-2 text-sm font-semibold text-zinc-200">{{ __('pitmetric.cookies.necessary') }}</button><button type="button" data-cookie-choice="preferences" class="bg-[#E10600] px-4 py-2 text-sm font-semibold text-white hover:bg-[#f01812]">{{ __('pitmetric.cookies.accept') }}</button></div></div>
     </div>
-
-    <script>
-        (() => {
-            const cookie = (name) => document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1];
-            const setCookie = (name, value, days = 365) => { const secure = location.protocol === 'https:' ? '; Secure' : ''; document.cookie = `${name}=${value}; Max-Age=${days * 86400}; Path=/; SameSite=Lax${secure}`; };
-            const languageModal = document.querySelector('[data-language-modal]');
-            const openLanguage = () => { languageModal?.classList.remove('hidden'); languageModal?.classList.add('flex'); };
-            const closeLanguage = () => { languageModal?.classList.add('hidden'); languageModal?.classList.remove('flex'); };
-            if (!cookie('pitmetric_locale')) openLanguage();
-            document.querySelectorAll('[data-language-open]').forEach(button => button.addEventListener('click', openLanguage));
-            document.querySelectorAll('[data-language-close]').forEach(button => button.addEventListener('click', closeLanguage));
-            languageModal?.addEventListener('click', event => { if (event.target === languageModal && cookie('pitmetric_locale')) closeLanguage(); });
-            const cookieBanner = document.querySelector('[data-cookie-banner]');
-            const showCookieBanner = () => cookieBanner?.classList.remove('hidden');
-            if (!cookie('pitmetric_cookie_consent')) showCookieBanner();
-            document.querySelectorAll('[data-cookie-choice]').forEach(button => button.addEventListener('click', () => { setCookie('pitmetric_cookie_consent', button.dataset.cookieChoice); cookieBanner?.classList.add('hidden'); }));
-            document.querySelectorAll('[data-cookie-settings]').forEach(button => button.addEventListener('click', showCookieBanner));
-
-            const partnerNotice = document.querySelector('[data-partner-notice]');
-            if (partnerNotice && sessionStorage.getItem('pitmetric_partner_notice_hidden') === '1') partnerNotice.remove();
-            document.querySelectorAll('[data-partner-notice-close]').forEach(button => button.addEventListener('click', () => {
-                sessionStorage.setItem('pitmetric_partner_notice_hidden', '1');
-                button.closest('[data-partner-notice]')?.remove();
-            }));
-        })();
-    </script>
 </body>
 </html>
