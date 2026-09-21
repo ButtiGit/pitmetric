@@ -1,33 +1,46 @@
 <?php
 
-test('month week and datetime local controls are completed with PitMetric composites', function () {
-    $javascript = file_get_contents(resource_path('js/form-controls-composite.js'));
-    $css = file_get_contents(resource_path('css/form-controls-composite.css'));
+test('vite exposes one app entrypoint and one public entrypoint', function () {
+    $vite = file_get_contents(base_path('vite.config.js'));
 
-    expect($javascript)
-        ->toContain('function enhanceMonth')
-        ->toContain('function enhanceWeek')
-        ->toContain('function enhanceDateTime')
-        ->toContain('input[type="month"]')
-        ->toContain('input[type="week"]')
-        ->toContain('input[type="datetime-local"]')
-        ->toContain('MutationObserver')
-        ->toContain("source.dataset.pmEnhanced = 'true'");
-
-    expect($css)
-        ->toContain('.pm-composite-control')
-        ->toContain('.pm-composite-week')
-        ->toContain('.pm-composite-datetime');
+    expect($vite)
+        ->toContain("'resources/js/app.js'")
+        ->toContain("'resources/js/public.js'")
+        ->not->toContain("'resources/css/app.css'")
+        ->not->toContain("'resources/css/public.css'");
 });
 
-test('composite controls load before the native picker guard', function () {
-    $javascript = file_get_contents(resource_path('js/app.js'));
+test('app and public layouts load only their own frontend entrypoint', function () {
+    $appHead = file_get_contents(resource_path('views/partials/head.blade.php'));
+    $publicLayout = file_get_contents(resource_path('views/layouts/public.blade.php'));
+
+    expect($appHead)
+        ->toContain("@vite('resources/js/app.js')")
+        ->not->toContain('resources/js/public.js');
+
+    expect($publicLayout)
+        ->toContain("@vite('resources/js/public.js')")
+        ->not->toContain('resources/js/app.js')
+        ->not->toContain('<script>');
+});
+
+test('public assets are consolidated without polish and simplify patch layers', function () {
+    $javascript = file_get_contents(resource_path('js/public.js'));
+    $css = file_get_contents(resource_path('css/public.css'));
 
     expect($javascript)
-        ->toContain("import '../css/form-controls-composite.css';")
-        ->toContain("import './form-controls-composite';")
-        ->toContain("import './form-control-guard';");
+        ->toContain("import '../css/public.css';")
+        ->toContain("import './public-site';")
+        ->not->toContain('workspace-forms')
+        ->not->toContain('onboarding')
+        ->not->toContain('pitmetric-demo');
 
-    expect(strpos($javascript, "import './form-controls-composite';"))
-        ->toBeLessThan(strpos($javascript, "import './form-control-guard';"));
+    expect($css)
+        ->toContain("@import './public-site.css';")
+        ->toContain("@import './home-editorial.css';")
+        ->toContain('.pm-public-header-action')
+        ->toContain('.pm-partner-notice');
+
+    expect(file_exists(resource_path('css/public-polish.css')))->toBeFalse()
+        ->and(file_exists(resource_path('css/public-simplify.css')))->toBeFalse();
 });
