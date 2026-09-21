@@ -85,6 +85,7 @@ class ConfigurationController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:2000'],
             'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'component_ids' => ['prohibited'],
         ]);
 
         $vehicle = Vehicle::query()
@@ -139,6 +140,7 @@ class ConfigurationController extends Controller
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:2000'],
             'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'component_ids' => ['prohibited'],
         ]);
 
         $vehicle = $configuration->vehicle()
