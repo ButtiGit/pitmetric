@@ -33,7 +33,7 @@ return [
             'next_title' => 'PitMetric gives you the next action',
             'next_body' => 'The dashboard is not just a list of modules. It reads the real operational state of your workspace and points to the next concrete step.',
             'workflow_title' => 'One operational chain',
-            'workflow_body' => 'The core path is Vehicle → Components → Configuration → Weekend → Session → Usage → Maintenance. A step is complete only when its underlying data is truly ready.',
+            'workflow_body' => 'The core path is Vehicle > Components > Configuration > Weekend > Session > Usage > Maintenance. A step is complete only when its underlying data is truly ready.',
             'navigation_title' => 'Everything else stays one click away',
             'navigation_body' => 'Use the sidebar to reach activity, vehicle, performance and management tools. The workflow tells you when to use them; the sidebar tells you where they are.',
             'status_title' => 'Status at a glance',
