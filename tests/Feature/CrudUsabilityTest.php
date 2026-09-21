@@ -2,6 +2,7 @@
 
 use App\Models\Circuit;
 use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\ComponentType;
 use App\Models\Configuration;
 use App\Models\Driver;
@@ -111,8 +112,16 @@ test('duplicate circuit and layout names produce validation errors instead of da
 
 test('configuration corrections keep their versions unchanged', function () {
     $vehicle = Vehicle::factory()->create(['workspace_id' => $this->operator->workspaces()->firstOrFail()->id]);
+    $type = ComponentType::create(['name' => 'Configuration engine']);
+    $component = Component::create(['component_type_id' => $type->id, 'name' => 'Configuration engine A', 'status' => 'active']);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $this->operator->id,
+        'installed_at' => now(),
+    ]);
     $configuration = Configuration::create(['vehicle_id' => $vehicle->id, 'name' => 'Original', 'status' => 'active']);
-    $version = app(CreateConfigurationVersionService::class)->create($configuration, $this->operator, []);
+    $version = app(CreateConfigurationVersionService::class)->create($configuration, $this->operator, [$component->id]);
     $this->put(route('configurations.update', $configuration), ['name' => 'Corrected', 'description' => 'Dry conditions'])->assertSessionHasNoErrors();
     expect($configuration->fresh()->name)->toBe('Corrected')->and($configuration->versions()->count())->toBe(1)->and($version->fresh()->version_number)->toBe(1);
 });
