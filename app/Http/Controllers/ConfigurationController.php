@@ -191,14 +191,14 @@ class ConfigurationController extends Controller
     /** @return list<int> */
     private function activeComponentIds(Vehicle $vehicle): array
     {
-        return ComponentInstallation::query()
+        return array_values(ComponentInstallation::query()
             ->where('vehicle_id', $vehicle->getKey())
             ->whereNull('removed_at')
             ->pluck('component_id')
             ->map(static fn ($id): int => (int) $id)
             ->sort()
             ->values()
-            ->all();
+            ->all());
     }
 
     private function hasDatabaseAccess(User $user): bool
