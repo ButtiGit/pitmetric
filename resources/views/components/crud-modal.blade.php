@@ -10,12 +10,12 @@
 
 @if ($permission === null || auth()->user()?->can($permission))
 @if ($trigger)
-    <button type="button" class="{{ $triggerClass }}" aria-haspopup="dialog" aria-controls="{{ $id }}" onclick="document.getElementById('{{ $id }}').showModal()">
+    <button type="button" class="{{ $triggerClass }}" aria-haspopup="dialog" aria-controls="{{ $id }}" data-test="{{ $id }}-trigger" onclick="document.getElementById('{{ $id }}').showModal()">
         {{ $trigger }}
     </button>
 @endif
 
-<dialog id="{{ $id }}" data-pm-crud-dialog aria-labelledby="{{ $id }}-title" @if ($description) aria-describedby="{{ $id }}-description" @endif class="w-[min(94vw,72rem)] {{ $size }} rounded-2xl border border-pm-border bg-pm-panel p-0 text-pm-text shadow-2xl backdrop:bg-black/70">
+<dialog id="{{ $id }}" data-pm-crud-dialog data-test="{{ $id }}-dialog" aria-labelledby="{{ $id }}-title" @if ($description) aria-describedby="{{ $id }}-description" @endif class="w-[min(94vw,72rem)] {{ $size }} rounded-2xl border border-pm-border bg-pm-panel p-0 text-pm-text shadow-2xl backdrop:bg-black/70">
     <div class="max-h-[88vh] overflow-y-auto p-5 sm:p-6">
         <div class="mb-5 flex items-start justify-between gap-4">
             <div>
