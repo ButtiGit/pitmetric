@@ -11,6 +11,7 @@ use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\CoreWorkflowService;
 use App\Services\MaintenanceHealthService;
 use App\Services\OperationalNotificationService;
 use App\Services\WorkspaceContext;
@@ -23,6 +24,7 @@ class DashboardController extends Controller
     public function __invoke(
         Request $request,
         WorkspaceContext $workspaceContext,
+        CoreWorkflowService $coreWorkflow,
         MaintenanceHealthService $healthService,
         OperationalNotificationService $operationalNotifications,
     ): View {
@@ -47,6 +49,7 @@ class DashboardController extends Controller
         $configurationCount = $domainReady ? Configuration::query()->where('status', 'active')->count() : 0;
         $sessionCount = $domainReady ? Session::query()->count() : 0;
         $maintenanceCount = $domainReady ? MaintenanceRecord::query()->count() : 0;
+        $workflowSnapshot = $domainReady ? $coreWorkflow->snapshot($eventsReady) : null;
         $maintenanceSummary = [
             'ok' => 0,
             'due_soon' => 0,
@@ -102,6 +105,7 @@ class DashboardController extends Controller
             'configurationCount' => $configurationCount,
             'sessionCount' => $sessionCount,
             'maintenanceCount' => $maintenanceCount,
+            'workflowSnapshot' => $workflowSnapshot,
             'maintenanceSummary' => $maintenanceSummary,
             'monthExpenseCents' => $monthExpenseCents,
             'lastSession' => $lastSession,
