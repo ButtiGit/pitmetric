@@ -2,6 +2,7 @@
 
 use App\Models\Circuit;
 use App\Models\Component;
+use App\Models\ComponentInstallation;
 use App\Models\ComponentTracker;
 use App\Models\ComponentType;
 use App\Models\Configuration;
@@ -51,6 +52,12 @@ it('records a session once, links its cost and raises maintenance attention from
         'component_id' => $component->id,
         'usage_metric_type_id' => $metric->id,
         'is_active' => true,
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'created_by' => $user->id,
+        'installed_at' => now(),
     ]);
 
     $configuration = Configuration::create([
