@@ -1,15 +1,15 @@
 <?php
 
-use App\Services\DataHubService;
-use App\Services\WorkspaceBackupExporter;
-use App\Services\WorkspaceBackupImporter;
-use App\Services\TelemetryImportService;
 use App\Services\CsvTelemetryImporter;
-use App\Services\VboTelemetryImporter;
-use App\Services\SessionPageService;
-use App\Services\RecordSessionService;
+use App\Services\DataHubService;
 use App\Services\MaintenancePageService;
 use App\Services\MaintenanceWorkOrderService;
+use App\Services\RecordSessionService;
+use App\Services\SessionPageService;
+use App\Services\TelemetryImportService;
+use App\Services\VboTelemetryImporter;
+use App\Services\WorkspaceBackupExporter;
+use App\Services\WorkspaceBackupImporter;
 
 it('keeps the large workflows behind smaller focused services', function () {
     expect(app(DataHubService::class))->toBeInstanceOf(DataHubService::class)
