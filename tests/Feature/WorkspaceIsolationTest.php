@@ -49,8 +49,13 @@ function createWorkspaceIsolationForeignFixture(User $owner): array
         'name' => 'Foreign Workspace Configuration',
         'status' => 'active',
     ]);
+    $installation = ComponentInstallation::create([
+        'vehicle_id' => $vehicle->id,
+        'component_id' => $component->id,
+        'installed_at' => now()->subMinute(),
+        'created_by' => $owner->id,
+    ]);
     $version = app(CreateConfigurationVersionService::class)->create($configuration, $owner, [$component->id]);
-    $installation = ComponentInstallation::query()->where('component_id', $component->id)->firstOrFail();
 
     $circuit = Circuit::create(['name' => 'Foreign Workspace Circuit']);
     $layout = $circuit->layouts()->create([
@@ -317,6 +322,12 @@ it('rejects foreign nested identifiers inside valid current team writes', functi
         'vehicle_id' => $ownVehicle->id,
         'name' => 'Current Workspace Configuration',
         'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $ownVehicle->id,
+        'component_id' => $ownComponent->id,
+        'installed_at' => now()->subMinute(),
+        'created_by' => $actor->id,
     ]);
     $ownVersion = app(CreateConfigurationVersionService::class)->create($ownConfiguration, $actor, [$ownComponent->id]);
     $ownCircuit = Circuit::create(['name' => 'Current Workspace Circuit']);
