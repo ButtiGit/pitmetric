@@ -4,7 +4,13 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "e2e": "playwright test",
+        "e2e:desktop": "playwright test --project=chrome-desktop",
+        "e2e:mobile": "playwright test --project=chrome-mobile"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.55.0"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.1.11",
