@@ -33,7 +33,7 @@ return [
             'next_title' => 'PitMetric ti dice cosa fare adesso',
             'next_body' => 'La dashboard non è solo un elenco di moduli. Legge lo stato operativo reale del workspace e indica la prossima azione concreta.',
             'workflow_title' => 'Un’unica catena operativa',
-            'workflow_body' => 'Il percorso core è Mezzo → Componenti → Configurazione → Weekend → Sessione → Utilizzo → Manutenzione. Un passaggio è completo solo quando i dati sottostanti sono davvero pronti.',
+            'workflow_body' => 'Il percorso core è Mezzo > Componenti > Configurazione > Weekend > Sessione > Utilizzo > Manutenzione. Un passaggio è completo solo quando i dati sottostanti sono davvero pronti.',
             'navigation_title' => 'Tutto il resto rimane a un clic',
             'navigation_body' => 'La sidebar porta ad attività, veicolo, performance e gestione. Il workflow ti dice quando usarli; la sidebar ti dice dove trovarli.',
             'status_title' => 'Stato a colpo d’occhio',
