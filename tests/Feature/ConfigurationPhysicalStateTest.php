@@ -24,7 +24,7 @@ test('configuration creation requires a real physical build and rolls back clean
     expect(Configuration::query()->count())->toBe(0);
 });
 
-test('configuration creation snapshots installed components instead of changing installations', function () {
+test('configuration creation snapshots installed components and rejects client controlled parts', function () {
     $installed = Component::create([
         'component_type_id' => $this->type->id,
         'name' => 'Installed engine',
@@ -44,8 +44,15 @@ test('configuration creation snapshots installed components instead of changing 
 
     $this->post(route('configurations.store'), [
         'vehicle_id' => $this->vehicle->id,
-        'name' => 'Race build',
+        'name' => 'Injected build',
         'component_ids' => [$notInstalled->id],
+    ])->assertSessionHasErrors('component_ids');
+
+    expect(Configuration::query()->count())->toBe(0);
+
+    $this->post(route('configurations.store'), [
+        'vehicle_id' => $this->vehicle->id,
+        'name' => 'Race build',
     ])->assertSessionHasNoErrors();
 
     $configuration = Configuration::query()->firstOrFail();
