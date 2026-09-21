@@ -23,7 +23,7 @@ class E2EBrowserSeeder extends Seeder
 
     public function run(): void
     {
-        if (!app()->environment(['local', 'testing'])) {
+        if (! app()->environment(['local', 'testing'])) {
             throw new RuntimeException('E2EBrowserSeeder may only run in local or testing environments.');
         }
 
@@ -35,7 +35,7 @@ class E2EBrowserSeeder extends Seeder
             'password' => Hash::make(self::PASSWORD),
         ])->save();
 
-        if (!$user->workspaces()->exists()) {
+        if (! $user->workspaces()->exists()) {
             $workspace = Workspace::factory()->create(['name' => 'PitMetric E2E Team']);
             $user->workspaces()->attach($workspace, [
                 'role' => 'owner',
