@@ -7,29 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class WorkspaceBackupExporter
 {
-    /** @param list<string> $workspaceTables */
-    public function __construct(private readonly array $workspaceTables = [
-        'vehicles',
-        'component_types',
-        'components',
-        'component_installations',
-        'configurations',
-        'circuits',
-        'track_sessions',
-        'usage_batches',
-        'maintenance_schedules',
-        'maintenance_records',
-        'expenses',
-        'drivers',
-        'events',
-        'event_entries',
-        'event_tasks',
-        'event_notes',
-        'event_schedule_items',
-        'technical_setups',
-        'setup_snapshots',
-        'maintenance_work_orders',
-    ]) {}
+    public function __construct(private readonly WorkspaceBackupTableRegistry $tables) {}
 
     /** @return array<string, mixed> */
     public function export(Workspace $workspace): array
@@ -37,7 +15,7 @@ class WorkspaceBackupExporter
         $workspaceId = (int) $workspace->getKey();
         $tables = [];
 
-        foreach ($this->workspaceTables as $table) {
+        foreach ($this->tables->workspaceTables() as $table) {
             $tables[$table] = DB::table($table)
                 ->where('workspace_id', $workspaceId)
                 ->orderBy('id')
