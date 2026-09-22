@@ -14,12 +14,12 @@
         $selectedType = old('session_type', $defaults['session_type']);
     @endphp
 
-    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+    <div class="pitmetric-app pm-mobile-page-with-dock min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-5">
 
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div><x-pitmetric.page-header :title="$it ? 'Sessioni in pista' : 'Track sessions'" :description="$it ? 'Registra giri, durata e distanza. Utilizzo dei componenti e costi si aggiornano insieme alla sessione.' : 'Record laps, duration and distance. Component usage and costs update with the session.'" /></div>
-                <x-crud-modal id="record-session" :title="$it ? 'Registra sessione' : 'Record session'" :description="$it ? 'Scegli build componenti e setup tecnico. Se non selezioni un setup, PitMetric usa l’ultimo profilo attivo del mezzo e lo fotografa nello storico.' : 'Choose component build and technical setup. If no setup is selected, PitMetric uses the vehicle’s latest active profile and snapshots it into history.'" :trigger="$it ? '+ Registra sessione' : '+ Record session'" size="max-w-5xl">
+                <x-crud-modal id="record-session" :title="$it ? 'Registra sessione' : 'Record session'" :description="$it ? 'Scegli build componenti e setup tecnico. Se non selezioni un setup, PitMetric usa l’ultimo profilo attivo del mezzo e lo fotografa nello storico.' : 'Choose component build and technical setup. If no setup is selected, PitMetric uses the vehicle’s latest active profile and snapshots it into history.'" :trigger="$it ? '+ Registra sessione' : '+ Record session'" trigger-class="hidden sm:inline-flex pm-race-button" size="max-w-5xl">
                     @can('team-write')<form method="POST" action="{{ route('sessions.store') }}" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         @csrf
                         <label class="grid gap-2 xl:col-span-2"><span class="pm-label">{{ $it ? 'Configurazione componenti' : 'Component configuration' }}</span><select class="pm-input" name="configuration_version_id" data-pm-vehicle-options required><option value="">{{ $it ? 'Seleziona configurazione' : 'Select configuration' }}</option>@foreach ($versions as $version)<option value="{{ $version->id }}" data-vehicle-id="{{ $version->configuration->vehicle_id }}" @selected((string) $selectedVersion === (string) $version->id)>{{ $version->configuration->vehicle->name }} · {{ $version->configuration->name }} v{{ $version->version_number }} · {{ $version->components->count() }} {{ $it ? 'componenti' : 'components' }}</option>@endforeach</select></label>
@@ -27,10 +27,10 @@
                         <label class="grid gap-2 xl:col-span-2"><span class="pm-label">{{ $it ? 'Circuito / layout' : 'Circuit / layout' }}</span><select class="pm-input" name="circuit_layout_id"><option value="">{{ $it ? 'Nessun circuito' : 'No circuit' }}</option>@foreach ($layouts as $layout)<option value="{{ $layout->id }}" @selected((string) $selectedLayout === (string) $layout->id)>{{ $layout->circuit->name }} · {{ $layout->name }} · {{ number_format($layout->length_meters, 0, ',', '.') }} m</option>@endforeach</select></label>
                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Tipo sessione' : 'Session type' }}</span><select class="pm-input" name="session_type" required>@foreach (['practice' => 'Practice', 'qualifying' => 'Qualifying', 'heat' => 'Heat', 'prefinal' => 'Prefinal', 'final' => 'Final', 'race' => 'Race', 'test' => 'Test'] as $value => $label)<option value="{{ $value }}" @selected($selectedType === $value)>{{ $label }}</option>@endforeach</select></label>
                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Data e ora' : 'Date and time' }}</span><input class="pm-input" name="started_at" type="datetime-local" required value="{{ old('started_at', $defaults['started_at']) }}"></label>
-                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Giri completati' : 'Completed laps' }}</span><input class="pm-input" name="completed_laps" type="number" min="0" max="10000" step="1" value="{{ old('completed_laps') }}"></label>
-                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Durata (min)' : 'Duration (min)' }}</span><input class="pm-input" name="duration_minutes" type="number" min="0" max="1440" step="0.1" value="{{ old('duration_minutes') }}"></label>
-                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Distanza manuale (km)' : 'Manual distance (km)' }}</span><input class="pm-input" name="distance_override_km" type="number" min="0" max="100000" step="0.001" value="{{ old('distance_override_km') }}"><span class="text-xs text-pm-muted">{{ $it ? 'Lascia vuoto per usare lunghezza layout × giri.' : 'Leave empty to use layout length × laps.' }}</span></label>
-                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo sessione (€)' : 'Session cost (€)' }}</span><input class="pm-input" name="session_cost" type="number" min="0" max="1000000" step="0.01" value="{{ old('session_cost') }}"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · registrato automaticamente nei Costi' : 'Optional · automatically recorded in Expenses' }}</span></label>
+                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Giri completati' : 'Completed laps' }}</span><input class="pm-input" name="completed_laps" type="number" inputmode="numeric" min="0" max="10000" step="1" value="{{ old('completed_laps') }}"></label>
+                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Durata (min)' : 'Duration (min)' }}</span><input class="pm-input" name="duration_minutes" type="number" inputmode="decimal" min="0" max="1440" step="0.1" value="{{ old('duration_minutes') }}"></label>
+                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Distanza manuale (km)' : 'Manual distance (km)' }}</span><input class="pm-input" name="distance_override_km" type="number" inputmode="decimal" min="0" max="100000" step="0.001" value="{{ old('distance_override_km') }}"><span class="text-xs text-pm-muted">{{ $it ? 'Lascia vuoto per usare lunghezza layout × giri.' : 'Leave empty to use layout length × laps.' }}</span></label>
+                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo sessione (€)' : 'Session cost (€)' }}</span><input class="pm-input" name="session_cost" type="number" inputmode="decimal" min="0" max="1000000" step="0.01" value="{{ old('session_cost') }}"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · registrato automaticamente nei Costi' : 'Optional · automatically recorded in Expenses' }}</span></label>
                         <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Descrizione costo' : 'Cost description' }}</span><input class="pm-input" name="cost_description" maxlength="180" value="{{ old('cost_description') }}" placeholder="{{ $it ? 'Noleggio pista / iscrizione' : 'Track rental / entry fee' }}"></label>
                         <label class="grid gap-2 md:col-span-2 xl:col-span-4"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="4000">{{ old('notes') }}</textarea></label>
                         <div class="md:col-span-2 xl:col-span-4 flex justify-end"><button class="pm-race-button" type="submit" @disabled($versions->isEmpty())>{{ $it ? 'Registra sessione' : 'Record session' }}</button></div>
@@ -42,7 +42,7 @@
             @if ((int) session('maintenance_attention', 0) > 0)<div class="rounded-xl border border-pm-warning/30 bg-pm-warning-subtle px-4 py-3 text-sm font-semibold text-pm-warning">{{ $it ? session('maintenance_attention').' interventi richiedono attenzione dopo l’aggiornamento utilizzo.' : session('maintenance_attention').' maintenance items need attention after usage was updated.' }} <a href="{{ route('maintenance.index') }}" class="underline">{{ $it ? 'Apri manutenzione' : 'Open maintenance' }}</a></div>@endif
             @if ($errors->any())<div class="rounded-xl border border-pm-danger/30 bg-pm-danger-subtle p-4 text-sm text-pm-danger"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-            <section class="grid gap-3 sm:grid-cols-3">
+            <section class="pm-mobile-stat-strip grid gap-3 sm:grid-cols-3" aria-label="{{ $it ? 'Stato manutenzione' : 'Maintenance status' }}">
                 <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Scaduti' : 'Overdue' }}</p><p class="mt-3 text-3xl font-black text-pm-danger">{{ $maintenanceSummary['overdue'] }}</p></article>
                 <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'In scadenza' : 'Due soon' }}</p><p class="mt-3 text-3xl font-black text-pm-warning">{{ $maintenanceSummary['due_soon'] }}</p></article>
                 <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Piani OK' : 'Schedules OK' }}</p><p class="mt-3 text-3xl font-black text-pm-success">{{ $maintenanceSummary['ok'] }}</p></article>
@@ -62,7 +62,7 @@
                 </section>
             @endif
 
-            <section class="space-y-3">
+            <section id="session-history" class="space-y-3 scroll-mt-20">
                 @forelse ($sessions as $session)
                     @php
                         $snapshot = $session->setupSnapshot;
@@ -101,5 +101,7 @@
             </section>
             {{ $sessions->links() }}
         </div>
+
+        @include('sessions.partials.mobile-actions')
     </div>
 </x-layouts::app>
