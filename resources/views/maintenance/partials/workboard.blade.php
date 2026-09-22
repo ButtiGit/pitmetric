@@ -4,10 +4,10 @@
             <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-pm-accent">{{ $it ? 'Interventi' : 'Jobs' }}</p>
             <h2 class="mt-1 text-lg font-black text-pm-text">{{ $it ? 'Coda operativa manutenzione' : 'Maintenance operations queue' }}</h2>
         </div>
-        <p class="text-xs text-pm-muted">{{ $it ? 'Il completamento chiude il lavoro e resetta il contatore del piano.' : 'Completion closes the job and resets the schedule counter.' }}</p>
+        <p class="text-xs text-pm-muted">{{ $it ? 'Scorri le corsie e completa il lavoro direttamente dal telefono.' : 'Swipe through lanes and complete work directly from your phone.' }}</p>
     </div>
 
-    <div class="mt-4 grid gap-4 xl:grid-cols-3">
+    <div class="pm-mobile-lanes mt-4 grid gap-4 xl:grid-cols-3" data-pm-mobile-lanes>
         @foreach ($boardColumns as $statusKey => $columnLabel)
             @php
                 $columnOrders = $workOrders->where('status', $statusKey);
@@ -17,7 +17,7 @@
                     default => 'neutral',
                 };
             @endphp
-            <div class="rounded-2xl border border-pm-border bg-pm-subtle/40 p-3">
+            <div class="pm-mobile-lane rounded-2xl border border-pm-border bg-pm-subtle/40 p-3" data-pm-maintenance-lane="{{ $statusKey }}">
                 <div class="mb-3 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <x-pitmetric.status-badge :label="$columnLabel" :variant="$columnVariant" />
@@ -37,7 +37,7 @@
                             };
                             $dueLate = $workOrder->due_at !== null && $workOrder->due_at->isPast();
                         @endphp
-                        <article class="rounded-xl border border-pm-border bg-pm-panel p-4 shadow-sm">
+                        <article class="rounded-xl border border-pm-border bg-pm-panel p-4 shadow-sm" data-pm-work-order="{{ $workOrder->id }}">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <p class="truncate text-[11px] font-bold uppercase tracking-[0.1em] text-pm-accent">{{ $workOrder->schedule->tracker->component->name }}</p>
@@ -85,7 +85,7 @@
                                     @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.complete', $workOrder) }}" class="grid gap-4 sm:grid-cols-2">
                                         @csrf
                                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Data e ora' : 'Date and time' }}</span><input class="pm-input" name="performed_at" type="datetime-local" required value="{{ now()->format('Y-m-d\TH:i') }}"></label>
-                                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo (€)' : 'Cost (€)' }}</span><input class="pm-input" name="cost" type="number" min="0" max="1000000" step="0.01"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · verrà registrato nei Costi' : 'Optional · will be recorded in Expenses' }}</span></label>
+                                        <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo (€)' : 'Cost (€)' }}</span><input class="pm-input" name="cost" type="number" inputmode="decimal" min="0" max="1000000" step="0.01"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · verrà registrato nei Costi' : 'Optional · will be recorded in Expenses' }}</span></label>
                                         <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Intervento eseguito' : 'Work performed' }}</span><input class="pm-input" name="description" required maxlength="180" value="{{ $workOrder->title }}"></label>
                                         <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note finali' : 'Completion notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000"></textarea></label>
                                         <div class="sm:col-span-2 flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Completa e registra' : 'Complete and record' }}</button></div>
