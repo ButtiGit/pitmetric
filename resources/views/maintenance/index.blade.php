@@ -18,11 +18,13 @@
         ];
     @endphp
 
-    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+    <div class="pitmetric-app pm-mobile-page-with-dock min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1440px] space-y-5">
             @include('maintenance.partials.overview')
             @include('maintenance.partials.workboard')
             @include('maintenance.partials.health-history')
         </div>
+
+        @include('maintenance.partials.mobile-actions')
     </div>
 </x-layouts::app>
