@@ -7,9 +7,16 @@ test('repository keeps project documentation entrypoints', function () {
 
 test('starter and packaged artifacts are not committed', function () {
     expect(file_exists(resource_path('views/welcome.blade.php')))->toBeFalse()
+        ->and(file_exists(resource_path('views/components/placeholder-pattern.blade.php')))->toBeFalse()
         ->and(file_exists(base_path('tests/Feature/ExampleTest.php')))->toBeFalse()
         ->and(file_exists(base_path('tests/Unit/ExampleTest.php')))->toBeFalse()
         ->and(glob(base_path('brand/*.zip')) ?: [])->toBe([]);
+});
+
+test('unused starter Flux icon overrides stay removed', function () {
+    foreach (['book-open-text', 'chevrons-up-down', 'folder-git-2', 'layout-grid'] as $icon) {
+        expect(file_exists(resource_path("views/flux/icon/{$icon}.blade.php")))->toBeFalse();
+    }
 });
 
 test('standalone game keeps one canonical runtime bundle', function () {
