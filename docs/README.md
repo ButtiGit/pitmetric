@@ -25,5 +25,6 @@ These files explain completed refactors. They are useful for rationale, but they
 
 - `REFACTOR_STEP3.md` — progressive split of large controllers/services/views.
 - `FRONTEND_CONSOLIDATION.md` — public/app bundle separation and native-first form consolidation.
+- `REPOSITORY_CLEANUP.md` — Step 7 repository cleanup boundaries and deferred dependency maintenance.
 
 Current behavior is ultimately protected by the codebase, Pest regression suite and Playwright browser workflows.
