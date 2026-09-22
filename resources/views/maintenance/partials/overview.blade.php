@@ -6,8 +6,8 @@
         />
     </div>
 
-    <div class="hidden flex-wrap gap-2 sm:flex">
-        <x-crud-modal id="create-maintenance-work-order" :title="$it ? 'Nuovo lavoro manutenzione' : 'New maintenance work order'" :description="$it ? 'Pianifica un intervento su un piano esistente e assegnalo al team.' : 'Plan work against an existing schedule and assign it to the team.'" :trigger="$it ? '+ Lavoro' : '+ Work order'">
+    <div class="flex flex-wrap gap-2">
+        <x-crud-modal id="create-maintenance-work-order" :title="$it ? 'Nuovo lavoro manutenzione' : 'New maintenance work order'" :description="$it ? 'Pianifica un intervento su un piano esistente e assegnalo al team.' : 'Plan work against an existing schedule and assign it to the team.'" :trigger="$it ? '+ Lavoro' : '+ Work order'" trigger-class="hidden sm:inline-flex pm-race-button">
             @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.store') }}" class="grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Piano manutenzione' : 'Maintenance schedule' }}</span><select class="pm-input" name="maintenance_schedule_id" required><option value="">{{ $it ? 'Seleziona' : 'Select' }}</option>@foreach ($schedules as $schedule)<option value="{{ $schedule->id }}" @selected((string) old('maintenance_schedule_id') === (string) $schedule->id)>{{ $schedule->tracker->component->name }} · {{ $schedule->name }}</option>@endforeach</select></label>
@@ -20,7 +20,7 @@
             </form>@endcan
         </x-crud-modal>
 
-        <x-crud-modal id="create-maintenance-schedule" :title="$it ? 'Nuovo piano manutenzione' : 'New maintenance schedule'" :description="$it ? 'Definisci la soglia di utilizzo che alimenterà gli alert e il workboard.' : 'Define the usage threshold that will feed alerts and the workboard.'" :trigger="$it ? '+ Piano' : '+ Schedule'" trigger-class="pm-ghost-button">
+        <x-crud-modal id="create-maintenance-schedule" :title="$it ? 'Nuovo piano manutenzione' : 'New maintenance schedule'" :description="$it ? 'Definisci la soglia di utilizzo che alimenterà gli alert e il workboard.' : 'Define the usage threshold that will feed alerts and the workboard.'" :trigger="$it ? '+ Piano' : '+ Schedule'" trigger-class="hidden sm:inline-flex pm-ghost-button">
             @can('team-write')<form method="POST" action="{{ route('maintenance.store') }}" class="grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Componente / metrica' : 'Component / metric' }}</span><select class="pm-input" name="component_tracker_id" required><option value="">{{ $it ? 'Seleziona' : 'Select' }}</option>@foreach ($trackers as $tracker)<option value="{{ $tracker->id }}" @selected((string) old('component_tracker_id') === (string) $tracker->id)>{{ $tracker->component->name }} · {{ $tracker->metric->name }} ({{ $tracker->metric->display_unit }})</option>@endforeach</select></label>
