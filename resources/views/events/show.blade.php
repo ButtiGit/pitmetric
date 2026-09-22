@@ -38,7 +38,7 @@
             : ['technical' => 'Technical', 'driver_feedback' => 'Driver feedback', 'incident' => 'Incident', 'operations' => 'Operations'];
     @endphp
 
-    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 pb-24 sm:px-6 sm:pb-8 lg:px-8 lg:py-7">
+    <div class="pitmetric-app pm-mobile-page-with-dock min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1500px] space-y-5">
             @include('events.partials.overview')
 

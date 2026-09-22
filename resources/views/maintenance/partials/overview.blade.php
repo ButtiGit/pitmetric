@@ -7,7 +7,7 @@
     </div>
 
     <div class="flex flex-wrap gap-2">
-        <x-crud-modal id="create-maintenance-work-order" :title="$it ? 'Nuovo lavoro manutenzione' : 'New maintenance work order'" :description="$it ? 'Pianifica un intervento su un piano esistente e assegnalo al team.' : 'Plan work against an existing schedule and assign it to the team.'" :trigger="$it ? '+ Lavoro' : '+ Work order'">
+        <x-crud-modal id="create-maintenance-work-order" :title="$it ? 'Nuovo lavoro manutenzione' : 'New maintenance work order'" :description="$it ? 'Pianifica un intervento su un piano esistente e assegnalo al team.' : 'Plan work against an existing schedule and assign it to the team.'" :trigger="$it ? '+ Lavoro' : '+ Work order'" trigger-class="hidden sm:inline-flex pm-race-button">
             @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.store') }}" class="grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Piano manutenzione' : 'Maintenance schedule' }}</span><select class="pm-input" name="maintenance_schedule_id" required><option value="">{{ $it ? 'Seleziona' : 'Select' }}</option>@foreach ($schedules as $schedule)<option value="{{ $schedule->id }}" @selected((string) old('maintenance_schedule_id') === (string) $schedule->id)>{{ $schedule->tracker->component->name }} · {{ $schedule->name }}</option>@endforeach</select></label>
@@ -20,13 +20,13 @@
             </form>@endcan
         </x-crud-modal>
 
-        <x-crud-modal id="create-maintenance-schedule" :title="$it ? 'Nuovo piano manutenzione' : 'New maintenance schedule'" :description="$it ? 'Definisci la soglia di utilizzo che alimenterà gli alert e il workboard.' : 'Define the usage threshold that will feed alerts and the workboard.'" :trigger="$it ? '+ Piano' : '+ Schedule'" trigger-class="pm-ghost-button">
+        <x-crud-modal id="create-maintenance-schedule" :title="$it ? 'Nuovo piano manutenzione' : 'New maintenance schedule'" :description="$it ? 'Definisci la soglia di utilizzo che alimenterà gli alert e il workboard.' : 'Define the usage threshold that will feed alerts and the workboard.'" :trigger="$it ? '+ Piano' : '+ Schedule'" trigger-class="hidden sm:inline-flex pm-ghost-button">
             @can('team-write')<form method="POST" action="{{ route('maintenance.store') }}" class="grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Componente / metrica' : 'Component / metric' }}</span><select class="pm-input" name="component_tracker_id" required><option value="">{{ $it ? 'Seleziona' : 'Select' }}</option>@foreach ($trackers as $tracker)<option value="{{ $tracker->id }}" @selected((string) old('component_tracker_id') === (string) $tracker->id)>{{ $tracker->component->name }} · {{ $tracker->metric->name }} ({{ $tracker->metric->display_unit }})</option>@endforeach</select></label>
                 <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome intervento' : 'Service name' }}</span><input class="pm-input" name="name" required maxlength="120" value="{{ old('name') }}" placeholder="Engine rebuild"></label>
-                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Intervallo' : 'Interval' }}</span><input class="pm-input" name="interval_display" type="number" required min="0.01" step="0.01" value="{{ old('interval_display') }}"></label>
-                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Preavviso' : 'Warning before' }}</span><input class="pm-input" name="warning_display" type="number" min="0" step="0.01" value="{{ old('warning_display') }}"></label>
+                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Intervallo' : 'Interval' }}</span><input class="pm-input" name="interval_display" type="number" inputmode="decimal" required min="0.01" step="0.01" value="{{ old('interval_display') }}"></label>
+                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Preavviso' : 'Warning before' }}</span><input class="pm-input" name="warning_display" type="number" inputmode="decimal" min="0" step="0.01" value="{{ old('warning_display') }}"></label>
                 <label class="grid gap-2 md:col-span-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000">{{ old('notes') }}</textarea></label>
                 <div class="md:col-span-2 flex justify-end"><button class="pm-race-button" type="submit" @disabled($trackers->isEmpty())>{{ $it ? 'Crea piano' : 'Create schedule' }}</button></div>
             </form>@endcan
@@ -42,7 +42,7 @@
     <div class="rounded-xl border border-pm-danger/30 bg-pm-danger-subtle p-4 text-sm text-pm-danger"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
 @endif
 
-<section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+<section class="pm-mobile-stat-strip grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="{{ $it ? 'Riepilogo manutenzione' : 'Maintenance summary' }}">
     <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Lavori aperti' : 'Open jobs' }}</p><p class="mt-3 text-3xl font-black text-pm-text">{{ $workSummary['open'] }}</p><p class="mt-1 text-xs text-pm-muted">{{ $workSummary['in_progress'] }} {{ $it ? 'in lavorazione' : 'in progress' }}</p></article>
     <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">Overdue</p><p class="mt-3 text-3xl font-black text-pm-danger">{{ $summary['overdue'] }}</p><p class="mt-1 text-xs text-pm-muted">{{ $it ? 'piani oltre il limite' : 'schedules past limit' }}</p></article>
     <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">Due soon</p><p class="mt-3 text-3xl font-black text-pm-warning">{{ $summary['due_soon'] }}</p><p class="mt-1 text-xs text-pm-muted">{{ $it ? 'richiedono pianificazione' : 'need planning' }}</p></article>
