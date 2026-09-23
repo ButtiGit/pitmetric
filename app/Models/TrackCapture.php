@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'circuit_id',
     'circuit_layout_id',
     'lap_time_ms',
+    'payload',
     'occurred_at',
     'status',
     'resolved_at',
@@ -46,6 +47,7 @@ class TrackCapture extends Model
     {
         return [
             'lap_time_ms' => 'integer',
+            'payload' => 'array',
             'occurred_at' => 'datetime',
             'resolved_at' => 'datetime',
         ];

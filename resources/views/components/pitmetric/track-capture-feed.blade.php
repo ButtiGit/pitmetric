@@ -10,6 +10,7 @@
         }
 
         $captures = \App\Models\TrackCapture::query()
+            ->where('kind', 'lap_time')
             ->with($relations)
             ->latest('occurred_at')
             ->latest('id')

@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Circuit;
-use App\Models\FollowUpTask;
-use App\Models\TrackCapture;
 use App\Models\User;
-use App\Services\TrackCaptureContextService;
+use App\Services\TrackCaptureService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +14,7 @@ class QuickCaptureController extends Controller
     public function storeLap(
         Request $request,
         WorkspaceContext $workspaceContext,
-        TrackCaptureContextService $contextService,
+        TrackCaptureService $captureService,
     ): RedirectResponse {
         $user = $request->user();
 
@@ -36,71 +33,34 @@ class QuickCaptureController extends Controller
             'component_names' => ['nullable', 'string', 'max:600'],
             'occurred_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'pit_mode' => ['nullable', 'boolean'],
         ]);
 
-        $circuitName = trim($validated['circuit_name']);
-        $subjectKey = $this->normalize($circuitName);
-        $circuit = Circuit::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($circuitName)])
-            ->first();
-        $layout = $circuit?->layouts()->where('is_active', true)->orderBy('id')->first();
-        $needsCircuit = $circuit === null;
-
-        $capture = TrackCapture::create([
+        $capture = $captureService->create($user, [
             'kind' => 'lap_time',
-            'circuit_name' => $circuitName,
-            'circuit_id' => $circuit?->getKey(),
-            'circuit_layout_id' => $layout?->getKey(),
+            'circuit_name' => $validated['circuit_name'],
             'lap_time_ms' => $this->parseLapTime($validated['lap_time']),
             'occurred_at' => $validated['occurred_at'] ?? now(),
-            'status' => $needsCircuit ? 'needs_attention' : 'ready',
-            'resolved_at' => $needsCircuit ? null : now(),
-            'created_by' => $user->getKey(),
             'notes' => $validated['notes'] ?? null,
+            'context' => [
+                'driver_name' => $validated['driver_name'] ?? null,
+                'vehicle_name' => $validated['vehicle_name'] ?? null,
+                'configuration_name' => $validated['configuration_name'] ?? null,
+                'technical_setup_name' => $validated['technical_setup_name'] ?? null,
+                'component_names' => $validated['component_names'] ?? null,
+            ],
         ]);
 
-        if ($needsCircuit) {
-            $task = FollowUpTask::query()
-                ->where('kind', 'missing_circuit')
-                ->where('subject_key', $subjectKey)
-                ->where('status', 'open')
-                ->first();
+        $needsAttention = $capture->status === 'needs_attention';
+        $message = $needsAttention
+            ? __('Lap saved. Missing context can be completed later from the alert inbox.')
+            : __('Lap saved.');
 
-            if ($task === null) {
-                FollowUpTask::create([
-                    'kind' => 'missing_circuit',
-                    'subject_key' => $subjectKey,
-                    'title' => "Create circuit: {$circuitName}",
-                    'description' => 'A lap time was captured before this circuit existed. Create the circuit when you have time; the pending timing records will be linked automatically.',
-                    'target_route' => 'circuits.index',
-                    'context' => ['circuit_name' => $circuitName, 'first_capture_id' => $capture->getKey()],
-                    'status' => 'open',
-                    'created_by' => $user->getKey(),
-                ]);
-            }
+        if ($request->boolean('pit_mode')) {
+            return to_route('pit-mode.index', ['captured' => $capture->getKey()])->with('status', $message);
         }
 
-        $pendingContext = $contextService->attach($capture, $user, [
-            'driver_name' => $validated['driver_name'] ?? null,
-            'vehicle_name' => $validated['vehicle_name'] ?? null,
-            'configuration_name' => $validated['configuration_name'] ?? null,
-            'technical_setup_name' => $validated['technical_setup_name'] ?? null,
-            'component_names' => $validated['component_names'] ?? null,
-        ]);
-
-        if ($pendingContext > 0) {
-            $capture->update([
-                'status' => 'needs_attention',
-                'resolved_at' => null,
-            ]);
-        }
-
-        $needsAttention = $needsCircuit || $pendingContext > 0;
-
-        return to_route('sessions.index', ['captured' => $capture->getKey()])
-            ->with('status', $needsAttention
-                ? __('Lap saved. Missing context can be completed later from the alert inbox.')
-                : __('Lap saved.'));
+        return to_route('sessions.index', ['captured' => $capture->getKey()])->with('status', $message);
     }
 
     private function parseLapTime(string $value): int
@@ -126,10 +86,5 @@ class QuickCaptureController extends Controller
         }
 
         return $milliseconds;
-    }
-
-    private function normalize(string $value): string
-    {
-        return mb_strtolower(trim(preg_replace('/\s+/', ' ', $value) ?? $value));
     }
 }
