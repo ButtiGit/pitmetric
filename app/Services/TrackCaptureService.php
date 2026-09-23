@@ -9,8 +9,11 @@ use App\Models\User;
 
 class TrackCaptureService
 {
-    public function __construct(private TrackCaptureContextService $contextService)
+    private TrackCaptureContextService $contextService;
+
+    public function __construct(TrackCaptureContextService $contextService)
     {
+        $this->contextService = $contextService;
     }
 
     /** @param array<string, mixed> $data */
