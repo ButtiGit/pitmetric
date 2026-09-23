@@ -36,7 +36,7 @@
 <a
     href="{{ route('follow-ups.index') }}"
     data-pm-follow-up-bell
-    class="fixed right-[4.65rem] top-[0.65rem] z-50 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/[0.035] text-zinc-300 shadow-none backdrop-blur transition hover:border-white/15 hover:bg-white/[0.06] lg:right-5 lg:top-5 lg:h-10 lg:w-10 lg:rounded-full lg:border-white/10 lg:bg-[#171a20]/95 lg:text-zinc-200 lg:shadow-lg lg:hover:border-white/20 lg:hover:bg-[#1d2128]"
+    class="fixed right-[4.65rem] top-[0.65rem] z-50 hidden h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/[0.035] text-zinc-300 shadow-none backdrop-blur transition hover:border-white/15 hover:bg-white/[0.06] lg:right-5 lg:top-5 lg:inline-flex lg:h-10 lg:w-10 lg:rounded-full lg:border-white/10 lg:bg-[#171a20]/95 lg:text-zinc-200 lg:shadow-lg lg:hover:border-white/20 lg:hover:bg-[#1d2128]"
     aria-label="{{ app()->getLocale() === 'it' ? 'Avvisi da completare' : 'Follow-up alerts' }}"
     title="{{ app()->getLocale() === 'it' ? 'Avvisi da completare' : 'Follow-up alerts' }}"
 >

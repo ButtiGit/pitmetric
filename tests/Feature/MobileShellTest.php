@@ -29,6 +29,14 @@ test('mobile navigation stays available away from the dashboard without duplicat
         ->assertDontSee('data-pm-mobile-cockpit', false);
 });
 
+test('follow-up bell stays hidden from the mobile header', function () {
+    $bell = file_get_contents(resource_path('views/components/pitmetric/follow-up-bell.blade.php'));
+
+    expect($bell)
+        ->toContain('z-50 hidden')
+        ->toContain('lg:inline-flex');
+});
+
 test('mobile shell assets include persistent personalization and reduced motion support', function () {
     $app = file_get_contents(resource_path('js/app.js'));
     $javascript = file_get_contents(resource_path('js/mobile-shell.js'));
