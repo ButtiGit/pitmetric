@@ -9,7 +9,9 @@ use App\Models\User;
 
 class TrackCaptureService
 {
-    public function __construct(private TrackCaptureContextService $contextService) {}
+    public function __construct(private TrackCaptureContextService $contextService)
+    {
+    }
 
     /** @param array<string, mixed> $data */
     public function create(User $user, array $data): TrackCapture
@@ -60,8 +62,9 @@ class TrackCaptureService
         return $capture;
     }
 
-    /** @param array<string, mixed> $data
-     *  @return array<string, string|null>
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, string|null>
      */
     private function context(array $data): array
     {
