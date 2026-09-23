@@ -37,26 +37,31 @@ class TracksideCapture extends Model
         ];
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return BelongsTo<CircuitLayout, $this> */
     public function circuitLayout(): BelongsTo
     {
         return $this->belongsTo(CircuitLayout::class)->withTrashed();
     }
 
+    /** @return BelongsTo<Driver, $this> */
     public function driver(): BelongsTo
     {
         return $this->belongsTo(Driver::class)->withTrashed();
     }
 
+    /** @return BelongsTo<Vehicle, $this> */
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class)->withTrashed();
     }
 
+    /** @return BelongsTo<Session, $this> */
     public function session(): BelongsTo
     {
         return $this->belongsTo(Session::class);
