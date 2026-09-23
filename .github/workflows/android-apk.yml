@@ -1,0 +1,82 @@
+name: android-apk
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/android-apk.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install
+
+      - name: Build Ionic application
+        working-directory: mobile
+        run: npm run build
+
+      - name: Generate Android project
+        working-directory: mobile
+        run: |
+          npx cap add android
+          npx cap sync android
+          npx capacitor-assets generate --android --iconBackgroundColor '#0b0d10' --splashBackgroundColor '#0b0d10'
+
+      - name: Build signed installable APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Stage APK
+        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk PitMetric.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PitMetric-Android
+          path: PitMetric.apk
+          if-no-files-found: error
+
+      - name: Publish stable Android download
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release edit android-latest \
+              --title 'PitMetric Android Beta' \
+              --notes 'Latest installable PitMetric Android build. Offline-first trackside operations, biometric unlock and photo/video gallery.' \
+              --latest
+          else
+            gh release create android-latest \
+              --title 'PitMetric Android Beta' \
+              --notes 'Latest installable PitMetric Android build. Offline-first trackside operations, biometric unlock and photo/video gallery.' \
+              --latest
+          fi
+
+          gh release upload android-latest PitMetric.apk --clobber
