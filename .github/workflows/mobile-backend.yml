@@ -33,6 +33,17 @@ jobs:
       - name: Pint
         run: composer lint:check
       - name: PHPStan
-        run: composer types:check
+        id: phpstan
+        continue-on-error: true
+        run: composer types:check 2>&1 | tee phpstan.log
+      - name: Upload PHPStan log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpstan-log
+          path: phpstan.log
+      - name: Fail if PHPStan failed
+        if: steps.phpstan.outcome == 'failure'
+        run: exit 1
       - name: Mobile API tests
         run: php artisan test --compact tests/Feature/MobileAppApiTest.php
