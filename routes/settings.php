@@ -19,3 +19,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/productization.php';
+require __DIR__.'/track-first.php';
