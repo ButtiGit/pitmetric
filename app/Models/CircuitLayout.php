@@ -6,11 +6,54 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 
 #[Fillable(['circuit_id', 'name', 'length_meters', 'is_active', 'notes'])]
 class CircuitLayout extends Model
 {
     use SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::created(function (CircuitLayout $layout): void {
+            if (! Schema::hasTable('track_captures') || ! Schema::hasTable('follow_up_tasks')) {
+                return;
+            }
+
+            $circuit = $layout->circuit()->withTrashed()->first();
+
+            if (! $circuit instanceof Circuit) {
+                return;
+            }
+
+            $normalizedName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $circuit->name) ?? $circuit->name));
+
+            TrackCapture::query()
+                ->withoutGlobalScopes()
+                ->where('workspace_id', $circuit->workspace_id)
+                ->where('status', 'needs_attention')
+                ->whereRaw('LOWER(circuit_name) = ?', [mb_strtolower($circuit->name)])
+                ->update([
+                    'circuit_id' => $circuit->getKey(),
+                    'circuit_layout_id' => $layout->getKey(),
+                    'status' => 'ready',
+                    'resolved_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            FollowUpTask::query()
+                ->withoutGlobalScopes()
+                ->where('workspace_id', $circuit->workspace_id)
+                ->where('kind', 'missing_circuit')
+                ->where('subject_key', $normalizedName)
+                ->where('status', 'open')
+                ->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        });
+    }
 
     /** @return BelongsTo<Circuit, $this> */
     public function circuit(): BelongsTo
