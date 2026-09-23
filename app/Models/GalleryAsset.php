@@ -14,6 +14,10 @@ use Illuminate\Support\Carbon;
  * @property string $client_id
  * @property string $title
  * @property string|null $description
+ * @property string $media_type
+ * @property string|null $mime_type
+ * @property string|null $original_name
+ * @property int|null $size_bytes
  * @property string|null $path
  * @property Carbon|null $captured_at
  * @property Carbon|null $created_at
@@ -21,7 +25,19 @@ use Illuminate\Support\Carbon;
  * @property-read User $user
  * @property-read Workspace|null $workspace
  */
-#[Fillable(['user_id', 'workspace_id', 'client_id', 'title', 'description', 'path', 'captured_at'])]
+#[Fillable([
+    'user_id',
+    'workspace_id',
+    'client_id',
+    'title',
+    'description',
+    'media_type',
+    'mime_type',
+    'original_name',
+    'size_bytes',
+    'path',
+    'captured_at',
+])]
 class GalleryAsset extends Model
 {
     /** @return BelongsTo<User, $this> */
@@ -39,6 +55,9 @@ class GalleryAsset extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['captured_at' => 'datetime'];
+        return [
+            'captured_at' => 'datetime',
+            'size_bytes' => 'integer',
+        ];
     }
 }

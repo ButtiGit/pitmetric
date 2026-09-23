@@ -29,6 +29,7 @@
                 <nav class="hidden items-center gap-8 text-sm font-semibold md:flex" aria-label="Main navigation">
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('home') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('home') }}">{{ __('pitmetric.nav.home') }}</a>
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('updates.*') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('updates.index') }}">{{ __('pitmetric.nav.updates') }}</a>
+                    <a class="border-b-2 pb-1 transition {{ request()->routeIs('app') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('app') }}">App</a>
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('about') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('about') }}">{{ __('pitmetric.nav.about') }}</a>
                 </nav>
                 <div class="flex items-center gap-2">
@@ -43,7 +44,7 @@
                     @endauth
                 </div>
             </div>
-            <nav class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-5 pb-3 text-xs font-semibold text-zinc-400 md:hidden" aria-label="Mobile navigation"><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-white' : '' }}">{{ __('pitmetric.nav.home') }}</a><a href="{{ route('updates.index') }}" class="{{ request()->routeIs('updates.*') ? 'text-white' : '' }}">{{ __('pitmetric.nav.updates') }}</a><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'text-white' : '' }}">{{ __('pitmetric.nav.about') }}</a></nav>
+            <nav class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-5 pb-3 text-xs font-semibold text-zinc-400 md:hidden" aria-label="Mobile navigation"><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-white' : '' }}">{{ __('pitmetric.nav.home') }}</a><a href="{{ route('updates.index') }}" class="{{ request()->routeIs('updates.*') ? 'text-white' : '' }}">{{ __('pitmetric.nav.updates') }}</a><a href="{{ route('app') }}" class="{{ request()->routeIs('app') ? 'text-white' : '' }}">App</a><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'text-white' : '' }}">{{ __('pitmetric.nav.about') }}</a></nav>
         </header>
 
         <aside data-partner-notice class="pm-partner-notice" aria-label="{{ app()->getLocale() === 'it' ? 'Collaborazione PitMetric' : 'PitMetric collaboration' }}">
@@ -65,7 +66,7 @@
         <footer class="border-t border-white/10 bg-[#06080a]">
             <div class="mx-auto grid max-w-7xl gap-8 px-5 py-10 sm:grid-cols-[1fr_auto] sm:items-end lg:px-8">
                 <div><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-8 w-auto opacity-90"><p class="mt-4 max-w-md text-sm leading-6 text-zinc-500">{{ __('pitmetric.footer.tagline') }}</p><p class="mt-2 text-[11px] text-zinc-600">{{ __('pitmetric.footer.photo_note') }}</p></div>
-                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-500"><span>© {{ now()->year }} PitMetric</span><a href="{{ route('about') }}" class="hover:text-zinc-300">{{ __('pitmetric.nav.about') }}</a><a href="{{ route('updates.index') }}" class="hover:text-zinc-300">{{ __('pitmetric.nav.updates') }}</a><button type="button" data-cookie-settings class="hover:text-zinc-300">{{ __('pitmetric.footer.cookies') }}</button></div>
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-500"><span>© {{ now()->year }} PitMetric</span><a href="{{ route('app') }}" class="hover:text-zinc-300">App</a><a href="{{ route('about') }}" class="hover:text-zinc-300">{{ __('pitmetric.nav.about') }}</a><a href="{{ route('updates.index') }}" class="hover:text-zinc-300">{{ __('pitmetric.nav.updates') }}</a><button type="button" data-cookie-settings class="hover:text-zinc-300">{{ __('pitmetric.footer.cookies') }}</button></div>
             </div>
         </footer>
     </div>

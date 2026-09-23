@@ -10,6 +10,8 @@ Route::prefix('mobile')->group(function (): void {
     Route::middleware('mobile.auth')->group(function (): void {
         Route::get('/me', [MobileAppController::class, 'me']);
         Route::post('/logout', [MobileAppController::class, 'logout']);
+        Route::get('/bootstrap', [MobileAppController::class, 'bootstrap']);
+        Route::post('/sync', [MobileAppController::class, 'syncOperation']);
         Route::get('/gallery', [MobileAppController::class, 'galleryIndex']);
         Route::post('/gallery', [MobileAppController::class, 'galleryStore']);
     });

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\MobileAccessToken;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateMobileToken
@@ -28,6 +29,7 @@ class AuthenticateMobileToken
         }
 
         $accessToken->forceFill(['last_used_at' => now()])->save();
+        Auth::setUser($accessToken->user);
         $request->setUserResolver(fn () => $accessToken->user);
         $request->attributes->set('mobile_access_token', $accessToken);
 

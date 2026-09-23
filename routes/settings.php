@@ -18,5 +18,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('security.edit');
 });
 
+require __DIR__.'/public-app.php';
 require __DIR__.'/productization.php';
 require __DIR__.'/track-first.php';
