@@ -27,19 +27,29 @@ class CircuitLayout extends Model
             }
 
             $normalizedName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $circuit->name) ?? $circuit->name));
-
-            TrackCapture::query()
+            $captures = TrackCapture::query()
                 ->withoutGlobalScopes()
                 ->where('workspace_id', $circuit->workspace_id)
-                ->where('status', 'needs_attention')
+                ->whereNull('circuit_id')
                 ->whereRaw('LOWER(circuit_name) = ?', [mb_strtolower($circuit->name)])
-                ->update([
+                ->get();
+            $hasReferenceTable = Schema::hasTable('track_capture_references');
+
+            foreach ($captures as $capture) {
+                $hasPendingContext = $hasReferenceTable && TrackCaptureReference::query()
+                    ->withoutGlobalScopes()
+                    ->where('workspace_id', $circuit->workspace_id)
+                    ->where('track_capture_id', $capture->getKey())
+                    ->where('status', 'pending')
+                    ->exists();
+
+                $capture->update([
                     'circuit_id' => $circuit->getKey(),
                     'circuit_layout_id' => $layout->getKey(),
-                    'status' => 'ready',
-                    'resolved_at' => now(),
-                    'updated_at' => now(),
+                    'status' => $hasPendingContext ? 'needs_attention' : 'ready',
+                    'resolved_at' => $hasPendingContext ? null : now(),
                 ]);
+            }
 
             FollowUpTask::query()
                 ->withoutGlobalScopes()
