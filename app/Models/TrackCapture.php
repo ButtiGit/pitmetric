@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'kind',
@@ -33,6 +34,12 @@ class TrackCapture extends Model
     public function circuitLayout(): BelongsTo
     {
         return $this->belongsTo(CircuitLayout::class)->withTrashed();
+    }
+
+    /** @return HasMany<TrackCaptureReference, $this> */
+    public function references(): HasMany
+    {
+        return $this->hasMany(TrackCaptureReference::class);
     }
 
     protected function casts(): array
