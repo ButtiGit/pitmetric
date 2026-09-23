@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConfigurationVersion;
+use App\Models\EventEntry;
 use App\Models\EventNote;
+use App\Models\EventScheduleItem;
 use App\Models\GalleryAsset;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
@@ -20,6 +22,7 @@ use App\Services\WorkspaceContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
@@ -109,35 +112,8 @@ class MobileAppController extends Controller
             ->latest('start_date')
             ->limit(12)
             ->get()
-            ->map(fn (RaceEvent $event): array => [
-                'id' => $event->getKey(),
-                'name' => $event->name,
-                'championship' => $event->championship,
-                'round_label' => $event->round_label,
-                'start_date' => $event->start_date?->toDateString(),
-                'end_date' => $event->end_date?->toDateString(),
-                'status' => $event->status,
-                'notes' => $event->notes,
-                'entries' => $event->entries->map(fn ($entry): array => [
-                    'id' => $entry->getKey(),
-                    'entry_number' => $entry->entry_number,
-                    'vehicle_id' => $entry->vehicle_id,
-                    'vehicle' => $entry->vehicle?->name,
-                    'driver' => $entry->driver?->display_name,
-                    'configuration_version_id' => $entry->configuration_version_id,
-                ])->values(),
-                'schedule' => $event->scheduleItems->map(fn ($item): array => [
-                    'id' => $item->getKey(),
-                    'event_entry_id' => $item->event_entry_id,
-                    'session_id' => $item->session_id,
-                    'label' => $item->label,
-                    'session_type' => $item->session_type,
-                    'starts_at' => $item->starts_at?->toIso8601String(),
-                    'duration_minutes' => $item->duration_minutes,
-                    'status' => $item->status,
-                    'notes' => $item->notes,
-                ])->values(),
-            ])->values();
+            ->map(fn (RaceEvent $event): array => $this->eventPayload($event))
+            ->values();
 
         $vehicles = Vehicle::query()
             ->where('workspace_id', $workspace->getKey())
@@ -162,20 +138,8 @@ class MobileAppController extends Controller
             ->latest('started_at')
             ->limit(30)
             ->get()
-            ->map(fn (Session $session): array => [
-                'id' => $session->getKey(),
-                'event_id' => $session->event_id,
-                'event_entry_id' => $session->event_entry_id,
-                'vehicle_id' => $session->vehicle_id,
-                'vehicle' => $session->vehicle?->name,
-                'configuration_version_id' => $session->configuration_version_id,
-                'session_type' => $session->session_type,
-                'started_at' => $session->started_at?->toIso8601String(),
-                'completed_laps' => $session->completed_laps,
-                'duration_seconds' => $session->duration_seconds,
-                'status' => $session->status,
-                'notes' => $session->notes,
-            ])->values();
+            ->map(fn (Session $session): array => $this->sessionItemPayload($session))
+            ->values();
 
         $configurations = ConfigurationVersion::query()
             ->with('configuration.vehicle')
@@ -217,16 +181,8 @@ class MobileAppController extends Controller
             ->orderBy('due_at')
             ->limit(50)
             ->get()
-            ->map(fn (MaintenanceWorkOrder $order): array => [
-                'id' => $order->getKey(),
-                'maintenance_schedule_id' => $order->maintenance_schedule_id,
-                'schedule' => $order->schedule?->name,
-                'title' => $order->title,
-                'priority' => $order->priority,
-                'status' => $order->status,
-                'due_at' => $order->due_at?->toIso8601String(),
-                'notes' => $order->notes,
-            ])->values();
+            ->map(fn (MaintenanceWorkOrder $order): array => $this->workOrderPayload($order))
+            ->values();
 
         $setups = TechnicalSetup::query()
             ->with('vehicle')
@@ -295,19 +251,21 @@ class MobileAppController extends Controller
         $result = DB::transaction(function () use ($validated, $workspace, $user): array {
             /** @var array<string, mixed> $payload */
             $payload = $validated['payload'];
-            $result = match ($validated['operation']) {
+            $operation = (string) $validated['operation'];
+            $result = match ($operation) {
                 'event.note.create' => $this->syncEventNote($payload, $user),
                 'session.create' => $this->syncSession($payload, $workspace, $user),
                 'vehicle.create' => $this->syncVehicle($payload),
                 'maintenance.work_order.create' => $this->syncWorkOrder($payload, $user),
                 'setup.create' => $this->syncSetup($payload, $user),
+                default => throw new RuntimeException('Unsupported mobile sync operation.'),
             };
 
             MobileSyncOperation::query()->create([
                 'user_id' => $user->getKey(),
                 'workspace_id' => $workspace->getKey(),
                 'client_id' => $validated['client_id'],
-                'operation' => $validated['operation'],
+                'operation' => $operation,
                 'payload' => $payload,
                 'result' => $result,
                 'processed_at' => now(),
@@ -399,7 +357,95 @@ class MobileAppController extends Controller
         return response()->json($this->galleryPayload($asset), $asset->wasRecentlyCreated ? 201 : 200);
     }
 
-    /** @param array<string, mixed> $payload */
+    /** @return array<string, mixed> */
+    private function eventPayload(RaceEvent $event): array
+    {
+        return [
+            'id' => $event->getKey(),
+            'name' => $event->name,
+            'championship' => $event->championship,
+            'round_label' => $event->round_label,
+            'start_date' => $this->dateValue($event->start_date, true),
+            'end_date' => $this->dateValue($event->end_date, true),
+            'status' => $event->status,
+            'notes' => $event->notes,
+            'entries' => $event->entries
+                ->map(fn (EventEntry $entry): array => $this->eventEntryPayload($entry))
+                ->values()
+                ->all(),
+            'schedule' => $event->scheduleItems
+                ->map(fn (EventScheduleItem $item): array => $this->scheduleItemPayload($item))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function eventEntryPayload(EventEntry $entry): array
+    {
+        return [
+            'id' => $entry->getKey(),
+            'entry_number' => $entry->entry_number,
+            'vehicle_id' => $entry->vehicle_id,
+            'vehicle' => $entry->vehicle?->name,
+            'driver' => $entry->driver?->display_name,
+            'configuration_version_id' => $entry->configuration_version_id,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function scheduleItemPayload(EventScheduleItem $item): array
+    {
+        return [
+            'id' => $item->getKey(),
+            'event_entry_id' => $item->event_entry_id,
+            'session_id' => $item->session_id,
+            'label' => $item->label,
+            'session_type' => $item->session_type,
+            'starts_at' => $this->dateValue($item->starts_at),
+            'duration_minutes' => $item->duration_minutes,
+            'status' => $item->status,
+            'notes' => $item->notes,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function sessionItemPayload(Session $session): array
+    {
+        return [
+            'id' => $session->getKey(),
+            'event_id' => $session->event_id,
+            'event_entry_id' => $session->event_entry_id,
+            'vehicle_id' => $session->vehicle_id,
+            'vehicle' => $session->vehicle?->name,
+            'configuration_version_id' => $session->configuration_version_id,
+            'session_type' => $session->session_type,
+            'started_at' => $this->dateValue($session->started_at),
+            'completed_laps' => $session->completed_laps,
+            'duration_seconds' => $session->duration_seconds,
+            'status' => $session->status,
+            'notes' => $session->notes,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function workOrderPayload(MaintenanceWorkOrder $order): array
+    {
+        return [
+            'id' => $order->getKey(),
+            'maintenance_schedule_id' => $order->maintenance_schedule_id,
+            'schedule' => $order->schedule?->name,
+            'title' => $order->title,
+            'priority' => $order->priority,
+            'status' => $order->status,
+            'due_at' => $this->dateValue($order->due_at),
+            'notes' => $order->notes,
+        ];
+    }
+
+    /** @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
     private function syncEventNote(array $payload, User $user): array
     {
         $validated = Validator::make($payload, [
@@ -424,7 +470,9 @@ class MobileAppController extends Controller
         return ['entity' => 'event_note', 'id' => $note->getKey()];
     }
 
-    /** @param array<string, mixed> $payload */
+    /** @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
     private function syncSession(array $payload, Workspace $workspace, User $user): array
     {
         $validated = Validator::make($payload, [
@@ -451,7 +499,9 @@ class MobileAppController extends Controller
         ];
     }
 
-    /** @param array<string, mixed> $payload */
+    /** @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
     private function syncVehicle(array $payload): array
     {
         $validated = Validator::make($payload, [
@@ -469,7 +519,9 @@ class MobileAppController extends Controller
         return ['entity' => 'vehicle', 'id' => $vehicle->getKey()];
     }
 
-    /** @param array<string, mixed> $payload */
+    /** @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
     private function syncWorkOrder(array $payload, User $user): array
     {
         $validated = Validator::make($payload, [
@@ -498,7 +550,9 @@ class MobileAppController extends Controller
         return ['entity' => 'maintenance_work_order', 'id' => $order->getKey()];
     }
 
-    /** @param array<string, mixed> $payload */
+    /** @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
     private function syncSetup(array $payload, User $user): array
     {
         $validated = Validator::make($payload, [
@@ -591,5 +645,16 @@ class MobileAppController extends Controller
     private function hasCloudAccess(User $user): bool
     {
         return Gate::forUser($user)->allows('manage-updates') || $user->hasDatabaseAccess();
+    }
+
+    private function dateValue(mixed $value, bool $dateOnly = false): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $date = Carbon::parse((string) $value);
+
+        return $dateOnly ? $date->toDateString() : $date->toIso8601String();
     }
 }
