@@ -444,7 +444,7 @@ class MobileAppController extends Controller
     }
 
     /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
+     * @return array<string, mixed>
      */
     private function syncEventNote(array $payload, User $user): array
     {
@@ -471,7 +471,7 @@ class MobileAppController extends Controller
     }
 
     /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
+     * @return array<string, mixed>
      */
     private function syncSession(array $payload, Workspace $workspace, User $user): array
     {
@@ -500,7 +500,7 @@ class MobileAppController extends Controller
     }
 
     /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
+     * @return array<string, mixed>
      */
     private function syncVehicle(array $payload): array
     {
@@ -520,7 +520,7 @@ class MobileAppController extends Controller
     }
 
     /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
+     * @return array<string, mixed>
      */
     private function syncWorkOrder(array $payload, User $user): array
     {
@@ -551,7 +551,7 @@ class MobileAppController extends Controller
     }
 
     /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
+     * @return array<string, mixed>
      */
     private function syncSetup(array $payload, User $user): array
     {
