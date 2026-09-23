@@ -30,10 +30,6 @@ class AuthenticateMobileToken
         }
 
         $user = $token->user;
-        if ($user === null) {
-            return $this->unauthorized();
-        }
-
         Auth::setUser($user);
         $request->setUserResolver(fn () => $user);
 
