@@ -121,7 +121,9 @@ class TrackCaptureContextService
     public function modelCreated(Model $model): void
     {
         foreach (self::TYPES as $kind => $definition) {
-            if (! $model instanceof $definition['model']) {
+            $modelClass = $definition['model'];
+
+            if (! $model instanceof $modelClass) {
                 continue;
             }
 
