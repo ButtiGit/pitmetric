@@ -42,7 +42,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['workspace_id', 'status']);
-            $table->unique(['workspace_id', 'kind', 'subject_key', 'status'], 'follow_up_open_subject_unique');
+            $table->index(['workspace_id', 'kind', 'subject_key'], 'follow_up_subject_index');
         });
     }
 
