@@ -38,9 +38,17 @@ export async function refreshBootstrap(): Promise<void> {
 }
 
 export async function syncNow(): Promise<void> {
-  if (appState.syncing || !appState.online || !appState.session?.user.cloud_enabled) {
+  if (appState.syncing || !appState.online || !appState.session) {
     await refreshPendingCount();
     return;
+  }
+
+  if (!appState.session.user.cloud_enabled) {
+    await refreshBootstrap();
+    if (!appState.session.user.cloud_enabled) {
+      await refreshPendingCount();
+      return;
+    }
   }
 
   appState.syncing = true;
