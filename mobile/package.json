@@ -13,29 +13,29 @@
     "sync:ios": "npm run build && npx cap sync ios"
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.2",
-    "@capacitor/app": "^8.0.0",
-    "@capacitor/camera": "^8.0.0",
-    "@capacitor/core": "^8.5.2",
-    "@capacitor/filesystem": "^8.0.0",
-    "@capacitor/haptics": "^8.0.0",
-    "@capacitor/ios": "^8.5.2",
-    "@capacitor/network": "^8.0.0",
-    "@capacitor/preferences": "^8.0.0",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.0.0",
+    "@capacitor/camera": "8.0.0",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/filesystem": "8.0.0",
+    "@capacitor/haptics": "8.0.0",
+    "@capacitor/ios": "8.5.2",
+    "@capacitor/network": "8.0.0",
+    "@capacitor/preferences": "8.0.0",
     "@capgo/capacitor-native-biometric": "8.6.11",
-    "@ionic/vue": "9.0.4",
-    "@ionic/vue-router": "9.0.4",
-    "ionicons": "^8.0.13",
-    "vue": "^3.5.43",
-    "vue-router": "^5.3.1"
+    "@ionic/vue": "8.8.19",
+    "@ionic/vue-router": "8.8.19",
+    "ionicons": "8.0.13",
+    "vue": "3.5.43",
+    "vue-router": "4.6.4"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^8.5.2",
-    "@types/node": "^24.0.0",
-    "@vitejs/plugin-vue": "^6.0.1",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.7",
-    "vue-tsc": "^3.0.6"
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.2",
+    "@types/node": "24.0.0",
+    "@vitejs/plugin-vue": "6.0.1",
+    "typescript": "5.9.2",
+    "vite": "7.1.7",
+    "vue-tsc": "3.0.6"
   }
 }
