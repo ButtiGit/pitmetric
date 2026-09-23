@@ -78,7 +78,7 @@ export async function login(email: string, password: string): Promise<SessionSta
   const data = await response.json();
   await SecureStorage.set('pitmetric.mobile.token', data.token);
   await SecureStorage.set('pitmetric.mobile.session', data.session);
-  if (data.session.cloudEnabled) await SecureStorage.set('pitmetric.mobile.biometric-ready', true);
+  await SecureStorage.set('pitmetric.mobile.biometric-ready', true);
   return data.session;
 }
 
@@ -88,6 +88,7 @@ export async function register(name: string, email: string, password: string): P
   const data = await response.json();
   await SecureStorage.set('pitmetric.mobile.token', data.token);
   await SecureStorage.set('pitmetric.mobile.session', data.session);
+  await SecureStorage.set('pitmetric.mobile.biometric-ready', true);
   return data.session;
 }
 
@@ -154,7 +155,10 @@ export async function addGalleryPhoto(title: string, description: string): Promi
 export async function galleryItems(): Promise<GalleryItem[]> {
   const conn = await database();
   const result = await conn.query('SELECT * FROM gallery_items ORDER BY created_at DESC');
-  return (result.values || []) as GalleryItem[];
+  return ((result.values || []) as GalleryItem[]).map(item => ({
+    ...item,
+    preview_uri: Capacitor.isNativePlatform() ? Capacitor.convertFileSrc(item.local_uri) : item.local_uri
+  }));
 }
 
 async function enqueue(operation: string, entity: string, localId: string, payload: unknown): Promise<void> {
@@ -166,6 +170,22 @@ export async function pendingCount(): Promise<number> {
   const conn = await database();
   const result = await conn.query('SELECT COUNT(*) AS total FROM outbox');
   return Number(result.values?.[0]?.total || 0);
+}
+
+async function galleryFormData(item: GalleryItem): Promise<FormData> {
+  const form = new FormData();
+  form.set('client_id', item.local_id);
+  form.set('title', item.title);
+  form.set('description', item.description);
+  form.set('captured_at', item.created_at);
+
+  const source = Capacitor.isNativePlatform() ? Capacitor.convertFileSrc(item.local_uri) : item.local_uri;
+  const response = await fetch(source);
+  if (!response.ok) throw new Error('Impossibile leggere la foto locale.');
+  const blob = await response.blob();
+  form.set('photo', blob, `${item.local_id}.jpg`);
+
+  return form;
 }
 
 export async function syncNow(): Promise<{ synced: number; pending: number }> {
@@ -183,7 +203,7 @@ export async function syncNow(): Promise<{ synced: number; pending: number }> {
     try {
       if (row.entity === 'gallery' && row.operation === 'create') {
         const item = JSON.parse(row.payload) as GalleryItem;
-        const response = await api('/gallery', { method: 'POST', body: JSON.stringify({ client_id: item.local_id, title: item.title, description: item.description, captured_at: item.created_at }) });
+        const response = await api('/gallery', { method: 'POST', body: await galleryFormData(item) });
         if (!response.ok) throw new Error(`sync ${response.status}`);
         const remote = await response.json();
         await conn.run('UPDATE gallery_items SET remote_id=?, sync_state=? WHERE local_id=?', [remote.id, 'synced', item.local_id]);
