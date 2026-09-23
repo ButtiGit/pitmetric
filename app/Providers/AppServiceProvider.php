@@ -20,9 +20,12 @@ use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\UsageBatch;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Policies\WorkspaceOwnedPolicy;
+use App\Services\TrackCaptureContextService;
 use App\Services\WorkspaceContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -60,6 +63,12 @@ class AppServiceProvider extends ServiceProvider
             UsageBatch::class,
         ] as $model) {
             Gate::policy($model, WorkspaceOwnedPolicy::class);
+        }
+
+        foreach ([Driver::class, Vehicle::class, Configuration::class, TechnicalSetup::class, Component::class] as $model) {
+            $model::created(function (Model $created): void {
+                app(TrackCaptureContextService::class)->modelCreated($created);
+            });
         }
 
         Gate::define('manage-updates', fn (User $user): bool => $this->isUpdateEditor($user));

@@ -1,0 +1,10 @@
+@media (max-width: 42rem) {
+    .pm-mobile-action-dock,
+    [data-pm-trackside-dock] {
+        bottom: calc(5.35rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .pm-mobile-page-with-dock {
+        padding-bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
