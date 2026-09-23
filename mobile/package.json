@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/repair-ionic-types.mjs",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
@@ -34,7 +35,7 @@
     "@capacitor/cli": "8.5.2",
     "@types/node": "24.0.0",
     "@vitejs/plugin-vue": "6.0.1",
-    "typescript": "5.9.2",
+    "typescript": "5.7.3",
     "vite": "7.1.7",
     "vue-tsc": "3.0.6"
   }
