@@ -33,26 +33,10 @@ jobs:
       - name: Pint
         run: composer lint:check
       - name: PHPStan
-        id: phpstan
-        continue-on-error: true
-        run: composer types:check 2>&1 | tee phpstan.log
+        run: composer types:check
       - name: Mobile API tests
-        id: mobile_tests
-        continue-on-error: true
-        run: php artisan test --compact tests/Feature/MobileAppApiTest.php 2>&1 | tee mobile-tests.log
+        run: php artisan test --compact tests/Feature/MobileAppApiTest.php
       - name: Full Laravel tests
-        id: full_tests
-        continue-on-error: true
-        run: php artisan test --compact 2>&1 | tee full-tests.log
-      - name: Upload backend diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-diagnostics
-          path: |
-            phpstan.log
-            mobile-tests.log
-            full-tests.log
-      - name: Fail on backend errors
-        if: steps.phpstan.outcome == 'failure' || steps.mobile_tests.outcome == 'failure' || steps.full_tests.outcome == 'failure'
-        run: exit 1
+        run: php artisan test --compact
+      - name: Historical CI wrapper
+        run: composer ci:check
