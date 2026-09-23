@@ -7,10 +7,12 @@ use App\Models\MobileAccessToken;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use RuntimeException;
 
 class MobileAppController extends Controller
 {
@@ -122,12 +124,20 @@ class MobileAppController extends Controller
             'captured_at' => $validated['captured_at'] ?? now(),
         ]);
 
-        if ($request->hasFile('photo')) {
+        $photo = $request->file('photo');
+
+        if ($photo instanceof UploadedFile) {
+            $storedPath = $photo->store('gallery/'.$user->getKey(), 'public');
+
+            if ($storedPath === false) {
+                throw new RuntimeException('Unable to store gallery photo.');
+            }
+
             if ($asset->path !== null) {
                 Storage::disk('public')->delete($asset->path);
             }
 
-            $asset->path = $request->file('photo')->store('gallery/'.$user->getKey(), 'public');
+            $asset->path = $storedPath;
         }
 
         $asset->save();
