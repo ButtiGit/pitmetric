@@ -14,14 +14,18 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MobileGalleryController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, WorkspaceContext $workspaceContext): JsonResponse
     {
         $user = $this->user($request);
         if (! $user->hasDatabaseAccess() || ! $user->hasVerifiedEmail()) {
             return response()->json(['photos' => [], 'cloud_enabled' => false]);
         }
 
+        $workspaceId = $workspaceContext->currentId($user);
+        abort_if($workspaceId === null, 409, 'No active workspace is available.');
+
         $photos = GalleryPhoto::query()
+            ->where('workspace_id', $workspaceId)
             ->latest('taken_at')
             ->latest('id')
             ->limit(100)
@@ -46,6 +50,9 @@ class MobileGalleryController extends Controller
             abort(403, 'Your team role cannot upload gallery photos.');
         }
 
+        $workspaceId = $workspaceContext->currentId($user);
+        abort_if($workspaceId === null, 409, 'No active workspace is available.');
+
         $validated = $request->validate([
             'client_uuid' => ['required', 'uuid'],
             'title' => ['required', 'string', 'max:160'],
@@ -54,13 +61,14 @@ class MobileGalleryController extends Controller
             'photo' => ['required', 'file', 'image', 'max:15360'],
         ]);
 
-        $existing = GalleryPhoto::query()->where('client_uuid', $validated['client_uuid'])->first();
+        $existing = GalleryPhoto::query()
+            ->where('workspace_id', $workspaceId)
+            ->where('client_uuid', $validated['client_uuid'])
+            ->first();
+
         if ($existing !== null) {
             return response()->json(['photo' => $this->serialize($existing), 'duplicate' => true]);
         }
-
-        $workspaceId = $workspaceContext->currentId($user);
-        abort_if($workspaceId === null, 409, 'No active workspace is available.');
 
         $file = $request->file('photo');
         abort_if($file === null, 422, 'A photo is required.');
@@ -84,9 +92,18 @@ class MobileGalleryController extends Controller
         return response()->json(['photo' => $this->serialize($photo), 'duplicate' => false], 201);
     }
 
-    public function show(Request $request, GalleryPhoto $galleryPhoto): BinaryFileResponse
-    {
-        $this->user($request);
+    public function show(
+        Request $request,
+        GalleryPhoto $galleryPhoto,
+        WorkspaceContext $workspaceContext,
+    ): BinaryFileResponse {
+        $user = $this->user($request);
+        $workspaceId = $workspaceContext->currentId($user);
+
+        abort_unless(
+            $workspaceId !== null && (int) $galleryPhoto->workspace_id === $workspaceId,
+            404,
+        );
         abort_unless(Storage::disk('local')->exists($galleryPhoto->path), 404);
 
         return response()->file(
