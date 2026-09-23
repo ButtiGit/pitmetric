@@ -68,11 +68,15 @@ test('mobile trackside surfaces stay one-handed and action-first', async ({ page
 
         const firstBox = await actions.nth(0).boundingBox();
         const secondBox = await actions.nth(1).boundingBox();
+        const firstTarget = await actions.nth(0).locator('summary').boundingBox();
+        const secondTarget = await actions.nth(1).locator('summary').boundingBox();
         expect(firstBox).not.toBeNull();
         expect(secondBox).not.toBeNull();
+        expect(firstTarget).not.toBeNull();
+        expect(secondTarget).not.toBeNull();
         expect(Math.abs(firstBox.y - secondBox.y)).toBeLessThanOrEqual(2);
-        expect(firstBox.height).toBeGreaterThanOrEqual(80);
-        expect(secondBox.height).toBeGreaterThanOrEqual(80);
+        expect(firstTarget.height).toBeGreaterThanOrEqual(44);
+        expect(secondTarget.height).toBeGreaterThanOrEqual(44);
 
         const pageBottomPadding = await root.evaluate((element) => parseFloat(getComputedStyle(element).paddingBottom));
         expect(pageBottomPadding).toBeGreaterThan(90);
