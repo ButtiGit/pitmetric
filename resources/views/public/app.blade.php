@@ -4,12 +4,13 @@
 >
     @php($apkUrl = 'https://github.com/ButtiGit/pitmetric/releases/download/android-latest/PitMetric.apk')
 
-    <section class="relative isolate overflow-hidden border-b border-white/10 bg-[#080a0d]">
-        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_70%_20%,rgba(225,6,0,.17),transparent_34%),radial-gradient(circle_at_20%_80%,rgba(255,98,94,.08),transparent_36%)]"></div>
+    <section class="relative isolate overflow-hidden border-b border-white/10 bg-[#080A0D]">
+        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_70%_20%,rgba(225,6,0,.17),transparent_34%),radial-gradient(circle_at_20%_80%,rgba(225,6,0,.07),transparent_36%)]"></div>
         <div class="mx-auto grid min-h-[72vh] max-w-7xl items-center gap-14 px-5 py-20 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-28">
             <div>
-                <p class="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#ff625e]">PitMetric / Android</p>
-                <h1 class="mt-6 max-w-3xl text-5xl font-black tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">
+                <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-12 w-auto sm:h-14">
+                <p class="mt-7 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E10600]">PitMetric / Android</p>
+                <h1 class="mt-5 max-w-3xl text-5xl font-black tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">
                     {{ app()->getLocale() === 'it' ? 'La pista non aspetta il Wi-Fi.' : 'The track does not wait for Wi-Fi.' }}
                 </h1>
                 <p class="mt-7 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
@@ -19,7 +20,7 @@
                 </p>
 
                 <div class="mt-9 flex flex-wrap items-center gap-4">
-                    <a href="{{ $apkUrl }}" class="inline-flex min-h-12 items-center justify-center bg-[#E10600] px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#f01812]">
+                    <a href="{{ $apkUrl }}" class="inline-flex min-h-12 items-center justify-center bg-[#E10600] px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#F01812]">
                         {{ app()->getLocale() === 'it' ? 'Scarica APK Android' : 'Download Android APK' }}
                     </a>
                     <span class="font-mono text-[11px] uppercase tracking-[0.12em] text-zinc-500">Beta · Android · APK</span>
@@ -34,12 +35,12 @@
 
             <div class="relative mx-auto w-full max-w-md">
                 <div class="absolute -inset-5 rounded-[3rem] bg-[#E10600]/10 blur-3xl"></div>
-                <div class="relative overflow-hidden rounded-[2.3rem] border border-white/10 bg-[#111419] p-3 shadow-2xl">
-                    <div class="rounded-[1.9rem] border border-white/10 bg-[#0b0d10] p-5">
+                <div class="relative overflow-hidden rounded-[2.3rem] border border-white/10 bg-[#111318] p-3 shadow-2xl">
+                    <div class="rounded-[1.9rem] border border-white/10 bg-[#0B0D10] p-5">
                         <div class="flex items-center justify-between border-b border-white/10 pb-5">
                             <div class="flex items-center gap-3">
-                                <div class="grid h-11 w-11 place-items-center rounded-xl bg-[#ff5a36] text-sm font-black tracking-[-.08em] text-white">PM</div>
-                                <div><p class="font-bold text-white">PitMetric</p><p class="text-xs text-zinc-500">Trackside / Offline</p></div>
+                                <img src="{{ asset('brand/pitmetric-app-icon-dark.svg') }}" alt="" class="h-12 w-12 shrink-0">
+                                <div><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-6 w-auto"><p class="mt-1 text-xs text-zinc-500">Trackside / Offline</p></div>
                             </div>
                             <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[.08em] text-emerald-400">Local first</span>
                         </div>
@@ -58,7 +59,7 @@
                                 </div>
                             @endforeach
                         </div>
-                        <div class="mt-4 rounded-2xl border border-[#ff5a36]/20 bg-[#ff5a36]/[.06] p-4 text-sm leading-6 text-zinc-300">
+                        <div class="mt-4 rounded-2xl border border-[#E10600]/20 bg-[#E10600]/[.06] p-4 text-sm leading-6 text-zinc-300">
                             {{ app()->getLocale() === 'it' ? '0 segnale? Continui a registrare. La sincronizzazione riparte quando la rete torna disponibile.' : 'No signal? Keep recording. Sync resumes when the network is available again.' }}
                         </div>
                     </div>
@@ -70,7 +71,7 @@
     <section class="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
         <div class="grid gap-12 lg:grid-cols-[.65fr_1.35fr] lg:gap-20">
             <div>
-                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#ff625e]">Install / Android</p>
+                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#E10600]">Install / Android</p>
                 <h2 class="mt-5 text-3xl font-black tracking-tight text-white">{{ app()->getLocale() === 'it' ? 'Installazione in tre tocchi.' : 'Install in three taps.' }}</h2>
             </div>
             <ol class="grid gap-0 border-t border-white/15">
@@ -86,7 +87,7 @@
                         ['03', 'Install', 'Open PitMetric.apk, confirm installation and launch PitMetric from its new icon.'],
                     ]) as [$number, $title, $copy])
                     <li class="grid gap-4 border-b border-white/15 py-7 sm:grid-cols-[4rem_10rem_1fr] sm:items-start">
-                        <span class="font-mono text-xs text-[#ff625e]">{{ $number }}</span>
+                        <span class="font-mono text-xs text-[#E10600]">{{ $number }}</span>
                         <strong class="text-white">{{ $title }}</strong>
                         <p class="text-sm leading-6 text-zinc-400">{{ $copy }}</p>
                     </li>
@@ -95,11 +96,11 @@
         </div>
     </section>
 
-    <section class="border-y border-white/10 bg-[#0d1014]">
+    <section class="border-y border-white/10 bg-[#0D1014]">
         <div class="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-3 lg:px-8">
-            <article><p class="font-mono text-[10px] uppercase tracking-[.18em] text-[#ff625e]">01 / Offline</p><h3 class="mt-4 text-xl font-bold text-white">SQLite + outbox</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Le operazioni vengono conservate sul dispositivo prima di qualsiasi richiesta di rete.' : 'Operations are kept on-device before any network request.' }}</p></article>
-            <article><p class="font-mono text-[10px] uppercase tracking-[.18em] text-[#ff625e]">02 / Security</p><h3 class="mt-4 text-xl font-bold text-white">Biometria</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Dopo il primo accesso puoi sbloccare la sessione con viso, impronta o credenziale del dispositivo.' : 'After the first sign-in, unlock the session with face, fingerprint or device credentials.' }}</p></article>
-            <article><p class="font-mono text-[10px] uppercase tracking-[.18em] text-[#ff625e]">03 / Media</p><h3 class="mt-4 text-xl font-bold text-white">Foto + video</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Titolo, descrizione e file restano disponibili in galleria anche senza segnale.' : 'Title, description and files remain available in the gallery even without signal.' }}</p></article>
+            <article><p class="font-mono text-[10px] uppercase tracking-[.18em] text-[#E10600]">01 / Offline</p><h3 class="mt-4 text-xl font-bold text-white">SQLite + outbox</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Le operazioni vengono conservate sul dispositivo prima di qualsiasi richiesta di rete.' : 'Operations are kept on-device before any network request.' }}</p></article>
+            <article><p class="font-mono text-[10px] uppercase tracking-[.18em] text-[#E10600]">02 / Security</p><h3 class="mt-4 text-xl font-bold text-white">Biometria</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Dopo il primo accesso puoi sbloccare la sessione con viso, impronta o credenziale del dispositivo.' : 'After the first sign-in, unlock the session with face, fingerprint or device credentials.' }}</p></article>
+            <article><p class="font-mono text-[10px] uppercase tracking-[.18em] text-[#E10600]">03 / Media</p><h3 class="mt-4 text-xl font-bold text-white">Foto + video</h3><p class="mt-3 text-sm leading-6 text-zinc-400">{{ app()->getLocale() === 'it' ? 'Titolo, descrizione e file restano disponibili in galleria anche senza segnale.' : 'Title, description and files remain available in the gallery even without signal.' }}</p></article>
         </div>
     </section>
 </x-layouts::public>
