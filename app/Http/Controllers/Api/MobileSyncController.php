@@ -56,7 +56,10 @@ class MobileSyncController extends Controller
         ]);
     }
 
-    /** @param array{id: string, type: string, payload: array<string, mixed>} $operation */
+    /**
+     * @param  array{id: string, type: string, payload: array<string, mixed>}  $operation
+     * @return array{id: string, duplicate: bool, resource_type: string|null, resource_id: int|null}
+     */
     private function syncOperation(User $user, array $operation, TrackCaptureService $captureService): array
     {
         $existing = MobileSyncReceipt::query()->where('client_uuid', $operation['id'])->first();
@@ -112,7 +115,7 @@ class MobileSyncController extends Controller
         return $captureService->create($user, $validated);
     }
 
-    /** @return array<string, mixed> */
+    /** @return array{id: string, duplicate: bool, resource_type: string|null, resource_id: int|null} */
     private function receipt(MobileSyncReceipt $receipt, bool $duplicate): array
     {
         return [
