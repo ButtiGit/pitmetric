@@ -1,10 +1,16 @@
 @php
     $show = request()->routeIs('sessions.*') || request()->routeIs('timing.*') || request()->routeIs('circuits.*');
     $captures = collect();
+    $hasContextReferences = \Illuminate\Support\Facades\Schema::hasTable('track_capture_references');
 
     if ($show && auth()->check() && \Illuminate\Support\Facades\Schema::hasTable('track_captures')) {
+        $relations = ['circuit', 'circuitLayout'];
+        if ($hasContextReferences) {
+            $relations[] = 'references';
+        }
+
         $captures = \App\Models\TrackCapture::query()
-            ->with(['circuit', 'circuitLayout'])
+            ->with($relations)
             ->latest('occurred_at')
             ->latest('id')
             ->limit(12)
@@ -15,7 +21,7 @@
 @if ($show && $captures->isNotEmpty())
     <div class="mx-auto w-full max-w-[1360px] px-4 pt-4 sm:px-6 lg:px-8">
         @if (request()->routeIs('circuits.*'))
-            @php($pending = $captures->where('status', 'needs_attention'))
+            @php($pending = $captures->filter(fn ($capture) => $capture->circuit_id === null))
             @if ($pending->isNotEmpty())
                 <section class="rounded-2xl border border-amber-400/20 bg-amber-400/[0.05] p-4 sm:p-5">
                     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -59,11 +65,20 @@
                                     <p class="mt-1 font-mono text-xl font-black text-white">{{ $capture->formattedLapTime() }}</p>
                                 </div>
                                 @if ($capture->status === 'needs_attention')
-                                    <span title="{{ app()->getLocale() === 'it' ? 'Circuito da completare' : 'Circuit needs completion' }}" class="shrink-0 rounded-full bg-amber-400/10 px-2 py-1 text-[10px] font-black text-amber-300">!</span>
+                                    <span title="{{ app()->getLocale() === 'it' ? 'Dati da completare' : 'Data needs completion' }}" class="shrink-0 rounded-full bg-amber-400/10 px-2 py-1 text-[10px] font-black text-amber-300">!</span>
                                 @else
-                                    <span class="shrink-0 rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-300">✓</span>
+                                    <span title="{{ app()->getLocale() === 'it' ? 'Completo' : 'Complete' }}" class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300"><flux:icon.check class="size-3.5" /></span>
                                 @endif
                             </div>
+                            @if ($hasContextReferences && $capture->references->isNotEmpty())
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    @foreach ($capture->references->take(5) as $reference)
+                                        <span class="rounded-md border px-1.5 py-1 text-[9px] font-bold {{ $reference->status === 'pending' ? 'border-amber-400/20 bg-amber-400/[0.06] text-amber-300' : 'border-white/8 bg-white/[0.025] text-zinc-400' }}">
+                                            {{ str_replace('_', ' ', $reference->kind) }}: {{ $reference->raw_name }}@if ($reference->status === 'pending') !@endif
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
                             <p class="mt-2 text-[11px] text-pm-muted">{{ $capture->occurred_at?->format('d/m H:i') }}</p>
                         </article>
                     @endforeach
