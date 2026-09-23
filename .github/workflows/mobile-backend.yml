@@ -33,17 +33,19 @@ jobs:
       - name: Pint
         run: composer lint:check
       - name: PHPStan
-        id: phpstan
+        run: composer types:check
+      - name: Mobile API tests
+        run: php artisan test --compact tests/Feature/MobileAppApiTest.php
+      - name: Full Laravel tests
+        id: full_tests
         continue-on-error: true
-        run: composer types:check 2>&1 | tee phpstan.log
-      - name: Upload PHPStan log
+        run: php artisan test --compact 2>&1 | tee full-tests.log
+      - name: Upload full test log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phpstan-log
-          path: phpstan.log
-      - name: Fail if PHPStan failed
-        if: steps.phpstan.outcome == 'failure'
+          name: full-tests-log
+          path: full-tests.log
+      - name: Fail if full tests failed
+        if: steps.full_tests.outcome == 'failure'
         run: exit 1
-      - name: Mobile API tests
-        run: php artisan test --compact tests/Feature/MobileAppApiTest.php
