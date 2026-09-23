@@ -1,5 +1,14 @@
 <x-layouts::app :title="'Pit Mode'">
-    @php($it = app()->getLocale() === 'it')
+    @php
+        $it = app()->getLocale() === 'it';
+        $contextIsEmpty = collect($context)->filter()->isEmpty();
+        $pressureLabels = [
+            'fl' => $it ? 'Ant. SX' : 'Front L',
+            'fr' => $it ? 'Ant. DX' : 'Front R',
+            'rl' => $it ? 'Post. SX' : 'Rear L',
+            'rr' => $it ? 'Post. DX' : 'Rear R',
+        ];
+    @endphp
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-3 py-4 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-3xl space-y-4">
@@ -36,10 +45,7 @@
                 </div>
             @endif
 
-            <details
-                class="rounded-2xl border border-pm-border bg-pm-panel p-4"
-                @if (collect($context)->filter()->isEmpty()) open @endif
-            >
+            <details class="rounded-2xl border border-pm-border bg-pm-panel p-4" {{ $contextIsEmpty ? 'open' : '' }}>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[0.14em] text-pm-accent">
@@ -79,7 +85,7 @@
                     </button>
                 </form>
 
-                @if (collect($context)->filter()->isNotEmpty())
+                @if (! $contextIsEmpty)
                     <form method="POST" action="{{ route('pit-mode.context.clear') }}" class="mt-2">
                         @csrf
                         @method('DELETE')
@@ -134,12 +140,7 @@
                     </summary>
                     <form method="POST" action="{{ route('pit-mode.pressures.store') }}" class="grid grid-cols-2 gap-3 border-t border-pm-border p-4">
                         @csrf
-                        @foreach ([
-                            'fl' => ($it ? 'Ant. SX' : 'Front L'),
-                            'fr' => ($it ? 'Ant. DX' : 'Front R'),
-                            'rl' => ($it ? 'Post. SX' : 'Rear L'),
-                            'rr' => ($it ? 'Post. DX' : 'Rear R'),
-                        ] as $key => $label)
+                        @foreach ($pressureLabels as $key => $label)
                             <label class="grid gap-1.5">
                                 <span class="pm-label">{{ $label }}</span>
                                 <input class="pm-input font-mono text-lg font-black" name="pressure_{{ $key }}" required type="number" inputmode="decimal" min="0.1" max="1000" step="0.01">
@@ -264,29 +265,25 @@
                                     'component_change' => $it ? 'Cambio componente' : 'Component change',
                                     default => $it ? 'Nota' : 'Note',
                                 };
+
+                                $captureSummary = match ($capture->kind) {
+                                    'lap_time' => (string) $capture->formattedLapTime(),
+                                    'tyre_pressure' => implode(' / ', [
+                                        data_get($capture->payload, 'fl'),
+                                        data_get($capture->payload, 'fr'),
+                                        data_get($capture->payload, 'rl'),
+                                        data_get($capture->payload, 'rr'),
+                                    ]).' '.(string) data_get($capture->payload, 'unit'),
+                                    'component_change' => (data_get($capture->payload, 'removed_component') ?: '-').' -> '.(data_get($capture->payload, 'installed_component') ?: '-'),
+                                    default => \Illuminate\Support\Str::limit((string) $capture->notes, 100),
+                                };
                             @endphp
 
                             <article class="rounded-xl border border-pm-border bg-pm-subtle p-3 {{ (string) request('captured') === (string) $capture->id ? 'ring-1 ring-pm-accent/60' : '' }}">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="text-[10px] font-black uppercase tracking-[0.12em] text-pm-accent">{{ $kindLabel }}</p>
-                                        <p class="mt-1 text-sm font-bold text-pm-text">
-                                            @if ($capture->kind === 'lap_time')
-                                                {{ $capture->formattedLapTime() }}
-                                            @elseif ($capture->kind === 'tyre_pressure')
-                                                {{ data_get($capture->payload, 'fl') }} /
-                                                {{ data_get($capture->payload, 'fr') }} /
-                                                {{ data_get($capture->payload, 'rl') }} /
-                                                {{ data_get($capture->payload, 'rr') }}
-                                                {{ data_get($capture->payload, 'unit') }}
-                                            @elseif ($capture->kind === 'component_change')
-                                                {{ data_get($capture->payload, 'removed_component') ?: '-' }}
-                                                &rarr;
-                                                {{ data_get($capture->payload, 'installed_component') ?: '-' }}
-                                            @else
-                                                {{ \Illuminate\Support\Str::limit((string) $capture->notes, 100) }}
-                                            @endif
-                                        </p>
+                                        <p class="mt-1 text-sm font-bold text-pm-text">{{ $captureSummary }}</p>
                                         <p class="mt-1 text-[11px] text-pm-muted">
                                             {{ $capture->circuit?->name ?? $capture->circuit_name ?? ($it ? 'Senza circuito' : 'No circuit') }}
                                             · {{ $capture->occurred_at?->format('H:i') }}
