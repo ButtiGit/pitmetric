@@ -30,7 +30,7 @@ class TrackCaptureContextService
      */
     public function attach(TrackCapture $capture, User $user, array $context): int
     {
-        if (! Schema::hasTable('track_capture_references') || ! Schema::hasTable('follow_up_tasks')) {
+        if (Schema::hasTable('track_capture_references') === false || Schema::hasTable('follow_up_tasks') === false) {
             return 0;
         }
 
@@ -71,9 +71,9 @@ class TrackCaptureContextService
 
     public function resolve(string $kind, string $name, int $workspaceId, int $entityId): void
     {
-        if (! isset(self::TYPES[$kind])
-            || ! Schema::hasTable('track_capture_references')
-            || ! Schema::hasTable('follow_up_tasks')) {
+        if (isset(self::TYPES[$kind]) === false
+            || Schema::hasTable('track_capture_references') === false
+            || Schema::hasTable('follow_up_tasks') === false) {
             return;
         }
 
@@ -123,7 +123,7 @@ class TrackCaptureContextService
         foreach (self::TYPES as $kind => $definition) {
             $modelClass = $definition['model'];
 
-            if (! $model instanceof $modelClass) {
+            if (($model instanceof $modelClass) === false) {
                 continue;
             }
 
@@ -189,7 +189,7 @@ class TrackCaptureContextService
             ->where('workspace_id', $workspaceId)
             ->find($captureId);
 
-        if (! $capture instanceof TrackCapture) {
+        if (($capture instanceof TrackCapture) === false) {
             return;
         }
 
