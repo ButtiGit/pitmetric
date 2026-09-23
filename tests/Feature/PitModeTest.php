@@ -14,11 +14,11 @@ beforeEach(function () {
 test('pit mode exposes five trackside quick actions', function () {
     $this->get(route('pit-mode.index'))
         ->assertOk()
-        ->assertSee('+ Tempo')
-        ->assertSee('+ Pressioni')
-        ->assertSee('+ Problema')
-        ->assertSee('+ Cambio componente')
-        ->assertSee('+ Nota');
+        ->assertSee('id="pit-lap"', false)
+        ->assertSee('id="pit-pressure"', false)
+        ->assertSee('id="pit-issue"', false)
+        ->assertSee('id="pit-component"', false)
+        ->assertSee('id="pit-note"', false);
 });
 
 test('pit context is remembered per workspace and reused by pressure captures', function () {
