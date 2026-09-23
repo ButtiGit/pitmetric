@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use RuntimeException;
 
@@ -123,7 +123,7 @@ class MobileAppController extends Controller
                     'entry_number' => $entry->entry_number,
                     'vehicle_id' => $entry->vehicle_id,
                     'vehicle' => $entry->vehicle?->name,
-                    'driver' => $entry->driver?->name,
+                    'driver' => $entry->driver?->display_name,
                     'configuration_version_id' => $entry->configuration_version_id,
                 ])->values(),
                 'schedule' => $event->scheduleItems->map(fn ($item): array => [
