@@ -14,6 +14,7 @@ use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\Workspace;
 use App\Services\RecordSessionService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use RuntimeException;
@@ -424,7 +425,7 @@ class MobileAppController extends Controller
     }
 
     /** @param array<string, mixed> $payload */
-    private function syncSession(array $payload, $workspace, User $user): array
+    private function syncSession(array $payload, Workspace $workspace, User $user): array
     {
         $validated = Validator::make($payload, [
             'event_id' => ['nullable', 'integer', 'required_with:event_entry_id,schedule_item_id'],
