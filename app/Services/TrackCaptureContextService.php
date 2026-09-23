@@ -26,7 +26,7 @@ class TrackCaptureContextService
     ];
 
     /**
-     * @param array<string, string|null> $context
+     * @param  array<string, string|null>  $context
      */
     public function attach(TrackCapture $capture, User $user, array $context): int
     {
