@@ -49,7 +49,7 @@ test('mobile trackside surfaces stay one-handed and action-first', async ({ page
         await expect(actions).toHaveCount(5);
         await expect(context).not.toHaveAttribute('open', '');
         await expect(bottomNav).toBeVisible();
-        await expect(followUpBell).toBeVisible();
+        await expect(followUpBell).toBeHidden();
         await expect(header.locator('a')).toBeHidden();
         await expectNoHorizontalPageOverflow(page);
 
@@ -62,9 +62,6 @@ test('mobile trackside surfaces stay one-handed and action-first', async ({ page
 
         const titleDoesNotWrap = await header.locator('h1').evaluate((element) => element.getBoundingClientRect().height <= parseFloat(getComputedStyle(element).lineHeight) * 1.25);
         expect(titleDoesNotWrap).toBeTruthy();
-
-        const bellRightInset = await followUpBell.evaluate((element) => window.innerWidth - element.getBoundingClientRect().right);
-        expect(bellRightInset).toBeGreaterThan(64);
 
         const firstBox = await actions.nth(0).boundingBox();
         const secondBox = await actions.nth(1).boundingBox();
