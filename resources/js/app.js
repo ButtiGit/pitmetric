@@ -3,6 +3,7 @@ import '../css/forms.css';
 import '../css/mobile.css';
 import '../css/mobile-shell.css';
 import '../css/mobile-shell-compat.css';
+import '../css/pit-mode.css';
 import '../css/onboarding.css';
 import '../css/workspace.css';
 
