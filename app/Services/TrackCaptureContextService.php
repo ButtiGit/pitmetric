@@ -30,6 +30,10 @@ class TrackCaptureContextService
      */
     public function attach(TrackCapture $capture, User $user, array $context): int
     {
+        if (! Schema::hasTable('track_capture_references') || ! Schema::hasTable('follow_up_tasks')) {
+            return 0;
+        }
+
         $items = [
             'driver' => $this->single($context['driver_name'] ?? null),
             'vehicle' => $this->single($context['vehicle_name'] ?? null),
@@ -168,7 +172,7 @@ class TrackCaptureContextService
         $model = $definition['model'];
         $column = $definition['column'];
         $id = $model::query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScope('workspace')
             ->where('workspace_id', $workspaceId)
             ->whereRaw('LOWER('.$column.') = ?', [mb_strtolower($name)])
             ->value('id');
@@ -195,7 +199,7 @@ class TrackCaptureContextService
             ->exists();
         $needsAttention = $capture->circuit_id === null || $hasPendingReference;
 
-        $capture->withoutEvents(function () use ($capture, $needsAttention): void {
+        TrackCapture::withoutEvents(function () use ($capture, $needsAttention): void {
             $capture->update([
                 'status' => $needsAttention ? 'needs_attention' : 'ready',
                 'resolved_at' => $needsAttention ? null : now(),
