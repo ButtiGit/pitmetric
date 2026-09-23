@@ -32,6 +32,7 @@ export type CapturePayload = {
 
 export type LocalCapture = {
   id: string;
+  ownerUserId: number;
   payload: CapturePayload;
   syncState: 'pending' | 'synced' | 'failed';
   remoteId?: number | null;
@@ -52,6 +53,7 @@ export type RemoteCapture = {
 
 export type LocalGalleryPhoto = {
   id: string;
+  ownerUserId: number;
   title: string;
   description: string;
   filePath: string;
