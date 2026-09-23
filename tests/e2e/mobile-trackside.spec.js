@@ -34,25 +34,49 @@ test('mobile trackside surfaces stay one-handed and action-first', async ({ page
 
     await login(page);
 
-    await test.step('Pit Mode keeps every quick action reachable above the mobile navigation', async () => {
+    await test.step('Pit Mode keeps every quick action reachable and its chrome collision-free', async () => {
         await page.goto('/pit');
 
         const root = page.locator('[data-pm-pit-page]');
+        const header = page.locator('[data-pm-pit-header]');
         const context = page.locator('[data-pm-pit-context]');
         const actions = page.locator('[data-pm-pit-action]');
         const bottomNav = page.locator('[data-pm-mobile-bottom-nav]');
+        const followUpBell = page.locator('[data-pm-follow-up-bell]');
 
         await expect(root).toBeVisible();
+        await expect(header).toBeVisible();
         await expect(actions).toHaveCount(5);
         await expect(context).not.toHaveAttribute('open', '');
         await expect(bottomNav).toBeVisible();
+        await expect(followUpBell).toBeVisible();
+        await expect(header.locator('a')).toBeHidden();
         await expectNoHorizontalPageOverflow(page);
+
+        const headerBox = await header.boundingBox();
+        const contextBox = await context.boundingBox();
+        expect(headerBox).not.toBeNull();
+        expect(contextBox).not.toBeNull();
+        expect(headerBox.height).toBeLessThan(110);
+        expect(headerBox.y + headerBox.height).toBeLessThan(contextBox.y);
+
+        const titleDoesNotWrap = await header.locator('h1').evaluate((element) => element.getBoundingClientRect().height <= parseFloat(getComputedStyle(element).lineHeight) * 1.25);
+        expect(titleDoesNotWrap).toBeTruthy();
+
+        const bellRightInset = await followUpBell.evaluate((element) => window.innerWidth - element.getBoundingClientRect().right);
+        expect(bellRightInset).toBeGreaterThan(64);
 
         const firstBox = await actions.nth(0).boundingBox();
         const secondBox = await actions.nth(1).boundingBox();
+        const firstTarget = await actions.nth(0).locator('summary').boundingBox();
+        const secondTarget = await actions.nth(1).locator('summary').boundingBox();
         expect(firstBox).not.toBeNull();
         expect(secondBox).not.toBeNull();
+        expect(firstTarget).not.toBeNull();
+        expect(secondTarget).not.toBeNull();
         expect(Math.abs(firstBox.y - secondBox.y)).toBeLessThanOrEqual(2);
+        expect(firstTarget.height).toBeGreaterThanOrEqual(44);
+        expect(secondTarget.height).toBeGreaterThanOrEqual(44);
 
         const pageBottomPadding = await root.evaluate((element) => parseFloat(getComputedStyle(element).paddingBottom));
         expect(pageBottomPadding).toBeGreaterThan(90);
