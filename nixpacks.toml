@@ -6,16 +6,6 @@ PORT = "80"
 NIXPACKS_PHP_ROOT_DIR = "/app/public"
 NIXPACKS_PHP_FALLBACK_PATH = "/index.php"
 
-# Keep npm ci as the clean installer, but reconcile package-lock.json first.
-# This prevents Coolify/Nixpacks builds from failing when package.json gains a
-# dependency (for example Playwright) before the generated lockfile is committed.
-[phases.install]
-cmds = [
-    "composer install --ignore-platform-reqs",
-    "npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
-    "npm ci --no-audit --no-fund"
-]
-
 [phases.build]
 cmds = [
     "npm run build",
