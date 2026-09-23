@@ -6,6 +6,7 @@ use App\Models\Circuit;
 use App\Models\FollowUpTask;
 use App\Models\TrackCapture;
 use App\Models\User;
+use App\Services\TrackCaptureContextService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,18 +14,26 @@ use Illuminate\Validation\ValidationException;
 
 class QuickCaptureController extends Controller
 {
-    public function storeLap(Request $request, WorkspaceContext $workspaceContext): RedirectResponse
-    {
+    public function storeLap(
+        Request $request,
+        WorkspaceContext $workspaceContext,
+        TrackCaptureContextService $contextService,
+    ): RedirectResponse {
         $user = $request->user();
 
         if (! $user instanceof User) {
             abort(401);
         }
 
-        $workspace = $workspaceContext->personal($user);
+        $workspaceContext->personal($user);
         $validated = $request->validate([
             'circuit_name' => ['required', 'string', 'max:120'],
             'lap_time' => ['required', 'string', 'max:20'],
+            'driver_name' => ['nullable', 'string', 'max:120'],
+            'vehicle_name' => ['nullable', 'string', 'max:120'],
+            'configuration_name' => ['nullable', 'string', 'max:120'],
+            'technical_setup_name' => ['nullable', 'string', 'max:120'],
+            'component_names' => ['nullable', 'string', 'max:600'],
             'occurred_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -71,9 +80,26 @@ class QuickCaptureController extends Controller
             }
         }
 
+        $pendingContext = $contextService->attach($capture, $user, [
+            'driver_name' => $validated['driver_name'] ?? null,
+            'vehicle_name' => $validated['vehicle_name'] ?? null,
+            'configuration_name' => $validated['configuration_name'] ?? null,
+            'technical_setup_name' => $validated['technical_setup_name'] ?? null,
+            'component_names' => $validated['component_names'] ?? null,
+        ]);
+
+        if ($pendingContext > 0) {
+            $capture->update([
+                'status' => 'needs_attention',
+                'resolved_at' => null,
+            ]);
+        }
+
+        $needsAttention = $needsCircuit || $pendingContext > 0;
+
         return to_route('sessions.index', ['captured' => $capture->getKey()])
-            ->with('status', $needsCircuit
-                ? __('Lap saved. The circuit can be completed later from the alert inbox.')
+            ->with('status', $needsAttention
+                ? __('Lap saved. Missing context can be completed later from the alert inbox.')
                 : __('Lap saved.'));
     }
 
