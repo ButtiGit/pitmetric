@@ -222,9 +222,79 @@ const initMobileDashboard = () => {
     applyState();
 };
 
+const initPitModeLayout = () => {
+    const lapAction = document.querySelector('#pit-lap');
+
+    if (!(lapAction instanceof HTMLDetailsElement)) {
+        return;
+    }
+
+    const root = lapAction.closest('.pitmetric-app');
+    const actions = lapAction.closest('section');
+
+    if (!root || !actions) {
+        return;
+    }
+
+    root.dataset.pmPitPage = '1';
+    root.querySelector('header')?.setAttribute('data-pm-pit-header', '1');
+    actions.dataset.pmPitActions = '1';
+
+    const context = actions.previousElementSibling;
+    if (context instanceof HTMLDetailsElement) {
+        context.dataset.pmPitContext = '1';
+
+        if (window.matchMedia('(max-width: 639px)').matches && context.dataset.pmPitTouched !== '1') {
+            context.removeAttribute('open');
+        }
+
+        if (context.dataset.pmPitBound !== '1') {
+            context.dataset.pmPitBound = '1';
+            context.addEventListener('toggle', () => {
+                if (context.open) {
+                    context.dataset.pmPitTouched = '1';
+                }
+            });
+        }
+    }
+
+    const actionItems = [...actions.querySelectorAll(':scope > details')]
+        .filter((item) => item instanceof HTMLDetailsElement);
+
+    actionItems.forEach((item) => {
+        item.dataset.pmPitAction = '1';
+        item.setAttribute('name', 'pit-action');
+
+        if (item.dataset.pmPitBound === '1') {
+            return;
+        }
+
+        item.dataset.pmPitBound = '1';
+        item.addEventListener('toggle', () => {
+            if (!item.open) {
+                return;
+            }
+
+            actionItems.forEach((otherItem) => {
+                if (otherItem !== item) {
+                    otherItem.removeAttribute('open');
+                }
+            });
+
+            window.setTimeout(() => {
+                item.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                    block: 'nearest',
+                });
+            }, 80);
+        });
+    });
+};
+
 const initMobileShell = () => {
     initMobileNavigation();
     initMobileDashboard();
+    initPitModeLayout();
 };
 
 document.addEventListener('DOMContentLoaded', initMobileShell);

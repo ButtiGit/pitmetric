@@ -1,0 +1,158 @@
+@media (max-width: 639px) {
+    [data-pm-pit-page] {
+        padding-top: .75rem;
+        padding-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    [data-pm-pit-page] > div {
+        gap: .75rem;
+    }
+
+    [data-pm-pit-header] {
+        border-radius: 1rem;
+        padding: .85rem .95rem;
+    }
+
+    [data-pm-pit-header] > div {
+        align-items: center;
+        gap: .75rem;
+    }
+
+    [data-pm-pit-header] > div > div {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    [data-pm-pit-header] h1 {
+        margin-top: .2rem;
+        font-size: 1.45rem;
+        line-height: 1;
+    }
+
+    [data-pm-pit-header] h1 + p {
+        display: none;
+    }
+
+    [data-pm-pit-header] a {
+        min-height: 2.5rem;
+        flex: none;
+        border-radius: .75rem;
+        padding: .55rem .7rem;
+        font-size: .72rem;
+    }
+
+    [data-pm-pit-context] {
+        border-radius: 1rem;
+        padding: .8rem .9rem;
+    }
+
+    [data-pm-pit-context] summary {
+        min-height: 2.75rem;
+    }
+
+    [data-pm-pit-context] summary > div {
+        min-width: 0;
+    }
+
+    [data-pm-pit-context] summary p:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-pm-pit-context] > form {
+        margin-top: .85rem;
+        gap: .65rem;
+    }
+
+    [data-pm-pit-context] .pm-input {
+        min-height: 3rem;
+    }
+
+    [data-pm-pit-actions] {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .55rem;
+    }
+
+    [data-pm-pit-action] {
+        min-width: 0;
+        overflow: hidden;
+        border-radius: 1rem;
+        scroll-margin-top: 5.5rem;
+        scroll-margin-bottom: 8rem;
+        transition: border-color .2s ease, box-shadow .2s ease, transform .16s ease;
+    }
+
+    [data-pm-pit-action]:not([open]):active {
+        transform: scale(.985);
+    }
+
+    [data-pm-pit-action][open] {
+        grid-column: 1 / -1;
+        border-color: color-mix(in srgb, var(--pm-accent, #E10600) 48%, var(--pm-border, #272d36));
+        box-shadow: 0 14px 32px rgb(0 0 0 / .18), inset 3px 0 0 var(--pm-accent, #E10600);
+    }
+
+    [data-pm-pit-action]:last-child:not([open]) {
+        grid-column: 1 / -1;
+    }
+
+    [data-pm-pit-action] > summary {
+        position: relative;
+        min-height: 5.45rem;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: .2rem;
+        padding: .8rem .85rem;
+        touch-action: manipulation;
+    }
+
+    [data-pm-pit-action] > summary > div {
+        min-width: 0;
+        padding-right: 1.9rem;
+    }
+
+    [data-pm-pit-action] > summary > div > p:first-child {
+        font-size: .94rem;
+        line-height: 1.12;
+    }
+
+    [data-pm-pit-action] > summary > div > p:last-child {
+        display: none;
+    }
+
+    [data-pm-pit-action] > summary > span {
+        position: absolute;
+        top: .75rem;
+        right: .8rem;
+        font-size: .72rem;
+        line-height: 1;
+        letter-spacing: .04em;
+    }
+
+    [data-pm-pit-action][open] > summary {
+        min-height: 3.65rem;
+        padding-block: .7rem;
+    }
+
+    [data-pm-pit-action] > form {
+        gap: .7rem;
+        padding: .85rem;
+    }
+
+    [data-pm-pit-action] > form .pm-input {
+        min-height: 3rem;
+    }
+
+    [data-pm-pit-action] > form textarea.pm-input {
+        min-height: 5.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-pm-pit-action] {
+        transition: none;
+    }
+}

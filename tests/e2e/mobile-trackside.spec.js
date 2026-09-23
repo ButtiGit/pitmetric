@@ -34,6 +34,42 @@ test('mobile trackside surfaces stay one-handed and action-first', async ({ page
 
     await login(page);
 
+    await test.step('Pit Mode keeps every quick action reachable above the mobile navigation', async () => {
+        await page.goto('/pit');
+
+        const root = page.locator('[data-pm-pit-page]');
+        const context = page.locator('[data-pm-pit-context]');
+        const actions = page.locator('[data-pm-pit-action]');
+        const bottomNav = page.locator('[data-pm-mobile-bottom-nav]');
+
+        await expect(root).toBeVisible();
+        await expect(actions).toHaveCount(5);
+        await expect(context).not.toHaveAttribute('open', '');
+        await expect(bottomNav).toBeVisible();
+        await expectNoHorizontalPageOverflow(page);
+
+        const firstBox = await actions.nth(0).boundingBox();
+        const secondBox = await actions.nth(1).boundingBox();
+        expect(firstBox).not.toBeNull();
+        expect(secondBox).not.toBeNull();
+        expect(Math.abs(firstBox.y - secondBox.y)).toBeLessThanOrEqual(2);
+
+        const pageBottomPadding = await root.evaluate((element) => parseFloat(getComputedStyle(element).paddingBottom));
+        expect(pageBottomPadding).toBeGreaterThan(90);
+
+        const note = page.locator('#pit-note');
+        await note.scrollIntoViewIfNeeded();
+        const noteBox = await note.boundingBox();
+        const navBox = await bottomNav.boundingBox();
+        expect(noteBox).not.toBeNull();
+        expect(navBox).not.toBeNull();
+        expect(noteBox.y).toBeLessThan(navBox.y);
+
+        await note.locator('summary').click();
+        await expect(note).toHaveAttribute('open', '');
+        await expect(page.locator('#pit-lap')).not.toHaveAttribute('open', '');
+    });
+
     await test.step('sessions expose a fixed primary action and bottom sheet', async () => {
         await page.goto('/sessions');
 
