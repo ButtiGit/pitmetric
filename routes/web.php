@@ -160,6 +160,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/circuits/{circuit}/layouts/{circuitLayout}', [CircuitController::class, 'updateLayout'])->name('circuits.layouts.update');
             Route::post('/circuits', [CircuitController::class, 'store'])->name('circuits.store');
             Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
+            Route::post('/timing/quick', [TimingController::class, 'storeQuickCapture'])->name('timing.quick.store');
             Route::post('/telemetry/import', [TelemetryController::class, 'store'])->name('telemetry.store');
 
             Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
@@ -185,8 +186,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
         });
 });
 
