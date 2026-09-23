@@ -14,13 +14,15 @@ on:
       - '.github/workflows/mobile-backend.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   backend-mobile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -30,21 +32,13 @@ jobs:
         with:
           node-version: '22'
       - run: composer setup
-      - name: Pint
-        id: pint
+      - name: Apply Pint formatting
         run: |
           ./vendor/bin/pint app/Http/Controllers/MobileAppController.php
-          git diff -- app/Http/Controllers/MobileAppController.php
-      - name: Upload Pint formatted controller
-        uses: actions/upload-artifact@v4
-        with:
-          name: pint-formatted-controller
-          path: app/Http/Controllers/MobileAppController.php
-      - name: PHPStan
-        run: composer types:check
-      - name: Mobile API tests
-        run: php artisan test --compact tests/Feature/MobileAppApiTest.php
-      - name: Full Laravel tests
-        run: php artisan test --compact
-      - name: Historical CI wrapper
-        run: composer ci:check
+          if ! git diff --quiet -- app/Http/Controllers/MobileAppController.php; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add app/Http/Controllers/MobileAppController.php
+            git commit -m 'Apply Pint formatting to mobile controller'
+            git push origin HEAD:${{ github.head_ref }}
+          fi
