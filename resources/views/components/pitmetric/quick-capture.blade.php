@@ -1,4 +1,43 @@
-@if (auth()->check() && \Illuminate\Support\Facades\Schema::hasTable('track_captures') && auth()->user()->can('team-write'))
+@php
+    $canQuickCapture = false;
+    $quickCaptureUser = auth()->user();
+
+    if ($quickCaptureUser instanceof \App\Models\User
+        && \Illuminate\Support\Facades\Schema::hasTable('track_captures')
+        && \Illuminate\Support\Facades\Schema::hasTable('workspace_user')) {
+        $membership = \Illuminate\Support\Facades\DB::table('workspace_user')
+            ->where('user_id', $quickCaptureUser->getKey());
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('workspace_user', 'status')) {
+            $membership->where('status', 'active');
+        }
+
+        $workspaceId = request()->hasSession() ? request()->session()->get('pitmetric.current_workspace_id') : null;
+
+        if (is_numeric($workspaceId)) {
+            $workspaceId = (int) $workspaceId;
+            $validSelection = (clone $membership)->where('workspace_id', $workspaceId)->exists();
+            $workspaceId = $validSelection ? $workspaceId : null;
+        }
+
+        if (! is_int($workspaceId)) {
+            $selected = (clone $membership)->orderBy('workspace_id')->value('workspace_id');
+            $workspaceId = is_numeric($selected) ? (int) $selected : null;
+        }
+
+        if ($workspaceId !== null) {
+            $writableMembership = (clone $membership)->where('workspace_id', $workspaceId);
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('workspace_user', 'role')) {
+                $writableMembership->whereIn('role', \App\Models\WorkspaceMembership::WRITABLE_ROLES);
+            }
+
+            $canQuickCapture = $writableMembership->exists();
+        }
+    }
+@endphp
+
+@if ($canQuickCapture)
     <details class="group fixed bottom-5 right-4 z-50 sm:bottom-6 sm:right-6">
         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-full bg-[#E10600] px-4 py-3 text-sm font-black text-white shadow-2xl shadow-black/40 transition hover:bg-[#f20b05] [&::-webkit-details-marker]:hidden">
             <flux:icon.bolt class="size-5" />
