@@ -23,11 +23,13 @@ class TrackCapture extends Model
 {
     use BelongsToWorkspace;
 
+    /** @return BelongsTo<Circuit, $this> */
     public function circuit(): BelongsTo
     {
         return $this->belongsTo(Circuit::class)->withTrashed();
     }
 
+    /** @return BelongsTo<CircuitLayout, $this> */
     public function circuitLayout(): BelongsTo
     {
         return $this->belongsTo(CircuitLayout::class)->withTrashed();
