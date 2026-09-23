@@ -1,0 +1,42 @@
+name: mobile-backend
+
+on:
+  pull_request:
+    paths:
+      - 'app/Http/Controllers/MobileAppController.php'
+      - 'app/Http/Middleware/AuthenticateMobileToken.php'
+      - 'app/Models/GalleryAsset.php'
+      - 'app/Models/MobileAccessToken.php'
+      - 'bootstrap/app.php'
+      - 'routes/api.php'
+      - 'tests/Feature/MobileAppApiTest.php'
+      - 'database/migrations/*mobile_app_tables.php'
+      - '.github/workflows/mobile-backend.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  backend-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: composer setup
+      - name: Pint
+        run: composer lint:check
+      - name: PHPStan
+        run: composer types:check
+      - name: Mobile API tests
+        run: php artisan test --compact tests/Feature/MobileAppApiTest.php
+      - name: Full Laravel tests
+        run: php artisan test --compact
+      - name: Historical CI wrapper
+        run: composer ci:check

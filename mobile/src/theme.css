@@ -1,0 +1,64 @@
+:root {
+  --ion-background-color: #0b0d10;
+  --ion-text-color: #f4f4f5;
+  --ion-color-primary: #ff5a36;
+  --ion-color-primary-rgb: 255,90,54;
+  --ion-color-primary-contrast: #fff;
+  --ion-color-primary-shade: #e04f30;
+  --ion-color-primary-tint: #ff6b4a;
+  --ion-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html, body, #app { background: #0b0d10; }
+ion-content { --background: #0b0d10; }
+ion-toolbar { --background: rgba(17,19,23,.96); --border-color: rgba(255,255,255,.07); }
+ion-list { background: transparent !important; }
+ion-item { --background: #14171c; --border-color: rgba(255,255,255,.08); --color: #f4f4f5; }
+ion-card { --background: #13161a; margin-inline: 0; border: 1px solid rgba(255,255,255,.07); box-shadow: none; border-radius: 18px; }
+
+.splash { min-height: 100vh; display: grid; place-content: center; gap: 22px; justify-items: center; background: radial-gradient(circle at 50% 35%, #231512 0, #0b0d10 42%); }
+.mark { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 18px; background: #ff5a36; color: white; font-weight: 900; letter-spacing: -.08em; font-size: 22px; box-shadow: 0 16px 45px rgba(255,90,54,.25); }
+.auth-wrap { width: min(100%, 480px); min-height: 100%; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 54px) 20px 36px; }
+.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 48px; }
+.brand div:last-child { display: grid; gap: 2px; }
+.brand strong { font-size: 20px; }
+.brand span, .muted { color: #8f96a3; }
+h1 { margin: 0 0 10px; font-size: clamp(30px, 8vw, 42px); letter-spacing: -.045em; }
+.auth-wrap > p { line-height: 1.55; }
+.auth-wrap ion-list { margin: 28px 0 18px; border: 1px solid rgba(255,255,255,.08); border-radius: 18px; overflow: hidden; }
+.auth-wrap ion-button { min-height: 48px; margin-top: 12px; }
+.error { color: #fb7185; font-size: 14px; }
+
+.toolbar-title { display: flex; align-items: center; gap: 9px; font-weight: 800; letter-spacing: -.025em; }
+.toolbar-title ion-badge { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.app-content { --padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+.screen { padding: 22px 16px 112px; max-width: 720px; margin: 0 auto; }
+.eyebrow { color: #ff5a36; font-size: 11px; font-weight: 900; letter-spacing: .18em; margin: 0 0 8px; }
+.hero { padding: 18px 2px 10px; }
+.hero p:last-child { color: #a1a7b0; line-height: 1.5; max-width: 620px; }
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.status-grid ion-card-content { min-height: 132px; display: grid; align-content: center; gap: 7px; }
+.status-grid ion-icon { font-size: 25px; color: #ff5a36; }
+.status-grid strong { font-size: 17px; }
+.status-grid span { color: #8f96a3; font-size: 13px; }
+.action-card { margin-top: 14px; }
+.action-card ion-card-title { font-size: 18px; }
+.action-card ion-card-content { color: #a1a7b0; padding-top: 0; }
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+.section-head h1 { margin-bottom: 0; }
+.composer ion-card-content { display: grid; gap: 12px; }
+.composer ion-input, .composer ion-textarea { --background: #0f1115; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; padding-inline: 12px !important; }
+.gallery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.photo-card { overflow: hidden; background: #13161a; border: 1px solid rgba(255,255,255,.07); border-radius: 16px; }
+.photo-card img, .photo-placeholder { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #171a20; }
+.photo-placeholder { display: grid; place-items: center; color: #676d78; font-size: 34px; }
+.photo-body { padding: 11px; }
+.photo-title { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+.photo-title strong { min-width: 0; font-size: 14px; }
+.photo-title ion-badge { font-size: 9px; }
+.photo-body p { margin: 6px 0 0; color: #8f96a3; font-size: 12px; line-height: 1.45; }
+.empty { margin-top: 24px; padding: 28px 18px; text-align: center; color: #8f96a3; border: 1px dashed rgba(255,255,255,.12); border-radius: 18px; }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; --background: rgba(16,18,22,.96); border-top: 1px solid rgba(255,255,255,.08); padding-bottom: env(safe-area-inset-bottom); min-height: 68px; backdrop-filter: blur(18px); }
+.bottom-nav ion-tab-button { --color: #737985; --color-selected: #ff5a36; }
+
+@media (min-width: 650px) { .gallery-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
