@@ -9,6 +9,13 @@
 /storage/*.key
 /storage/pail
 /vendor
+/mobile/node_modules
+/mobile/dist
+/mobile/android/.gradle
+/mobile/android/local.properties
+/mobile/ios/App/Pods
+/mobile/ios/App/App/public
+/mobile/ios/App/App/capacitor.config.json
 .env
 .env.backup
 .env.production

@@ -43,6 +43,18 @@ jobs:
       - name: Run CI Checks
         run: composer ci:check
 
+      - name: Install mobile dependencies
+        run: npm --prefix mobile install
+
+      - name: Audit mobile runtime dependencies
+        run: npm --prefix mobile audit --omit=dev --audit-level=high
+
+      - name: Build Ionic mobile app
+        run: npm --prefix mobile run build
+
+      - name: Validate Capacitor Android project and branded assets
+        run: npm --prefix mobile run native:android
+
   browser-e2e:
     needs: ci
     runs-on: ubuntu-latest
