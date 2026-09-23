@@ -3,17 +3,6 @@
 use App\Models\GalleryAsset;
 use App\Models\User;
 
-function mobileTokenFor(User $user): string
-{
-    $response = test()->postJson('/api/mobile/login', [
-        'email' => $user->email,
-        'password' => 'password',
-        'device_name' => 'pest',
-    ])->assertOk();
-
-    return $response->json('token');
-}
-
 test('mobile login reports whether cloud database access is enabled', function () {
     $localOnly = User::factory()->create(['password' => 'password']);
     $cloud = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
@@ -31,7 +20,11 @@ test('mobile bearer token protects private endpoints', function () {
     $this->getJson('/api/mobile/me')->assertUnauthorized();
 
     $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
-    $token = mobileTokenFor($user);
+    $token = $this->postJson('/api/mobile/login', [
+        'email' => $user->email,
+        'password' => 'password',
+        'device_name' => 'pest',
+    ])->assertOk()->json('token');
 
     $this->withToken($token)->getJson('/api/mobile/me')
         ->assertOk()
@@ -40,7 +33,11 @@ test('mobile bearer token protects private endpoints', function () {
 
 test('local only accounts cannot push gallery data to the cloud', function () {
     $user = User::factory()->create(['password' => 'password']);
-    $token = mobileTokenFor($user);
+    $token = $this->postJson('/api/mobile/login', [
+        'email' => $user->email,
+        'password' => 'password',
+        'device_name' => 'pest',
+    ])->assertOk()->json('token');
 
     $this->withToken($token)->postJson('/api/mobile/gallery', [
         'client_id' => fake()->uuid(),
@@ -50,7 +47,11 @@ test('local only accounts cannot push gallery data to the cloud', function () {
 
 test('cloud enabled accounts can idempotently sync gallery metadata', function () {
     $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
-    $token = mobileTokenFor($user);
+    $token = $this->postJson('/api/mobile/login', [
+        'email' => $user->email,
+        'password' => 'password',
+        'device_name' => 'pest',
+    ])->assertOk()->json('token');
     $clientId = fake()->uuid();
 
     $payload = [
