@@ -6,6 +6,7 @@ use App\Models\Circuit;
 use App\Models\CircuitLayout;
 use App\Models\RaceEvent;
 use App\Models\Session;
+use App\Models\TracksideCapture;
 use App\Models\User;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -38,6 +39,15 @@ class CircuitController extends Controller
 
         return view('circuits.index', [
             'circuits' => Circuit::query()->withTrashed()->with(['layouts' => fn ($query) => $query->withTrashed()])->orderBy('name')->get(),
+            'pendingCircuitGroups' => TracksideCapture::query()
+                ->selectRaw('circuit_name, COUNT(*) AS captures_count, MAX(captured_at) AS last_captured_at')
+                ->where('capture_type', 'lap_time')
+                ->where('status', 'pending')
+                ->whereNull('circuit_layout_id')
+                ->whereNotNull('circuit_name')
+                ->groupBy('circuit_name')
+                ->orderByDesc('last_captured_at')
+                ->get(),
         ]);
     }
 
@@ -59,21 +69,59 @@ class CircuitController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($validated): void {
+        [$circuit, $layout] = DB::transaction(function () use ($validated): array {
             $circuit = Circuit::create([
                 'name' => $validated['name'],
                 'country' => $validated['country'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            $circuit->layouts()->create([
+            $layout = $circuit->layouts()->create([
                 'name' => $validated['layout_name'],
                 'length_meters' => $validated['length_meters'],
                 'is_active' => true,
             ]);
+
+            return [$circuit, $layout];
         });
 
-        return to_route('circuits.index')->with('status', __('Circuit created.'));
+        $pendingCaptureIds = TracksideCapture::query()
+            ->where('capture_type', 'lap_time')
+            ->where('status', 'pending')
+            ->whereNull('circuit_layout_id')
+            ->whereRaw('LOWER(circuit_name) = LOWER(?)', [$circuit->name])
+            ->pluck('id');
+
+        if ($pendingCaptureIds->isNotEmpty()) {
+            TracksideCapture::query()
+                ->whereKey($pendingCaptureIds)
+                ->update([
+                    'circuit_layout_id' => $layout->getKey(),
+                    'status' => 'resolved',
+                    'resolved_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            $alertKeys = $pendingCaptureIds
+                ->map(fn ($id): string => 'trackside-capture:'.$id)
+                ->all();
+
+            $user->unreadNotifications()
+                ->latest()
+                ->limit(250)
+                ->get()
+                ->filter(fn ($notification): bool => in_array($notification->data['alert_key'] ?? null, $alertKeys, true))
+                ->each->markAsRead();
+        }
+
+        $status = __('Circuit created.');
+        if ($pendingCaptureIds->isNotEmpty()) {
+            $status .= ' '.(app()->getLocale() === 'it'
+                ? $pendingCaptureIds->count().' registrazioni rapide collegate automaticamente.'
+                : $pendingCaptureIds->count().' quick captures linked automatically.');
+        }
+
+        return to_route('circuits.index')->with('status', $status);
     }
 
     public function update(Request $request, Circuit $circuit): RedirectResponse

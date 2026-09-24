@@ -3,7 +3,7 @@
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1360px] space-y-6">
             <div class="pm-page-toolbar">
-                <x-pitmetric.page-header :title="$it ? 'Circuiti' : 'Circuits'" :description="$it ? 'Tracciati e lunghezze utilizzati nelle sessioni.' : 'Tracks and lengths used in your sessions.'" />
+                <x-pitmetric.page-header :title="$it ? 'Circuiti' : 'Circuits'" :description="$it ? 'Tracciati completi e riferimenti salvati al volo da sistemare quando hai tempo.' : 'Complete tracks and trackside references you can finish when there is time.'" />
                 <x-crud-modal id="create-circuit" :title="$it ? 'Aggiungi circuito' : 'Add circuit'" :trigger="$it ? 'Aggiungi circuito' : 'Add circuit'">
                     <form method="POST" action="{{ route('circuits.store') }}" class="grid gap-4 sm:grid-cols-2">
                         @csrf
@@ -18,6 +18,47 @@
             </div>
             @if (session('status'))<p role="status" class="pm-feedback">{{ session('status') }}</p>@endif
             @if ($errors->any())<div role="alert" class="pm-feedback text-pm-danger"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+
+            @if ($pendingCircuitGroups->isNotEmpty())
+                <section class="rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-4 sm:p-5" aria-labelledby="pending-circuits-title">
+                    <div class="mb-4 flex items-start gap-3">
+                        <div class="rounded-lg bg-amber-400/10 p-2 text-amber-300"><flux:icon.bell-alert class="size-5" /></div>
+                        <div>
+                            <h2 id="pending-circuits-title" class="font-black text-pm-text">{{ $it ? 'Da completare' : 'Needs completion' }}</h2>
+                            <p class="mt-1 text-sm text-pm-muted">{{ $it ? 'Questi nomi sono stati usati in pista prima di creare il circuito. I tempi sono già al sicuro.' : 'These names were used at the track before the circuit was created. The lap times are already safe.' }}</p>
+                        </div>
+                    </div>
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach ($pendingCircuitGroups as $pendingCircuit)
+                            <article class="rounded-xl border border-amber-400/20 bg-[#111317]/70 p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="break-words font-bold text-pm-text">{{ $pendingCircuit->circuit_name }}</p>
+                                        <p class="mt-1 text-xs text-pm-muted">{{ $pendingCircuit->captures_count }} {{ $it ? 'tempi in attesa' : 'lap times waiting' }}</p>
+                                    </div>
+                                    <span class="rounded-full bg-amber-400/10 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-300">{{ $it ? 'Da fare' : 'Todo' }}</span>
+                                </div>
+                                @can('team-write')
+                                    <div class="mt-4">
+                                        <x-crud-modal id="complete-circuit-{{ $loop->index }}" :title="$it ? 'Completa circuito' : 'Complete circuit'" :trigger="$it ? 'Completa ora' : 'Complete now'">
+                                            <form method="POST" action="{{ route('circuits.store') }}" class="grid gap-4 sm:grid-cols-2">
+                                                @csrf
+                                                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome circuito' : 'Circuit name' }}</span><input class="pm-input" name="name" required maxlength="120" value="{{ $pendingCircuit->circuit_name }}"></label>
+                                                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Paese' : 'Country' }}</span><input class="pm-input" name="country" maxlength="80"></label>
+                                                <label class="grid gap-2"><span class="pm-label">Layout</span><input class="pm-input" name="layout_name" required maxlength="120" value="{{ $it ? 'Completo' : 'Full track' }}"></label>
+                                                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Lunghezza (m)' : 'Length (m)' }}</span><input class="pm-input" name="length_meters" type="number" inputmode="numeric" required min="1" max="100000" step="1"></label>
+                                                <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input" name="notes" maxlength="2000"></textarea></label>
+                                                <p class="sm:col-span-2 text-xs text-pm-muted">{{ $it ? 'Creandolo con questo nome, PitMetric collegherà automaticamente i tempi rapidi registrati.' : 'Creating it with this name automatically links the quick lap captures.' }}</p>
+                                                <div class="sm:col-span-2"><button class="pm-race-button w-full" type="submit">{{ $it ? 'Crea e collega tempi' : 'Create and link laps' }}</button></div>
+                                            </form>
+                                        </x-crud-modal>
+                                    </div>
+                                @endcan
+                            </article>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
 
             <div class="space-y-4">
                 @forelse ($circuits->reject(fn ($circuit) => $circuit->trashed()) as $circuit)
@@ -67,7 +108,7 @@
                         </div>
                     </section>
                 @empty
-                    <x-pitmetric.empty-state :title="$it ? 'Nessun circuito' : 'No circuits'" :description="$it ? 'Aggiungi il circuito e la lunghezza del primo layout.' : 'Add a circuit and the length of its first layout.'" />
+                    <x-pitmetric.empty-state :title="$it ? 'Nessun circuito' : 'No circuits'" :description="$it ? 'Aggiungi un circuito quando ti serve. I tempi rapidi possono essere registrati anche prima.' : 'Add a circuit when you need it. Quick lap times can be captured first.'" />
                 @endforelse
             </div>
             @if ($circuits->contains(fn ($circuit) => $circuit->trashed()))
