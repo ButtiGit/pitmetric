@@ -7,6 +7,16 @@ use App\Models\Vehicle;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+test('capacitor origin can preflight the mobile login endpoint', function () {
+    $this->withHeaders([
+        'Origin' => 'https://localhost',
+        'Access-Control-Request-Method' => 'POST',
+        'Access-Control-Request-Headers' => 'content-type',
+    ])->options('/api/mobile/login')
+        ->assertNoContent()
+        ->assertHeader('Access-Control-Allow-Origin', 'https://localhost');
+});
+
 test('mobile login reports whether cloud database access is enabled', function () {
     $localOnly = User::factory()->create(['password' => 'password']);
     $cloud = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
