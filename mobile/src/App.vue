@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
-  IonApp, IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton,
-  IonInput, IonTextarea, IonIcon, IonBadge, IonTabBar, IonTabButton,
-  IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSpinner,
-  IonSelect, IonSelectOption, IonLabel, IonChip
+  IonApp, IonPage, IonContent, IonButton, IonInput, IonTextarea, IonIcon, IonBadge,
+  IonTabBar, IonTabButton, IonSelect, IonSelectOption, IonLabel, IonSpinner
 } from '@ionic/vue';
 import {
-  addOutline, buildOutline, calendarOutline, cameraOutline, carSportOutline,
-  cloudDoneOutline, cloudOfflineOutline, ellipsisHorizontalOutline, fingerPrintOutline,
-  flagOutline, homeOutline, imagesOutline, logOutOutline, personCircleOutline,
-  playOutline, pauseOutline, settingsOutline, speedometerOutline, stopwatchOutline,
-  syncOutline, timeOutline, trashOutline, videocamOutline
+  addOutline, analyticsOutline, buildOutline, cameraOutline, carSportOutline,
+  checkmarkCircleOutline, chevronForwardOutline, cloudDoneOutline, cloudOfflineOutline,
+  ellipsisHorizontalOutline, flagOutline, homeOutline, imagesOutline, logOutOutline,
+  pauseOutline, personCircleOutline, playOutline, settingsOutline, speedometerOutline,
+  stopwatchOutline, syncOutline, timeOutline, trashOutline, videocamOutline
 } from 'ionicons/icons';
 import {
   addGalleryMedia, addGalleryPhoto, biometricAvailable, biometricUnlock, bootLocalStore,
@@ -25,7 +23,7 @@ import {
   type QuickRecord
 } from './quicklog';
 
-type Screen = 'home' | 'timer' | 'sessions' | 'pit' | 'weekend' | 'garage' | 'more' | 'maintenance' | 'setup' | 'gallery' | 'account';
+type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weekend' | 'maintenance' | 'setup' | 'gallery' | 'account';
 
 const ready = ref(false);
 const session = ref<SessionState | null>(null);
@@ -56,9 +54,9 @@ const timingVehicle = ref('');
 const timingNotes = ref('');
 const manualLap = ref('');
 
+const sessionConfigurationId = ref<number | null>(null);
 const sessionEventId = ref<number | null>(null);
 const sessionEntryId = ref<number | null>(null);
-const sessionConfigurationId = ref<number | null>(null);
 const sessionType = ref('practice');
 const sessionStartedAt = ref(new Date().toISOString().slice(0, 16));
 const sessionLaps = ref<number | null>(null);
@@ -95,21 +93,55 @@ const setupBrakeBias = ref<number | null>(null);
 const mediaTitle = ref('');
 const mediaDescription = ref('');
 
-const cloudLabel = computed(() => session.value?.cloudEnabled ? 'Cloud attivo' : session.value ? 'Account locale' : 'Solo dispositivo');
+const lapRecords = computed(() => quick.value.filter(item => item.kind === 'lap_time' && item.value_ms != null));
+const sessionRecords = computed(() => quick.value.filter(item => item.kind === 'session'));
+const recentQuick = computed(() => quick.value.slice(0, 8));
 const firstName = computed(() => session.value?.user?.name?.split(' ')[0] || 'pilota');
-const currentEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === selectedEventId.value) || snapshot.value.events[0] || null);
+const cloudLabel = computed(() => session.value?.cloudEnabled ? 'Cloud attivo' : 'Locale');
+const currentEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === selectedEventId.value) || null);
 const selectedSessionEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === sessionEventId.value) || null);
 const moreSelected = computed(() => !['home', 'timer', 'sessions', 'garage'].includes(active.value));
-const recentQuick = computed(() => quick.value.slice(0, 8));
+
 const bestLap = computed(() => {
-  const values = quick.value.filter(item => item.kind === 'lap_time' && item.value_ms != null).map(item => Number(item.value_ms));
+  const values = lapRecords.value.map(item => Number(item.value_ms));
   return values.length ? Math.min(...values) : null;
 });
+const lastLap = computed(() => lapRecords.value[0]?.value_ms ?? null);
+const averageLap = computed(() => {
+  const values = lapRecords.value.map(item => Number(item.value_ms));
+  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
+});
+const lastDelta = computed(() => lastLap.value != null && bestLap.value != null ? Number(lastLap.value) - Number(bestLap.value) : null);
+const improvement = computed(() => {
+  const values = [...lapRecords.value].reverse().map(item => Number(item.value_ms));
+  if (values.length < 2) return null;
+  return values[values.length - 1] - values[0];
+});
+const chartLaps = computed(() => [...lapRecords.value].slice(0, 12).reverse());
+const chartPoints = computed(() => {
+  const values = chartLaps.value.map(item => Number(item.value_ms));
+  if (!values.length) return '';
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(1, max - min);
+  return values.map((value, index) => {
+    const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
+    const y = 84 - ((value - min) / span) * 64;
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(' ');
+});
+const chartAreaPoints = computed(() => chartPoints.value ? `0,100 ${chartPoints.value} 100,100` : '');
 
 function formatDate(value?: string | null): string {
   if (!value) return '—';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
+function deltaLabel(value: number | null): string {
+  if (value === null) return '—';
+  if (Math.abs(value) < 1) return '+0.000';
+  return `${value >= 0 ? '+' : '−'}${(Math.abs(value) / 1000).toFixed(3)}`;
 }
 
 function quickMeta(item: QuickRecord): string {
@@ -122,12 +154,7 @@ async function refreshLocal(preferCloud = false) {
   [gallery.value, quick.value, pending.value, pendingOps.value, snapshot.value] = await Promise.all([
     galleryItems(), quickRecords(), pendingCount(), pendingOperations(), cachedSnapshot()
   ]);
-
   if (preferCloud && session.value?.cloudEnabled) snapshot.value = await refreshSnapshotFromCloud();
-  if (!selectedEventId.value && snapshot.value.events[0]) selectedEventId.value = snapshot.value.events[0].id;
-  if (!sessionEventId.value && snapshot.value.events[0]) sessionEventId.value = snapshot.value.events[0].id;
-  if (!sessionConfigurationId.value && snapshot.value.configurations[0]) sessionConfigurationId.value = snapshot.value.configurations[0].id;
-  if (!setupVehicleId.value && snapshot.value.vehicles[0]) setupVehicleId.value = snapshot.value.vehicles[0].id;
 }
 
 async function submitAuth() {
@@ -138,7 +165,7 @@ async function submitAuth() {
       : await register(name.value, email.value, password.value);
     await syncNow();
     await refreshLocal(true);
-    actionMessage.value = 'Account collegato. I dati compatibili in coda verranno sincronizzati.';
+    actionMessage.value = 'Account collegato. I dati locali restano disponibili.';
   } catch (error) {
     authError.value = error instanceof Error ? error.message : 'Accesso non riuscito.';
   }
@@ -156,46 +183,37 @@ async function unlock() {
   }
 }
 
-async function queue(operation: string, payload: Record<string, unknown>, message: string) {
-  await queueOperation(operation, payload);
-  actionMessage.value = message;
-  await refreshLocal(false);
-}
-
 function startTimer() {
   if (timerRunning.value) return;
   timerStartedAt = Date.now() - timerElapsed.value;
   timerRunning.value = true;
   timerInterval = setInterval(() => { timerElapsed.value = Date.now() - timerStartedAt; }, 31);
 }
-
 function pauseTimer() {
   timerRunning.value = false;
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = null;
 }
+function resetTimer() { pauseTimer(); timerElapsed.value = 0; }
 
-function resetTimer() {
-  pauseTimer();
-  timerElapsed.value = 0;
+async function storeLap(value: number, source: 'stopwatch' | 'manual') {
+  await addQuickRecord('lap_time', timingLabel.value || 'Tempo sul giro', {
+    vehicle: timingVehicle.value || null,
+    notes: timingNotes.value || null,
+    source,
+  }, value);
+  quick.value = await quickRecords();
+  actionMessage.value = `Tempo salvato: ${formatLapTime(value)}. Nessuna configurazione necessaria.`;
 }
 
 async function saveTimedLap(continueTiming = false) {
   if (timerElapsed.value < 100) return;
   const value = timerElapsed.value;
-  await addQuickRecord('lap_time', timingLabel.value || 'Tempo sul giro', {
-    vehicle: timingVehicle.value || null,
-    notes: timingNotes.value || null,
-    source: 'stopwatch'
-  }, value);
-  actionMessage.value = `Tempo salvato: ${formatLapTime(value)}`;
-  quick.value = await quickRecords();
+  await storeLap(value, 'stopwatch');
   if (continueTiming) {
     timerStartedAt = Date.now();
     timerElapsed.value = 0;
-  } else {
-    resetTimer();
-  }
+  } else resetTimer();
 }
 
 async function saveManualLap() {
@@ -204,14 +222,8 @@ async function saveManualLap() {
     actionMessage.value = 'Inserisci un tempo come 1:23.456 oppure 83.456.';
     return;
   }
-  await addQuickRecord('lap_time', timingLabel.value || 'Tempo manuale', {
-    vehicle: timingVehicle.value || null,
-    notes: timingNotes.value || null,
-    source: 'manual'
-  }, value);
+  await storeLap(value, 'manual');
   manualLap.value = '';
-  quick.value = await quickRecords();
-  actionMessage.value = `Tempo salvato: ${formatLapTime(value)}`;
 }
 
 async function saveSession() {
@@ -223,59 +235,73 @@ async function saveSession() {
     duration_minutes: sessionDuration.value,
     best_lap_ms: bestLapMs,
     notes: sessionNotes.value || null,
+    event_id: sessionEventId.value,
+    event_entry_id: sessionEntryId.value,
+    configuration_version_id: sessionConfigurationId.value,
   };
+
+  await addQuickRecord('session', 'Sessione', common, bestLapMs, common.started_at);
+  if (bestLapMs !== null) {
+    await addQuickRecord('lap_time', 'Best lap sessione', { source: 'session', notes: sessionNotes.value || null }, bestLapMs, common.started_at);
+  }
 
   if (sessionConfigurationId.value) {
     const payload: Record<string, unknown> = {
       configuration_version_id: sessionConfigurationId.value,
-      ...common,
+      session_type: sessionType.value,
+      started_at: common.started_at,
+      completed_laps: sessionLaps.value,
+      duration_minutes: sessionDuration.value,
+      notes: sessionNotes.value || null,
     };
     if (sessionEventId.value) payload.event_id = sessionEventId.value;
     if (sessionEntryId.value) payload.event_entry_id = sessionEntryId.value;
-    await queue('session.create', payload, 'Sessione salvata offline e pronta per la sincronizzazione.');
-  } else {
-    await addQuickRecord('session', 'Sessione libera', common, bestLapMs, common.started_at);
-    quick.value = await quickRecords();
-    actionMessage.value = 'Sessione libera salvata. Non serve creare prima weekend, mezzo o configurazione.';
+    await queueOperation('session.create', payload);
   }
 
+  quick.value = await quickRecords();
+  pending.value = await pendingCount();
   sessionLaps.value = null;
   sessionDuration.value = null;
   sessionBestLap.value = '';
   sessionNotes.value = '';
+  actionMessage.value = 'Sessione salvata sul dispositivo. Configurazione, weekend e account sono opzionali.';
 }
 
 async function savePitNote() {
   if (!noteBody.value.trim()) return;
-  const event = currentEvent.value;
-  if (event) {
-    await queue('event.note.create', { event_id: event.id, kind: noteKind.value, body: noteBody.value.trim(), occurred_at: new Date().toISOString() }, 'Nota salvata offline.');
-  } else {
-    await addQuickRecord('note', noteBody.value.trim().slice(0, 56), { kind: noteKind.value, body: noteBody.value.trim() });
-    quick.value = await quickRecords();
-    actionMessage.value = 'Nota libera salvata sul dispositivo.';
-  }
+  await addQuickRecord('note', noteBody.value.trim().slice(0, 52), {
+    kind: noteKind.value,
+    body: noteBody.value.trim(),
+    event_id: selectedEventId.value,
+  });
+  quick.value = await quickRecords();
   noteBody.value = '';
+  actionMessage.value = 'Nota salvata localmente.';
 }
 
 async function saveVehicle() {
   if (!vehicleName.value.trim()) return;
-  await queue('vehicle.create', {
+  await queueOperation('vehicle.create', {
     name: vehicleName.value.trim(), category: vehicleCategory.value,
     manufacturer: vehicleManufacturer.value || null, model: vehicleModel.value || null,
     identifier: vehicleIdentifier.value || null
-  }, session.value ? 'Mezzo salvato offline e pronto per il cloud.' : 'Mezzo salvato offline. Collega un account quando vuoi sincronizzarlo.');
+  });
+  pending.value = await pendingCount();
   vehicleName.value = ''; vehicleManufacturer.value = ''; vehicleModel.value = ''; vehicleIdentifier.value = '';
+  actionMessage.value = 'Mezzo salvato in coda locale.';
 }
 
 async function saveWorkOrder() {
   if (!workOrderTitle.value.trim()) return;
-  await queue('maintenance.work_order.create', {
+  await addQuickRecord('maintenance', workOrderTitle.value.trim(), {
     maintenance_schedule_id: workOrderScheduleId.value,
-    title: workOrderTitle.value.trim(), priority: workOrderPriority.value,
-    notes: workOrderNotes.value || null
-  }, 'Intervento salvato offline.');
+    priority: workOrderPriority.value,
+    notes: workOrderNotes.value || null,
+  });
+  quick.value = await quickRecords();
   workOrderTitle.value = ''; workOrderNotes.value = '';
+  actionMessage.value = 'Promemoria manutenzione salvato.';
 }
 
 async function saveSetup() {
@@ -288,44 +314,38 @@ async function saveSetup() {
     ['brake_bias_pct', setupBrakeBias.value]
   ];
   map.forEach(([key, value]) => { if (value !== null && value !== undefined) values[key] = Number(value); });
-
-  if (setupVehicleId.value) {
-    await queue('setup.create', { vehicle_id: setupVehicleId.value, name: setupName.value.trim(), description: setupDescription.value || null, values }, 'Setup salvato offline.');
-  } else {
-    await addQuickRecord('setup', setupName.value.trim(), { description: setupDescription.value || null, values });
-    quick.value = await quickRecords();
-    actionMessage.value = 'Setup libero salvato senza richiedere un mezzo.';
-  }
+  await addQuickRecord('setup', setupName.value.trim(), {
+    vehicle_id: setupVehicleId.value,
+    description: setupDescription.value || null,
+    values,
+  });
+  quick.value = await quickRecords();
   setupName.value = ''; setupDescription.value = '';
+  actionMessage.value = 'Setup salvato localmente.';
 }
 
 async function addPhoto() {
-  const title = mediaTitle.value.trim() || 'Foto trackside';
-  await addGalleryPhoto(title, mediaDescription.value.trim());
+  await addGalleryPhoto(mediaTitle.value.trim() || 'Foto trackside', mediaDescription.value.trim());
   mediaTitle.value = ''; mediaDescription.value = '';
   await refreshLocal();
 }
-
 async function addMedia() {
   try {
-    const title = mediaTitle.value.trim() || 'Media trackside';
-    await addGalleryMedia(title, mediaDescription.value.trim());
+    await addGalleryMedia(mediaTitle.value.trim() || 'Media trackside', mediaDescription.value.trim());
     mediaTitle.value = ''; mediaDescription.value = '';
     await refreshLocal();
   } catch (error) {
     actionMessage.value = error instanceof Error ? error.message : 'File non disponibile.';
   }
 }
-
 async function removeQuick(id: string) {
   await deleteQuickRecord(id);
   quick.value = await quickRecords();
 }
-
 async function forceSync() {
   if (!session.value?.cloudEnabled) {
     active.value = 'account';
-    actionMessage.value = session.value ? 'Il tuo account non ha il cloud attivo.' : 'Collega un account solo se vuoi sincronizzare i dati.';
+    actionMessage.value = 'Il cloud è opzionale: collega un account solo se vuoi sincronizzare.';
     return;
   }
   syncing.value = true;
@@ -333,11 +353,8 @@ async function forceSync() {
     const result = await syncNow();
     await refreshLocal(true);
     actionMessage.value = result.synced > 0 ? `${result.synced} elementi sincronizzati.` : 'Dati già aggiornati.';
-  } finally {
-    syncing.value = false;
-  }
+  } finally { syncing.value = false; }
 }
-
 async function signOut() {
   await logout();
   session.value = null;
@@ -353,210 +370,153 @@ onMounted(async () => {
   stopAutoSync = await startAutoSync(() => refreshLocal(false));
   ready.value = true;
 });
-
-onUnmounted(async () => {
-  pauseTimer();
-  await stopAutoSync?.();
-});
+onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
 </script>
 
 <template>
   <ion-app>
-    <div v-if="!ready" class="splash"><div class="mark">PM</div><ion-spinner name="crescent" /></div>
+    <div v-if="!ready" class="splash"><div class="mark" /><ion-spinner name="crescent" /></div>
 
     <ion-page v-else>
-      <ion-header translucent>
-        <ion-toolbar>
-          <ion-title><div class="toolbar-title"><span>PitMetric</span><ion-badge :color="session?.cloudEnabled ? 'success' : 'medium'">{{ cloudLabel }}</ion-badge></div></ion-title>
-          <ion-button slot="end" fill="clear" :disabled="syncing" @click="forceSync"><ion-icon :icon="session?.cloudEnabled ? syncOutline : cloudOfflineOutline" /></ion-button>
-        </ion-toolbar>
-      </ion-header>
-
       <ion-content :fullscreen="true" class="app-content">
-        <p v-if="actionMessage" class="action-message" @click="actionMessage = ''">{{ actionMessage }}</p>
-
-        <main v-if="active === 'home'" class="screen home-screen">
-          <section class="hero-dashboard">
-            <div><p class="eyebrow">TRACKSIDE LOGGER</p><h1>Pronto, {{ firstName }}.</h1></div>
-            <p>Registra subito. Nessun account, weekend, vettura o configurazione obbligatori.</p>
-          </section>
-
-          <section class="quick-actions">
-            <button class="quick-primary" type="button" @click="active = 'timer'"><ion-icon :icon="stopwatchOutline" /><div><strong>Cronometro</strong><span>Tempo sul giro in 1 tocco</span></div></button>
-            <button type="button" @click="active = 'sessions'"><ion-icon :icon="flagOutline" /><div><strong>Sessione</strong><span>Libera o collegata</span></div></button>
-            <button type="button" @click="active = 'pit'"><ion-icon :icon="speedometerOutline" /><div><strong>Nota rapida</strong><span>Setup, pista, pilota</span></div></button>
-            <button type="button" @click="active = 'gallery'"><ion-icon :icon="cameraOutline" /><div><strong>Foto / video</strong><span>Anche senza titolo</span></div></button>
-          </section>
-
-          <section class="metric-strip">
-            <div><span>BEST LOCALE</span><strong>{{ bestLap !== null ? formatLapTime(bestLap) : '—' }}</strong></div>
-            <div><span>QUICK LOG</span><strong>{{ quick.length }}</strong></div>
-            <div><span>IN CODA</span><strong>{{ pending }}</strong></div>
-          </section>
-
-          <div class="section-head compact"><div><p class="eyebrow">RECENTI</p><h2>Ultime registrazioni</h2></div><ion-button fill="clear" @click="active = 'timer'">Aggiungi</ion-button></div>
-          <div v-if="recentQuick.length" class="timeline-list">
-            <article v-for="item in recentQuick" :key="item.id" class="timeline-row">
-              <div class="timeline-icon"><ion-icon :icon="item.kind === 'lap_time' ? stopwatchOutline : item.kind === 'session' ? flagOutline : item.kind === 'setup' ? settingsOutline : timeOutline" /></div>
-              <div><strong>{{ item.title }}</strong><span>{{ quickMeta(item) }}</span></div>
-              <button type="button" class="icon-button danger" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline" /></button>
-            </article>
-          </div>
-          <div v-else class="empty compact-empty">Premi Cronometro, Sessione o Nota rapida: il primo dato viene salvato subito sul telefono.</div>
-
-          <button v-if="!session" class="cloud-invite" type="button" @click="active = 'account'">
-            <ion-icon :icon="cloudOfflineOutline" /><div><strong>Account opzionale</strong><span>Usa tutto in locale. Accedi solo per collegare cloud e database.</span></div>
+        <header class="app-topbar">
+          <div class="brand-mini"><div class="mark" /><span class="wordmark">PitMetric</span></div>
+          <button class="sync-pill" type="button" @click="forceSync">
+            <ion-icon :icon="session?.cloudEnabled ? cloudDoneOutline : cloudOfflineOutline" />
+            <span>{{ cloudLabel }}</span>
           </button>
+        </header>
+
+        <button v-if="actionMessage" class="toast" type="button" @click="actionMessage = ''">{{ actionMessage }}</button>
+
+        <main v-if="active === 'home'" class="screen dashboard-screen">
+          <section class="dashboard-hero">
+            <div>
+              <p class="eyebrow">RACE DASHBOARD</p>
+              <h1>{{ bestLap !== null ? formatLapTime(bestLap) : 'Pronto a girare' }}</h1>
+              <p>{{ bestLap !== null ? 'Personal best locale' : `Ciao ${firstName}. Inizia dal primo giro, senza configurare nulla.` }}</p>
+            </div>
+            <button class="hero-start" type="button" @click="active = 'timer'"><ion-icon :icon="playOutline" />START</button>
+          </section>
+
+          <section class="stat-grid">
+            <article class="stat-card featured"><span>BEST LAP</span><strong>{{ bestLap !== null ? formatLapTime(bestLap) : '—' }}</strong><small>{{ lapRecords.length }} giri registrati</small></article>
+            <article class="stat-card"><span>ULTIMO GIRO</span><strong>{{ lastLap !== null ? formatLapTime(lastLap) : '—' }}</strong><small :class="lastDelta !== null && lastDelta <= 0 ? 'positive' : ''">{{ deltaLabel(lastDelta) }} dal best</small></article>
+            <article class="stat-card"><span>MEDIA</span><strong>{{ averageLap !== null ? formatLapTime(averageLap) : '—' }}</strong><small>ultimi {{ lapRecords.length }} giri</small></article>
+            <article class="stat-card"><span>TREND</span><strong>{{ improvement !== null ? deltaLabel(improvement) : '—' }}</strong><small>{{ improvement !== null && improvement < 0 ? 'più veloce' : 'dal primo giro' }}</small></article>
+          </section>
+
+          <section class="panel chart-panel">
+            <div class="panel-head"><div><p class="eyebrow">PACE TREND</p><h2>Andamento giri</h2></div><span>{{ chartLaps.length }} lap</span></div>
+            <div v-if="chartLaps.length >= 2" class="lap-chart">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Andamento degli ultimi tempi sul giro">
+                <defs><linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E10600" stop-opacity=".28"/><stop offset="100%" stop-color="#E10600" stop-opacity="0"/></linearGradient></defs>
+                <line x1="0" y1="25" x2="100" y2="25"/><line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="75" x2="100" y2="75"/>
+                <polygon :points="chartAreaPoints" fill="url(#paceFill)" stroke="none"/>
+                <polyline :points="chartPoints" fill="none" vector-effect="non-scaling-stroke"/>
+              </svg>
+              <div class="chart-labels"><span>{{ formatLapTime(chartLaps[0]?.value_ms) }}</span><span>{{ formatLapTime(chartLaps[chartLaps.length - 1]?.value_ms) }}</span></div>
+            </div>
+            <div v-else class="chart-empty">Registra almeno 2 giri: il grafico si costruirà automaticamente.</div>
+          </section>
+
+          <section class="quick-grid">
+            <button class="quick-card primary" type="button" @click="active = 'timer'"><span class="quick-icon"><ion-icon :icon="stopwatchOutline" /></span><strong>Nuovo tempo</strong><small>Cronometro o manuale</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+            <button class="quick-card" type="button" @click="active = 'sessions'"><span class="quick-icon"><ion-icon :icon="flagOutline" /></span><strong>Sessione</strong><small>Senza gerarchie obbligatorie</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+            <button class="quick-card" type="button" @click="active = 'pit'"><span class="quick-icon"><ion-icon :icon="speedometerOutline" /></span><strong>Nota</strong><small>Trackside in 2 tocchi</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+            <button class="quick-card" type="button" @click="active = 'garage'"><span class="quick-icon"><ion-icon :icon="carSportOutline" /></span><strong>Garage</strong><small>{{ snapshot.vehicles.length }} mezzi cloud</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+          </section>
+
+          <section class="panel activity-panel">
+            <div class="panel-head"><div><p class="eyebrow">ACTIVITY</p><h2>Ultime registrazioni</h2></div><span>{{ quick.length }}</span></div>
+            <div v-if="recentQuick.length" class="activity-list">
+              <article v-for="item in recentQuick" :key="item.id" class="activity-row">
+                <div class="activity-dot"><ion-icon :icon="item.kind === 'lap_time' ? stopwatchOutline : item.kind === 'session' ? flagOutline : item.kind === 'setup' ? settingsOutline : timeOutline" /></div>
+                <div><strong>{{ item.kind === 'lap_time' ? formatLapTime(item.value_ms) : item.title }}</strong><span>{{ item.kind === 'lap_time' ? item.title : quickMeta(item) }}</span></div>
+                <button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline" /></button>
+              </article>
+            </div>
+            <div v-else class="empty-state"><ion-icon :icon="analyticsOutline"/><strong>Nessun dato ancora</strong><span>Il primo tempo apparirà qui e nei grafici.</span></div>
+          </section>
         </main>
 
         <main v-else-if="active === 'timer'" class="screen timer-screen">
-          <div class="section-head"><div><p class="eyebrow">QUICK TIMING</p><h1>Cronometro</h1></div><ion-badge color="medium">locale</ion-badge></div>
-
-          <section class="stopwatch-panel">
-            <span class="stopwatch-label">TEMPO CORRENTE</span>
-            <strong class="stopwatch-value">{{ formatLapTime(timerElapsed) }}</strong>
-            <div class="stopwatch-controls">
-              <ion-button v-if="!timerRunning" expand="block" @click="startTimer"><ion-icon slot="start" :icon="playOutline" />Avvia</ion-button>
-              <ion-button v-else expand="block" color="danger" @click="pauseTimer"><ion-icon slot="start" :icon="pauseOutline" />Pausa</ion-button>
-              <ion-button v-if="timerElapsed > 0" expand="block" fill="outline" @click="saveTimedLap(timerRunning)">{{ timerRunning ? 'Giro' : 'Salva tempo' }}</ion-button>
+          <section class="screen-title"><div><p class="eyebrow">LIVE TIMING</p><h1>Cronometro</h1></div><span class="status-dot"><i/>LOCAL</span></section>
+          <section class="timer-panel">
+            <span class="timer-kicker">CURRENT LAP</span>
+            <strong class="timer-value">{{ formatLapTime(timerElapsed) }}</strong>
+            <div class="timer-metrics"><span>BEST <b>{{ bestLap !== null ? formatLapTime(bestLap) : '—' }}</b></span><span>LAST <b>{{ lastLap !== null ? formatLapTime(lastLap) : '—' }}</b></span></div>
+            <div class="timer-actions">
+              <button v-if="!timerRunning" class="big-action start" type="button" @click="startTimer"><ion-icon :icon="playOutline"/>Avvia</button>
+              <button v-else class="big-action lap" type="button" @click="saveTimedLap(true)"><ion-icon :icon="flagOutline"/>Giro</button>
+              <button v-if="timerRunning" class="square-action" type="button" @click="pauseTimer"><ion-icon :icon="pauseOutline"/></button>
+              <button v-else-if="timerElapsed > 0" class="square-action" type="button" @click="saveTimedLap(false)"><ion-icon :icon="checkmarkCircleOutline"/></button>
             </div>
-            <ion-button v-if="timerElapsed > 0" fill="clear" size="small" @click="resetTimer">Azzera</ion-button>
+            <button v-if="timerElapsed > 0" class="text-action" type="button" @click="resetTimer">Azzera</button>
           </section>
 
-          <ion-card class="composer compact-composer"><ion-card-content>
-            <div class="two-col"><ion-input v-model="timingLabel" label="Pista / etichetta" label-placement="stacked" placeholder="Es. Kartodromo" /><ion-input v-model="timingVehicle" label="Mezzo" label-placement="stacked" placeholder="Opzionale" /></div>
-            <ion-textarea v-model="timingNotes" label="Nota" label-placement="stacked" :auto-grow="true" placeholder="Gomme, meteo, traffico…" />
-          </ion-card-content></ion-card>
-
-          <section class="manual-time">
-            <div><p class="eyebrow">INSERIMENTO MANUALE</p><h2>Hai già il tempo?</h2></div>
-            <div class="manual-time-row"><ion-input v-model="manualLap" inputmode="decimal" placeholder="1:23.456" /><ion-button @click="saveManualLap">Salva</ion-button></div>
+          <section class="panel form-panel">
+            <div class="panel-head"><div><p class="eyebrow">CONTESTO OPZIONALE</p><h2>Dettagli giro</h2></div></div>
+            <div class="form-grid two"><ion-input v-model="timingLabel" label="Pista / etichetta" label-placement="stacked" placeholder="Es. Busca"/><ion-input v-model="timingVehicle" label="Mezzo" label-placement="stacked" placeholder="Opzionale"/></div>
+            <ion-textarea v-model="timingNotes" label="Note" label-placement="stacked" :auto-grow="true" placeholder="Gomme, meteo, traffico…"/>
           </section>
 
-          <div class="compact-list">
-            <article v-for="item in quick.filter(record => record.kind === 'lap_time').slice(0, 12)" :key="item.id" class="compact-row lap-row">
-              <ion-icon :icon="stopwatchOutline" /><div><strong>{{ formatLapTime(item.value_ms) }}</strong><span>{{ item.title }} · {{ formatDate(item.occurred_at) }}</span></div><button type="button" class="icon-button danger" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline" /></button>
-            </article>
-          </div>
+          <section class="manual-card">
+            <div><span>INSERIMENTO MANUALE</span><strong>Hai già il tempo?</strong></div>
+            <div class="manual-row"><ion-input v-model="manualLap" inputmode="decimal" placeholder="1:23.456"/><button type="button" @click="saveManualLap">Salva</button></div>
+            <small>Nessuna configurazione, vettura o sessione necessaria.</small>
+          </section>
+
+          <section class="panel"><div class="panel-head"><div><p class="eyebrow">LAP HISTORY</p><h2>Ultimi giri</h2></div><span>{{ lapRecords.length }}</span></div>
+            <div class="lap-list"><article v-for="(item, index) in lapRecords.slice(0, 12)" :key="item.id" class="lap-list-row"><span class="lap-index">{{ String(lapRecords.length - index).padStart(2,'0') }}</span><strong>{{ formatLapTime(item.value_ms) }}</strong><span>{{ item.title }}</span><button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div>
+          </section>
         </main>
 
         <main v-else-if="active === 'sessions'" class="screen">
-          <div class="section-head"><div><p class="eyebrow">SESSIONS</p><h1>Nuova sessione</h1></div><ion-badge color="medium">gerarchia opzionale</ion-badge></div>
-          <ion-card class="composer"><ion-card-content>
-            <div class="form-intro"><strong>Registra prima, organizza dopo.</strong><span>Se lasci vuota la configurazione, PitMetric crea una sessione libera locale.</span></div>
-            <ion-select v-model="sessionConfigurationId" label="Configurazione (opzionale)" label-placement="stacked"><ion-select-option :value="null">Nessuna — sessione libera</ion-select-option><ion-select-option v-for="config in snapshot.configurations" :key="config.id" :value="config.id">{{ config.vehicle }} · {{ config.configuration }} v{{ config.version_number }}</ion-select-option></ion-select>
-            <ion-select v-model="sessionEventId" label="Weekend (opzionale)" label-placement="stacked" @ion-change="sessionEntryId = null"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="event in snapshot.events" :key="event.id" :value="event.id">{{ event.name }}</ion-select-option></ion-select>
-            <ion-select v-if="selectedSessionEvent" v-model="sessionEntryId" label="Iscrizione (opzionale)" label-placement="stacked"><ion-select-option :value="null">Nessuna</ion-select-option><ion-select-option v-for="entry in selectedSessionEvent.entries" :key="entry.id" :value="entry.id">#{{ entry.entry_number || '—' }} · {{ entry.driver || entry.vehicle }}</ion-select-option></ion-select>
-            <div class="two-col"><ion-select v-model="sessionType" label="Tipo" label-placement="stacked"><ion-select-option v-for="type in ['practice','qualifying','heat','prefinal','final','race','test']" :key="type" :value="type">{{ type }}</ion-select-option></ion-select><ion-input v-model="sessionStartedAt" type="datetime-local" label="Inizio" label-placement="stacked" /></div>
-            <div class="three-col"><ion-input v-model.number="sessionLaps" type="number" label="Giri" label-placement="stacked" /><ion-input v-model.number="sessionDuration" type="number" label="Minuti" label-placement="stacked" /><ion-input v-model="sessionBestLap" inputmode="decimal" label="Best lap" label-placement="stacked" placeholder="1:23.456" /></div>
-            <ion-textarea v-model="sessionNotes" label="Note" label-placement="stacked" :auto-grow="true" />
-            <ion-button expand="block" @click="saveSession"><ion-icon slot="start" :icon="addOutline" />Registra sessione</ion-button>
-          </ion-card-content></ion-card>
-
-          <div class="compact-list">
-            <article v-for="item in quick.filter(record => record.kind === 'session').slice(0, 8)" :key="item.id" class="compact-row"><ion-icon :icon="flagOutline" /><div><strong>{{ item.title }}</strong><span>{{ quickMeta(item) }} · {{ item.payload.completed_laps ?? '—' }} giri</span></div><ion-badge color="medium">locale</ion-badge></article>
-            <article v-for="item in snapshot.sessions.slice(0, 8)" :key="`cloud-${item.id}`" class="compact-row"><ion-icon :icon="cloudDoneOutline" /><div><strong>{{ item.vehicle || item.session_type }}</strong><span>{{ item.session_type }} · {{ formatDate(item.started_at) }} · {{ item.completed_laps ?? '—' }} giri</span></div><ion-badge>{{ item.status }}</ion-badge></article>
-          </div>
-        </main>
-
-        <main v-else-if="active === 'pit'" class="screen">
-          <div class="section-head"><div><p class="eyebrow">QUICK NOTE</p><h1>Nota rapida</h1></div><ion-badge color="medium">{{ currentEvent ? 'collegata' : 'libera' }}</ion-badge></div>
-          <ion-card class="composer"><ion-card-content>
-            <ion-select v-model="selectedEventId" label="Weekend (opzionale)" label-placement="stacked"><ion-select-option :value="null">Nessuno — nota libera</ion-select-option><ion-select-option v-for="event in snapshot.events" :key="event.id" :value="event.id">{{ event.name }}</ion-select-option></ion-select>
-            <ion-select v-model="noteKind" label="Tipo" label-placement="stacked"><ion-select-option value="technical">Tecnica</ion-select-option><ion-select-option value="driver">Pilota</ion-select-option><ion-select-option value="strategy">Strategia</ion-select-option><ion-select-option value="weather">Meteo</ion-select-option><ion-select-option value="incident">Incidente</ion-select-option></ion-select>
-            <ion-textarea v-model="noteBody" label="Nota" label-placement="stacked" :auto-grow="true" placeholder="Scrivi e salva. Non serve preparare nulla prima." />
-            <ion-button expand="block" @click="savePitNote">Salva ora</ion-button>
-          </ion-card-content></ion-card>
-          <div class="compact-list"><article v-for="item in quick.filter(record => record.kind === 'note').slice(0, 12)" :key="item.id" class="compact-row"><ion-icon :icon="timeOutline" /><div><strong>{{ item.title }}</strong><span>{{ item.payload.kind }} · {{ formatDate(item.occurred_at) }}</span></div><button type="button" class="icon-button danger" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline" /></button></article></div>
+          <section class="screen-title"><div><p class="eyebrow">SESSION LOGGER</p><h1>Nuova sessione</h1><p>Salva prima. Collega configurazione e cloud solo se ti servono.</p></div></section>
+          <section class="panel form-panel">
+            <div class="form-grid two"><ion-select v-model="sessionType" label="Tipo" label-placement="stacked"><ion-select-option v-for="type in ['practice','qualifying','heat','prefinal','final','race','test']" :key="type" :value="type">{{ type }}</ion-select-option></ion-select><ion-input v-model="sessionStartedAt" type="datetime-local" label="Inizio" label-placement="stacked"/></div>
+            <div class="form-grid three"><ion-input v-model.number="sessionLaps" type="number" label="Giri" label-placement="stacked"/><ion-input v-model.number="sessionDuration" type="number" label="Minuti" label-placement="stacked"/><ion-input v-model="sessionBestLap" inputmode="decimal" label="Best lap" label-placement="stacked" placeholder="1:23.456"/></div>
+            <ion-textarea v-model="sessionNotes" label="Note" label-placement="stacked" :auto-grow="true"/>
+            <details class="advanced"><summary>Collegamenti avanzati opzionali</summary><div class="advanced-body"><ion-select v-model="sessionConfigurationId" label="Configurazione" label-placement="stacked"><ion-select-option :value="null">Nessuna</ion-select-option><ion-select-option v-for="config in snapshot.configurations" :key="config.id" :value="config.id">{{ config.vehicle }} · {{ config.configuration }} v{{ config.version_number }}</ion-select-option></ion-select><ion-select v-model="sessionEventId" label="Weekend" label-placement="stacked" @ion-change="sessionEntryId = null"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="event in snapshot.events" :key="event.id" :value="event.id">{{ event.name }}</ion-select-option></ion-select><ion-select v-if="selectedSessionEvent" v-model="sessionEntryId" label="Iscrizione" label-placement="stacked"><ion-select-option :value="null">Nessuna</ion-select-option><ion-select-option v-for="entry in selectedSessionEvent.entries" :key="entry.id" :value="entry.id">#{{ entry.entry_number || '—' }} · {{ entry.driver || entry.vehicle }}</ion-select-option></ion-select></div></details>
+            <button class="save-button" type="button" @click="saveSession"><ion-icon :icon="addOutline"/>Salva sessione</button>
+          </section>
+          <section class="panel"><div class="panel-head"><div><p class="eyebrow">LOCAL SESSIONS</p><h2>Storico</h2></div><span>{{ sessionRecords.length }}</span></div><div class="activity-list"><article v-for="item in sessionRecords.slice(0,12)" :key="item.id" class="activity-row"><div class="activity-dot"><ion-icon :icon="flagOutline"/></div><div><strong>{{ String(item.payload.session_type || 'Sessione') }}</strong><span>{{ quickMeta(item) }} · {{ item.payload.completed_laps || '—' }} giri</span></div><button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div></section>
         </main>
 
         <main v-else-if="active === 'garage'" class="screen">
-          <div class="section-head"><div><p class="eyebrow">GARAGE</p><h1>Mezzi</h1></div><ion-badge>{{ snapshot.vehicles.length }}</ion-badge></div>
-          <div class="compact-list"><article v-for="vehicle in snapshot.vehicles" :key="vehicle.id" class="compact-row"><ion-icon :icon="carSportOutline" /><div><strong>{{ vehicle.name }}</strong><span>{{ vehicle.manufacturer }} {{ vehicle.model }} · {{ vehicle.category }}</span></div><ion-badge :color="vehicle.status === 'active' ? 'success' : 'medium'">{{ vehicle.status }}</ion-badge></article></div>
-          <ion-card class="composer"><ion-card-header><ion-card-title>Aggiungi mezzo</ion-card-title></ion-card-header><ion-card-content>
-            <ion-input v-model="vehicleName" label="Nome" label-placement="stacked" placeholder="È l’unico campo necessario" />
-            <ion-select v-model="vehicleCategory" label="Categoria" label-placement="stacked"><ion-select-option v-for="category in ['kart','formula','gt','touring','rally','prototype','hypercar','road_car','motorcycle','other']" :key="category" :value="category">{{ category }}</ion-select-option></ion-select>
-            <div class="two-col"><ion-input v-model="vehicleManufacturer" label="Costruttore" label-placement="stacked" /><ion-input v-model="vehicleModel" label="Modello" label-placement="stacked" /></div>
-            <ion-input v-model="vehicleIdentifier" label="Telaio / identificativo" label-placement="stacked" />
-            <ion-button expand="block" @click="saveVehicle">Salva offline</ion-button>
-          </ion-card-content></ion-card>
+          <section class="screen-title"><div><p class="eyebrow">GARAGE</p><h1>Mezzi</h1><p>Puoi registrare tempi anche senza aggiungere un mezzo.</p></div><ion-badge>{{ snapshot.vehicles.length }}</ion-badge></section>
+          <div class="vehicle-grid"><article v-for="vehicle in snapshot.vehicles" :key="vehicle.id" class="vehicle-card"><ion-icon :icon="carSportOutline"/><div><strong>{{ vehicle.name }}</strong><span>{{ [vehicle.manufacturer, vehicle.model].filter(Boolean).join(' ') || vehicle.category }}</span></div><small>{{ vehicle.status }}</small></article></div>
+          <section class="panel form-panel"><div class="panel-head"><div><p class="eyebrow">NEW VEHICLE</p><h2>Aggiungi mezzo</h2></div></div><ion-input v-model="vehicleName" label="Nome" label-placement="stacked"/><ion-select v-model="vehicleCategory" label="Categoria" label-placement="stacked"><ion-select-option v-for="category in ['kart','formula','gt','touring','rally','prototype','hypercar','road_car','motorcycle','other']" :key="category" :value="category">{{ category }}</ion-select-option></ion-select><div class="form-grid two"><ion-input v-model="vehicleManufacturer" label="Costruttore" label-placement="stacked"/><ion-input v-model="vehicleModel" label="Modello" label-placement="stacked"/></div><ion-input v-model="vehicleIdentifier" label="Identificativo" label-placement="stacked"/><button class="save-button" type="button" @click="saveVehicle">Salva in locale</button></section>
         </main>
 
-        <main v-else-if="active === 'weekend'" class="screen">
-          <p class="eyebrow">RACE WEEKEND</p><h1>Weekend</h1>
-          <div v-if="snapshot.events.length" class="stack-list"><ion-card v-for="event in snapshot.events" :key="event.id"><ion-card-header><div class="card-title-row"><ion-card-title>{{ event.name }}</ion-card-title><ion-badge>{{ event.status }}</ion-badge></div></ion-card-header><ion-card-content><p class="muted">{{ event.championship }} {{ event.round_label ? `· ${event.round_label}` : '' }}</p><div class="schedule-list" v-if="event.schedule.length"><div v-for="item in event.schedule" :key="item.id" class="schedule-row"><div><strong>{{ item.label }}</strong><span>{{ formatDate(item.starts_at) }}</span></div><ion-badge :color="item.status === 'completed' ? 'success' : 'medium'">{{ item.status }}</ion-badge></div></div><div class="entry-chips" v-if="event.entries.length"><ion-chip v-for="entry in event.entries" :key="entry.id">#{{ entry.entry_number || '—' }} {{ entry.driver || entry.vehicle }}</ion-chip></div></ion-card-content></ion-card></div>
-          <div v-else class="empty">Nessun weekend: non è un problema. Cronometro, sessioni libere e note funzionano comunque.</div>
+        <main v-else-if="active === 'pit'" class="screen">
+          <section class="screen-title"><div><p class="eyebrow">QUICK NOTE</p><h1>Nota trackside</h1><p>Non serve un weekend esistente.</p></div></section>
+          <section class="panel form-panel"><ion-select v-model="noteKind" label="Tipo" label-placement="stacked"><ion-select-option value="technical">Tecnica</ion-select-option><ion-select-option value="driver">Pilota</ion-select-option><ion-select-option value="strategy">Strategia</ion-select-option><ion-select-option value="weather">Meteo</ion-select-option><ion-select-option value="incident">Incidente</ion-select-option></ion-select><ion-select v-model="selectedEventId" label="Weekend opzionale" label-placement="stacked"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="event in snapshot.events" :key="event.id" :value="event.id">{{ event.name }}</ion-select-option></ion-select><ion-textarea v-model="noteBody" label="Nota" label-placement="stacked" :auto-grow="true" placeholder="Pressioni, comportamento, pista…"/><button class="save-button" type="button" @click="savePitNote">Salva nota</button></section>
         </main>
 
-        <main v-else-if="active === 'maintenance'" class="screen">
-          <div class="section-head"><div><p class="eyebrow">MAINTENANCE</p><h1>Manutenzione</h1></div><ion-button fill="clear" @click="active = 'more'">Indietro</ion-button></div>
-          <div class="compact-list"><article v-for="order in snapshot.work_orders" :key="order.id" class="compact-row"><ion-icon :icon="buildOutline" /><div><strong>{{ order.title }}</strong><span>{{ order.schedule || 'Intervento libero' }} · {{ order.due_at ? formatDate(order.due_at) : 'senza scadenza' }}</span></div><ion-badge :color="order.priority === 'critical' ? 'danger' : order.priority === 'high' ? 'warning' : 'medium'">{{ order.priority }}</ion-badge></article></div>
-          <ion-card class="composer"><ion-card-content><ion-input v-model="workOrderTitle" label="Intervento" label-placement="stacked" /><ion-select v-model="workOrderScheduleId" label="Piano (opzionale)" label-placement="stacked"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="item in snapshot.maintenance_schedules" :key="item.id" :value="item.id">{{ item.name }}</ion-select-option></ion-select><ion-select v-model="workOrderPriority" label="Priorità" label-placement="stacked"><ion-select-option v-for="priority in ['low','normal','high','critical']" :key="priority" :value="priority">{{ priority }}</ion-select-option></ion-select><ion-textarea v-model="workOrderNotes" label="Note" label-placement="stacked" :auto-grow="true" /><ion-button expand="block" @click="saveWorkOrder">Salva offline</ion-button></ion-card-content></ion-card>
-        </main>
+        <main v-else-if="active === 'weekend'" class="screen"><section class="screen-title"><div><p class="eyebrow">WEEKENDS</p><h1>Eventi sincronizzati</h1></div></section><div class="event-list"><article v-for="event in snapshot.events" :key="event.id" class="event-card"><div><strong>{{ event.name }}</strong><span>{{ event.championship }} {{ event.round_label ? `· ${event.round_label}` : '' }}</span></div><ion-badge>{{ event.status }}</ion-badge></article></div><div v-if="!snapshot.events.length" class="empty-state"><ion-icon :icon="flagOutline"/><strong>Nessun evento</strong><span>Non è un problema: timer e sessioni funzionano comunque.</span></div></main>
 
-        <main v-else-if="active === 'setup'" class="screen">
-          <div class="section-head"><div><p class="eyebrow">SETUP</p><h1>Setup</h1></div><ion-button fill="clear" @click="active = 'more'">Indietro</ion-button></div>
-          <div class="compact-list"><article v-for="item in quick.filter(record => record.kind === 'setup').slice(0, 6)" :key="item.id" class="compact-row"><ion-icon :icon="settingsOutline" /><div><strong>{{ item.title }}</strong><span>Setup libero · {{ formatDate(item.occurred_at) }}</span></div><ion-badge color="medium">locale</ion-badge></article><article v-for="item in snapshot.setups" :key="`cloud-${item.id}`" class="compact-row"><ion-icon :icon="settingsOutline" /><div><strong>{{ item.name }}</strong><span>{{ item.vehicle }} · {{ item.description || 'Nessuna descrizione' }}</span></div><ion-badge>{{ item.status }}</ion-badge></article></div>
-          <ion-card class="composer"><ion-card-content>
-            <ion-select v-model="setupVehicleId" label="Mezzo (opzionale)" label-placement="stacked"><ion-select-option :value="null">Nessuno — setup libero</ion-select-option><ion-select-option v-for="vehicle in snapshot.vehicles" :key="vehicle.id" :value="vehicle.id">{{ vehicle.name }}</ion-select-option></ion-select>
-            <ion-input v-model="setupName" label="Nome setup" label-placement="stacked" />
-            <ion-textarea v-model="setupDescription" label="Descrizione" label-placement="stacked" :auto-grow="true" />
-            <p class="form-label">Pressioni gomme (bar)</p><div class="four-col"><ion-input v-model.number="setupTyreFl" type="number" label="FL" label-placement="stacked" /><ion-input v-model.number="setupTyreFr" type="number" label="FR" label-placement="stacked" /><ion-input v-model.number="setupTyreRl" type="number" label="RL" label-placement="stacked" /><ion-input v-model.number="setupTyreRr" type="number" label="RR" label-placement="stacked" /></div>
-            <div class="two-col"><ion-input v-model.number="setupRideFront" type="number" label="Altezza ant. mm" label-placement="stacked" /><ion-input v-model.number="setupRideRear" type="number" label="Altezza post. mm" label-placement="stacked" /></div>
-            <ion-input v-model.number="setupBrakeBias" type="number" label="Brake bias %" label-placement="stacked" />
-            <ion-button expand="block" @click="saveSetup">Salva setup</ion-button>
-          </ion-card-content></ion-card>
-        </main>
+        <main v-else-if="active === 'maintenance'" class="screen"><section class="screen-title"><div><p class="eyebrow">MAINTENANCE</p><h1>Promemoria</h1></div></section><section class="panel form-panel"><ion-input v-model="workOrderTitle" label="Cosa va fatto?" label-placement="stacked"/><ion-select v-model="workOrderPriority" label="Priorità" label-placement="stacked"><ion-select-option v-for="priority in ['low','normal','high','critical']" :key="priority" :value="priority">{{ priority }}</ion-select-option></ion-select><ion-select v-model="workOrderScheduleId" label="Piano opzionale" label-placement="stacked"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="item in snapshot.maintenance_schedules" :key="item.id" :value="item.id">{{ item.name }}</ion-select-option></ion-select><ion-textarea v-model="workOrderNotes" label="Note" label-placement="stacked" :auto-grow="true"/><button class="save-button" type="button" @click="saveWorkOrder">Salva promemoria</button></section></main>
 
-        <main v-else-if="active === 'gallery'" class="screen">
-          <div class="section-head"><div><p class="eyebrow">MEDIA</p><h1>Galleria</h1></div><ion-button fill="clear" @click="active = 'more'">Indietro</ion-button></div>
-          <ion-card class="composer"><ion-card-content><ion-input v-model="mediaTitle" label="Titolo (opzionale)" label-placement="stacked" placeholder="PitMetric ne userà uno generico" /><ion-textarea v-model="mediaDescription" label="Descrizione" label-placement="stacked" :auto-grow="true" /><div class="media-buttons"><ion-button expand="block" @click="addPhoto"><ion-icon slot="start" :icon="cameraOutline" />Fotocamera</ion-button><ion-button expand="block" fill="outline" @click="addMedia"><ion-icon slot="start" :icon="videocamOutline" />Foto / video</ion-button></div></ion-card-content></ion-card>
-          <div v-if="gallery.length" class="gallery-grid"><article v-for="item in gallery" :key="item.local_id" class="photo-card"><video v-if="item.media_type === 'video'" :src="item.preview_uri || item.local_uri" controls playsinline preload="metadata" /><img v-else-if="item.preview_uri || item.local_uri.startsWith('http')" :src="item.preview_uri || item.local_uri" :alt="item.title" /><div v-else class="photo-placeholder"><ion-icon :icon="imagesOutline" /></div><div class="photo-body"><div class="photo-title"><strong>{{ item.title }}</strong><ion-badge :color="item.sync_state === 'synced' ? 'success' : item.sync_state === 'error' ? 'danger' : 'warning'">{{ item.sync_state }}</ion-badge></div><p>{{ item.description }}</p></div></article></div>
-          <div v-else class="empty">Nessun media. Fotocamera e archivio funzionano anche senza account.</div>
-        </main>
+        <main v-else-if="active === 'setup'" class="screen"><section class="screen-title"><div><p class="eyebrow">SETUP</p><h1>Setup libero</h1><p>Anche senza mezzo collegato.</p></div></section><section class="panel form-panel"><ion-select v-model="setupVehicleId" label="Mezzo opzionale" label-placement="stacked"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="vehicle in snapshot.vehicles" :key="vehicle.id" :value="vehicle.id">{{ vehicle.name }}</ion-select-option></ion-select><ion-input v-model="setupName" label="Nome setup" label-placement="stacked"/><ion-textarea v-model="setupDescription" label="Descrizione" label-placement="stacked" :auto-grow="true"/><div class="form-grid four"><ion-input v-model.number="setupTyreFl" type="number" label="FL bar" label-placement="stacked"/><ion-input v-model.number="setupTyreFr" type="number" label="FR bar" label-placement="stacked"/><ion-input v-model.number="setupTyreRl" type="number" label="RL bar" label-placement="stacked"/><ion-input v-model.number="setupTyreRr" type="number" label="RR bar" label-placement="stacked"/></div><div class="form-grid two"><ion-input v-model.number="setupRideFront" type="number" label="Altezza ant." label-placement="stacked"/><ion-input v-model.number="setupRideRear" type="number" label="Altezza post." label-placement="stacked"/></div><ion-input v-model.number="setupBrakeBias" type="number" label="Brake bias %" label-placement="stacked"/><button class="save-button" type="button" @click="saveSetup">Salva setup</button></section></main>
 
-        <main v-else-if="active === 'account'" class="screen account-screen">
-          <div class="section-head"><div><p class="eyebrow">ACCOUNT & CLOUD</p><h1>{{ session ? session.user?.name : 'Facoltativo' }}</h1></div><ion-button fill="clear" @click="active = 'more'">Indietro</ion-button></div>
-          <template v-if="!session">
-            <section class="local-first-note"><ion-icon :icon="personCircleOutline" /><div><strong>Non serve registrarsi.</strong><span>L’app resta utilizzabile in locale. Crea un account solo per collegare il dispositivo al cloud PitMetric.</span></div></section>
-            <ion-card class="composer auth-card"><ion-card-content>
-              <div class="auth-switch"><button :class="{ active: authMode === 'login' }" @click="authMode = 'login'">Accedi</button><button :class="{ active: authMode === 'register' }" @click="authMode = 'register'">Registrati</button></div>
-              <ion-input v-if="authMode === 'register'" v-model="name" label="Nome" label-placement="stacked" autocomplete="name" />
-              <ion-input v-model="email" label="Email" label-placement="stacked" type="email" autocomplete="email" />
-              <ion-input v-model="password" label="Password" label-placement="stacked" type="password" :autocomplete="authMode === 'login' ? 'current-password' : 'new-password'" />
-              <p v-if="authError" class="error">{{ authError }}</p>
-              <ion-button expand="block" @click="submitAuth">{{ authMode === 'login' ? 'Collega account' : 'Crea e collega account' }}</ion-button>
-              <ion-button v-if="biometric && authMode === 'login'" expand="block" fill="outline" @click="unlock"><ion-icon slot="start" :icon="fingerPrintOutline" />Sblocca sessione salvata</ion-button>
-            </ion-card-content></ion-card>
-          </template>
-          <template v-else>
-            <p class="muted">{{ session.user?.email }}</p>
-            <ion-card><ion-card-content><strong>{{ cloudLabel }}</strong><p>{{ session.cloudEnabled ? 'Le operazioni compatibili vengono sincronizzate automaticamente. I Quick Log senza gerarchia restano sempre disponibili sul telefono.' : 'Puoi continuare a usare tutto in locale. Il cloud non è abilitato per questo account.' }}</p><p class="muted small">Ultimo snapshot: {{ snapshot.synced_at ? formatDate(snapshot.synced_at) : 'mai' }}</p></ion-card-content></ion-card>
-            <ion-card v-if="pendingOps.length"><ion-card-header><ion-card-title>Coda offline</ion-card-title></ion-card-header><ion-card-content><div class="queue-row" v-for="item in pendingOps" :key="item.local_id"><span>{{ item.operation }}</span><ion-badge color="warning">{{ item.attempts }} retry</ion-badge></div></ion-card-content></ion-card>
-            <ion-button v-if="session.cloudEnabled" expand="block" @click="forceSync"><ion-icon slot="start" :icon="syncOutline" />Sincronizza adesso</ion-button>
-            <ion-button expand="block" fill="outline" color="danger" @click="signOut"><ion-icon slot="start" :icon="logOutOutline" />Scollega account</ion-button>
-          </template>
-        </main>
+        <main v-else-if="active === 'gallery'" class="screen"><section class="screen-title"><div><p class="eyebrow">MEDIA</p><h1>Galleria</h1></div></section><section class="panel form-panel"><ion-input v-model="mediaTitle" label="Titolo opzionale" label-placement="stacked"/><ion-textarea v-model="mediaDescription" label="Descrizione" label-placement="stacked" :auto-grow="true"/><div class="media-actions"><button type="button" @click="addPhoto"><ion-icon :icon="cameraOutline"/>Fotocamera</button><button type="button" @click="addMedia"><ion-icon :icon="videocamOutline"/>Foto / video</button></div></section><div class="gallery-grid"><article v-for="item in gallery" :key="item.local_id" class="media-card"><video v-if="item.media_type === 'video'" :src="item.preview_uri || item.local_uri" controls playsinline preload="metadata"/><img v-else-if="item.preview_uri || item.local_uri.startsWith('http')" :src="item.preview_uri || item.local_uri" :alt="item.title"/><div v-else class="media-placeholder"><ion-icon :icon="imagesOutline"/></div><div><strong>{{ item.title }}</strong><span>{{ item.sync_state }}</span></div></article></div></main>
+
+        <main v-else-if="active === 'account'" class="screen"><section class="screen-title"><div><p class="eyebrow">ACCOUNT & CLOUD</p><h1>{{ session ? session.user?.name : 'Opzionale' }}</h1><p>{{ session ? session.user?.email : 'Usa PitMetric in locale quanto vuoi. Accedi solo per sincronizzare.' }}</p></div></section><section v-if="!session" class="panel auth-panel"><div class="segmented"><button :class="{active: authMode === 'login'}" type="button" @click="authMode='login'">Accedi</button><button :class="{active: authMode === 'register'}" type="button" @click="authMode='register'">Registrati</button></div><ion-input v-if="authMode === 'register'" v-model="name" label="Nome" label-placement="stacked"/><ion-input v-model="email" type="email" label="Email" label-placement="stacked"/><ion-input v-model="password" type="password" label="Password" label-placement="stacked"/><p v-if="authError" class="error">{{ authError }}</p><button class="save-button" type="button" @click="submitAuth">{{ authMode === 'login' ? 'Accedi' : 'Crea account' }}</button><button v-if="biometric && authMode === 'login'" class="secondary-button" type="button" @click="unlock"><ion-icon :icon="personCircleOutline"/>Sblocco biometrico</button></section><section v-else class="panel account-panel"><div class="account-status"><ion-icon :icon="session.cloudEnabled ? cloudDoneOutline : cloudOfflineOutline"/><div><strong>{{ session.cloudEnabled ? 'Cloud attivo' : 'Account collegato' }}</strong><span>{{ pending }} operazioni in coda</span></div></div><button class="secondary-button" type="button" @click="forceSync"><ion-icon :icon="syncOutline"/>Sincronizza ora</button><button class="danger-button" type="button" @click="signOut"><ion-icon :icon="logOutOutline"/>Scollega account</button><div v-if="pendingOps.length" class="queue"><span v-for="item in pendingOps.slice(0,8)" :key="item.local_id">{{ item.operation }} · {{ item.attempts }} retry</span></div></section></main>
 
         <main v-else class="screen">
-          <p class="eyebrow">TOOLS</p><h1>Altro</h1>
-          <div class="tools-grid">
-            <button type="button" @click="active = 'pit'"><ion-icon :icon="speedometerOutline" /><strong>Nota rapida</strong><span>Senza weekend</span></button>
-            <button type="button" @click="active = 'weekend'"><ion-icon :icon="calendarOutline" /><strong>Weekend</strong><span>Quando ti serve struttura</span></button>
-            <button type="button" @click="active = 'maintenance'"><ion-icon :icon="buildOutline" /><strong>Manutenzione</strong><span>Interventi e priorità</span></button>
-            <button type="button" @click="active = 'setup'"><ion-icon :icon="settingsOutline" /><strong>Setup</strong><span>Anche senza mezzo</span></button>
-            <button type="button" @click="active = 'gallery'"><ion-icon :icon="imagesOutline" /><strong>Galleria</strong><span>Foto + video</span></button>
-            <button type="button" @click="active = 'account'"><ion-icon :icon="personCircleOutline" /><strong>{{ session ? 'Account' : 'Cloud opzionale' }}</strong><span>{{ session ? cloudLabel : 'Accedi quando vuoi' }}</span></button>
-          </div>
+          <section class="screen-title"><div><p class="eyebrow">TOOLS</p><h1>Altro</h1></div></section>
+          <section class="tools-grid"><button type="button" @click="active='pit'"><ion-icon :icon="speedometerOutline"/><strong>Nota rapida</strong><span>Trackside</span></button><button type="button" @click="active='setup'"><ion-icon :icon="settingsOutline"/><strong>Setup</strong><span>Assetto libero</span></button><button type="button" @click="active='maintenance'"><ion-icon :icon="buildOutline"/><strong>Manutenzione</strong><span>Promemoria</span></button><button type="button" @click="active='gallery'"><ion-icon :icon="imagesOutline"/><strong>Galleria</strong><span>Foto + video</span></button><button type="button" @click="active='weekend'"><ion-icon :icon="flagOutline"/><strong>Weekend</strong><span>Cloud opzionale</span></button><button type="button" @click="active='account'"><ion-icon :icon="personCircleOutline"/><strong>Account</strong><span>{{ session ? 'Collegato' : 'Opzionale' }}</span></button></section>
         </main>
       </ion-content>
 
       <ion-tab-bar slot="bottom" class="bottom-nav">
-        <ion-tab-button :selected="active === 'home'" @click="active = 'home'"><ion-icon :icon="homeOutline" /><ion-label>Home</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'timer'" @click="active = 'timer'"><ion-icon :icon="stopwatchOutline" /><ion-label>Timer</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'sessions'" @click="active = 'sessions'"><ion-icon :icon="flagOutline" /><ion-label>Sessioni</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'garage'" @click="active = 'garage'"><ion-icon :icon="carSportOutline" /><ion-label>Garage</ion-label></ion-tab-button>
-        <ion-tab-button :selected="moreSelected" @click="active = 'more'"><ion-icon :icon="ellipsisHorizontalOutline" /><ion-label>Altro</ion-label></ion-tab-button>
+        <ion-tab-button :selected="active === 'home'" @click="active='home'"><ion-icon :icon="homeOutline"/><ion-label>Home</ion-label></ion-tab-button>
+        <ion-tab-button :selected="active === 'timer'" @click="active='timer'"><ion-icon :icon="stopwatchOutline"/><ion-label>Timer</ion-label></ion-tab-button>
+        <ion-tab-button :selected="active === 'sessions'" @click="active='sessions'"><ion-icon :icon="flagOutline"/><ion-label>Sessioni</ion-label></ion-tab-button>
+        <ion-tab-button :selected="active === 'garage'" @click="active='garage'"><ion-icon :icon="carSportOutline"/><ion-label>Garage</ion-label></ion-tab-button>
+        <ion-tab-button :selected="moreSelected" @click="active='more'"><ion-icon :icon="ellipsisHorizontalOutline"/><ion-label>Altro</ion-label></ion-tab-button>
       </ion-tab-bar>
     </ion-page>
   </ion-app>
