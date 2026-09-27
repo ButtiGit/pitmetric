@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: { androidScheme: 'https' },
   plugins: {
+    CapacitorHttp: { enabled: true },
     Camera: { presentationStyle: 'popover' },
     CapacitorSQLite: { iosDatabaseLocation: 'Library/CapacitorDatabase' }
   }
