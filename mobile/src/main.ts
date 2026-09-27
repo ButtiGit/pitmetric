@@ -6,5 +6,6 @@ import '@ionic/vue/css/normalize.css';
 import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/typography.css';
 import './theme.css';
+import './trackside.css';
 
 createApp(App).use(IonicVue).mount('#app');
