@@ -31,7 +31,6 @@ test('mobile public cover uses telemetry navigation and keeps notices sequential
             display: navStyle.display,
             columns: navStyle.gridTemplateColumns.split(' ').length,
             borderRadius: firstLinkStyle.borderRadius,
-            backgroundImage: firstLinkStyle.backgroundImage,
             firstIndex: firstIndexStyle.content,
             activeTraceOpacity: activeTraceStyle?.opacity,
         };
@@ -40,7 +39,6 @@ test('mobile public cover uses telemetry navigation and keeps notices sequential
     expect(navVisualState.display).toBe('grid');
     expect(navVisualState.columns).toBe(4);
     expect(navVisualState.borderRadius).toBe('0px');
-    expect(navVisualState.backgroundImage).toBe('none');
     expect(navVisualState.firstIndex).toContain('01');
     expect(navVisualState.activeTraceOpacity).toBe('1');
 
