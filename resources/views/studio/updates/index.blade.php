@@ -16,7 +16,10 @@
                         <p class="mt-3 max-w-2xl text-sm leading-7 text-pm-text-secondary">{{ __('pitmetric.studio.intro_simple') }}</p>
                         <p class="mt-3 text-xs text-pm-muted">{{ __('pitmetric.studio.signed_in_as') }} <span class="font-semibold text-pm-text-secondary">{{ auth()->user()->email }}</span></p>
                     </div>
-                    <a href="{{ route('studio.updates.create') }}" class="pm-race-button shrink-0">＋ {{ __('pitmetric.studio.new_post') }}</a>
+                    <div class="flex shrink-0 flex-wrap gap-2">
+                        <a href="{{ route('studio.outreach.index') }}" class="pm-ghost-button">✉ Outreach</a>
+                        <a href="{{ route('studio.updates.create') }}" class="pm-race-button">＋ {{ __('pitmetric.studio.new_post') }}</a>
+                    </div>
                 </div>
             </section>
 
