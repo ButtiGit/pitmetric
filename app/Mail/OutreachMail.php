@@ -14,7 +14,7 @@ class OutreachMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public string $locale,
+        public string $contentLocale,
         public string $subjectLine,
         public string $note,
         public string $unsubscribeUrl,
@@ -32,7 +32,7 @@ class OutreachMail extends Mailable
         return new Content(
             view: 'emails.outreach',
             with: [
-                'locale' => $this->locale,
+                'locale' => $this->contentLocale,
                 'note' => $this->note,
                 'unsubscribeUrl' => $this->unsubscribeUrl,
             ],
