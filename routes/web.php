@@ -5,6 +5,7 @@ use App\Http\Controllers\ComponentController;
 use App\Http\Controllers\ComponentInstallationController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoSessionController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
@@ -48,6 +49,10 @@ Route::post('/locale', function (Request $request) {
         'lax',
     ));
 })->name('locale.update');
+
+Route::post('/demo', DemoSessionController::class)
+    ->middleware('guest')
+    ->name('demo.enter');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
@@ -185,7 +190,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
             Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
         });
 });
