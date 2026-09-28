@@ -59,6 +59,7 @@ class OutreachStudioController extends Controller
 
             if (MarketingSuppression::query()->where('email_hash', $hash)->exists()) {
                 $suppressed++;
+
                 continue;
             }
 
