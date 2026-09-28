@@ -22,6 +22,7 @@
                         @else
                             <a href="{{ route('register') }}" class="pm-home-text-link">{{ __('pitmetric.home.discover') }}</a>
                             <a href="{{ route('login') }}" class="pm-home-text-link pm-home-text-link--muted">{{ __('pitmetric.nav.login') }}</a>
+                            <a href="{{ route('demo.public') }}" class="pm-home-text-link pm-home-text-link--muted">Demo</a>
                         @endauth
                     </div>
                 </div>
