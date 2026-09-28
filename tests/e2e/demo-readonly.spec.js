@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-test('public demo opens a seeded read-only workspace without horizontal overflow', async ({ page }) => {
+test('public demo opens a seeded read-only workspace without horizontal overflow', async ({ page, context }) => {
+    await context.addCookies([
+        {
+            name: 'pitmetric_locale',
+            value: 'en',
+            url: 'http://127.0.0.1:8000',
+        },
+    ]);
+
     await page.goto('/');
 
     const authActions = page.locator('[aria-label="Authentication actions"]');
