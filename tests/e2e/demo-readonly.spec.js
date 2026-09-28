@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('public demo opens a seeded read-only workspace without horizontal overflow', async ({ page }) => {
     await page.goto('/');
 
-    const authActions = page.getByRole('generic', { name: 'Authentication actions' });
+    const authActions = page.locator('[aria-label="Authentication actions"]');
     const compactDemo = authActions.getByRole('button', { name: 'Demo' });
     const desktopDemo = page.locator('header form[action$="/demo"] button').filter({ hasText: 'Demo' }).first();
 
