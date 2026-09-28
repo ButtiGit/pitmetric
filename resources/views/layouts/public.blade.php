@@ -44,7 +44,7 @@
                         @if (Route::has('register'))
                             <a href="{{ route('register') }}" class="pm-public-header-action hidden items-center xl:inline-flex">{{ app()->getLocale() === 'it' ? 'Registrati' : 'Register' }}</a>
                         @endif
-                        <form method="POST" action="{{ route('demo.enter') }}" class="shrink-0">
+                        <form method="POST" action="{{ route('demo.enter') }}" class="hidden shrink-0 xl:block">
                             @csrf
                             <button type="submit" class="pm-public-header-action pm-public-header-action--primary inline-flex items-center">Demo</button>
                         </form>
@@ -56,17 +56,21 @@
                 <a href="{{ route('updates.index') }}" class="shrink-0 {{ request()->routeIs('updates.*') ? 'text-white' : '' }}">{{ __('pitmetric.nav.updates') }}</a>
                 <a href="{{ route('app') }}" class="shrink-0 {{ request()->routeIs('app') ? 'text-white' : '' }}">App</a>
                 <a href="{{ route('about') }}" class="shrink-0 {{ request()->routeIs('about') ? 'text-white' : '' }}">{{ __('pitmetric.nav.about') }}</a>
-                @guest
-                    <a href="{{ route('login') }}" class="shrink-0 text-zinc-200">{{ __('pitmetric.nav.login') }}</a>
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="shrink-0 text-zinc-200">{{ app()->getLocale() === 'it' ? 'Registrati' : 'Register' }}</a>
-                    @endif
-                    <form method="POST" action="{{ route('demo.enter') }}" class="shrink-0">
-                        @csrf
-                        <button type="submit" class="font-bold text-[#ff625e]">Demo</button>
-                    </form>
-                @endguest
             </nav>
+            @guest
+                <div class="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-5 pb-3 xl:hidden lg:px-8" aria-label="Authentication actions">
+                    <a href="{{ route('login') }}" class="min-w-0 rounded-lg border border-white/10 px-2 py-2 text-center text-xs font-bold text-zinc-200 transition hover:border-white/25 hover:text-white">{{ __('pitmetric.nav.login') }}</a>
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}" class="min-w-0 rounded-lg border border-white/10 px-2 py-2 text-center text-xs font-bold text-zinc-200 transition hover:border-white/25 hover:text-white">{{ app()->getLocale() === 'it' ? 'Registrati' : 'Register' }}</a>
+                    @else
+                        <span></span>
+                    @endif
+                    <form method="POST" action="{{ route('demo.enter') }}" class="min-w-0">
+                        @csrf
+                        <button type="submit" class="w-full min-w-0 rounded-lg bg-[#E10600] px-2 py-2 text-center text-xs font-black text-white transition hover:bg-[#f01812]">Demo</button>
+                    </form>
+                </div>
+            @endguest
         </header>
 
         <aside data-partner-notice class="pm-partner-notice" aria-label="{{ app()->getLocale() === 'it' ? 'Collaborazione PitMetric' : 'PitMetric collaboration' }}">
