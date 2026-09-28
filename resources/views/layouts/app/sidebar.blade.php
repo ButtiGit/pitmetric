@@ -6,12 +6,23 @@
             <flux:sidebar.header class="border-b border-white/5 pb-4"><a href="{{ route('dashboard') }}" wire:navigate aria-label="PitMetric"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-8 w-auto max-w-44"></a><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
 
             @php
+                $readOnlyDemo = (bool) session('pitmetric.demo_read_only', false);
                 $activityOpen = request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
                 $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
                 $managementOpen = request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*');
                 $studioOpen = request()->routeIs('studio.*');
             @endphp
+
+            @if ($readOnlyDemo)
+                <div class="mx-2 mt-4 shrink-0 rounded-xl border border-[#E10600]/35 bg-[#E10600]/10 p-3">
+                    <div class="flex items-center gap-2">
+                        <span class="size-2 shrink-0 rounded-full bg-[#E10600]"></span>
+                        <p class="text-[10px] font-black uppercase tracking-[0.14em] text-[#ff625e]">Demo · Read only</p>
+                    </div>
+                    <p class="mt-2 text-xs leading-5 text-zinc-300">{{ app()->getLocale() === 'it' ? 'Esplora dati di esempio. Aggiunta, modifica ed eliminazione sono disattivate.' : 'Explore sample data. Creating, editing and deleting are disabled.' }}</p>
+                </div>
+            @endif
 
             <flux:sidebar.nav class="min-h-0 flex-1 overflow-y-auto pt-4 pe-1 [scrollbar-width:thin]">
                 <flux:sidebar.group :heading="__('pitmetric.nav.platform')" class="grid gap-1">
@@ -45,20 +56,22 @@
                         </div>
                     </details>
 
-                    <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($performanceOpen) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
-                            <flux:icon.chart-bar class="size-4 shrink-0" />
-                            <span class="min-w-0 flex-1">Performance</span>
-                            <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
-                        </summary>
-                        <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
-                            <flux:sidebar.item icon="clock" :href="route('timing.index')" :current="request()->routeIs('timing.*')">{{ app()->getLocale() === 'it' ? 'Tempi' : 'Timing' }}</flux:sidebar.item>
-                            <flux:sidebar.item icon="signal" :href="route('telemetry.index')" :current="request()->routeIs('telemetry.*')">{{ app()->getLocale() === 'it' ? 'Telemetria' : 'Telemetry' }}</flux:sidebar.item>
-                            @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
-                                <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">Intelligence</flux:sidebar.item>
-                            @endif
-                        </div>
-                    </details>
+                    @unless ($readOnlyDemo)
+                        <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($performanceOpen) open @endif>
+                            <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                                <flux:icon.chart-bar class="size-4 shrink-0" />
+                                <span class="min-w-0 flex-1">Performance</span>
+                                <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                            </summary>
+                            <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                                <flux:sidebar.item icon="clock" :href="route('timing.index')" :current="request()->routeIs('timing.*')">{{ app()->getLocale() === 'it' ? 'Tempi' : 'Timing' }}</flux:sidebar.item>
+                                <flux:sidebar.item icon="signal" :href="route('telemetry.index')" :current="request()->routeIs('telemetry.*')">{{ app()->getLocale() === 'it' ? 'Telemetria' : 'Telemetry' }}</flux:sidebar.item>
+                                @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
+                                    <flux:sidebar.item icon="chart-bar" :href="route('insights.index')" :current="request()->routeIs('insights.*')">Intelligence</flux:sidebar.item>
+                                @endif
+                            </div>
+                        </details>
+                    @endunless
 
                     <details name="pitmetric-sidebar-section" class="group/sidebar-section mt-1" @if ($managementOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
@@ -94,7 +107,9 @@
             </flux:sidebar.nav>
 
             <flux:sidebar.nav class="shrink-0 border-t border-white/5 pt-4">
-                <flux:sidebar.item icon="envelope" :href="route('newsletter.edit')" :current="request()->routeIs('newsletter.edit')">{{ __('demo.nav.newsletter') }}</flux:sidebar.item>
+                @unless ($readOnlyDemo)
+                    <flux:sidebar.item icon="envelope" :href="route('newsletter.edit')" :current="request()->routeIs('newsletter.edit')">{{ __('demo.nav.newsletter') }}</flux:sidebar.item>
+                @endunless
                 <flux:sidebar.item icon="globe-alt" :href="route('home')">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="newspaper" :href="route('updates.index')">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
                 <flux:sidebar.item icon="user" :href="route('about')">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
@@ -110,7 +125,7 @@
                 <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-7 max-w-[8.5rem] w-auto">
             </a>
             <flux:spacer />
-            <flux:dropdown position="top" align="end"><flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" /><flux:menu><flux:menu.radio.group><div class="p-0 text-sm font-normal"><div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm"><flux:avatar :name="auth()->user()->name" :initials="auth()->user()->initials()" /><div class="grid min-w-0 flex-1 text-start text-sm leading-tight"><flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading><flux:text class="truncate">{{ auth()->user()->email }}</flux:text></div></div></div></flux:menu.radio.group><flux:menu.separator /><flux:menu.radio.group><flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item></flux:menu.radio.group><flux:menu.separator /><form method="POST" action="{{ route('logout') }}" class="w-full">@csrf<flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full cursor-pointer" data-test="logout-button">{{ __('Log out') }}</flux:menu.item></form></flux:menu></flux:dropdown>
+            <flux:dropdown position="top" align="end"><flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" /><flux:menu><flux:menu.radio.group><div class="p-0 text-sm font-normal"><div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm"><flux:avatar :name="auth()->user()->name" :initials="auth()->user()->initials()" /><div class="grid min-w-0 flex-1 text-start text-sm leading-tight"><flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading><flux:text class="truncate">{{ auth()->user()->email }}</flux:text></div></div></div></flux:menu.radio.group><flux:menu.separator />@unless ($readOnlyDemo)<flux:menu.radio.group><flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item></flux:menu.radio.group><flux:menu.separator />@endunless<form method="POST" action="{{ route('logout') }}" class="w-full">@csrf<flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full cursor-pointer" data-test="logout-button">{{ __('Log out') }}</flux:menu.item></form></flux:menu></flux:dropdown>
         </flux:header>
 
         {{ $slot }}
