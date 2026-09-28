@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -17,7 +18,9 @@ class OutreachMail extends Mailable
         public string $subjectLine,
         public string $note,
         public string $unsubscribeUrl,
-    ) {}
+    ) {
+        // Intentionally empty: promoted properties carry the message state.
+    }
 
     public function envelope(): Envelope
     {
@@ -36,7 +39,7 @@ class OutreachMail extends Mailable
         );
     }
 
-    /** @return array<int, \Illuminate\Mail\Mailables\Attachment> */
+    /** @return array<int, Attachment> */
     public function attachments(): array
     {
         return [];
