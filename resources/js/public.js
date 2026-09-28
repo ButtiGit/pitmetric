@@ -1,4 +1,5 @@
 import '../css/public.css';
+import '../css/public-cover-mobile.css';
 import './public-site';
 
 function readCookie(name) {
@@ -42,30 +43,68 @@ function initializePublicShell() {
     });
 
     const cookieBanner = document.querySelector('[data-cookie-banner]');
-    const showCookieBanner = () => cookieBanner?.classList.remove('hidden');
+    let partnerNotice = document.querySelector('[data-partner-notice]');
+    const mobileNoticeMedia = window.matchMedia('(max-width: 767px)');
+
+    const syncMobileNotices = () => {
+        if (!partnerNotice?.isConnected) return;
+
+        if (!mobileNoticeMedia.matches) {
+            partnerNotice.removeAttribute('data-mobile-notice-suppressed');
+            partnerNotice.removeAttribute('aria-hidden');
+            return;
+        }
+
+        const cookieIsVisible = Boolean(cookieBanner && !cookieBanner.classList.contains('hidden'));
+
+        if (cookieIsVisible) {
+            partnerNotice.setAttribute('data-mobile-notice-suppressed', 'true');
+            partnerNotice.setAttribute('aria-hidden', 'true');
+            return;
+        }
+
+        partnerNotice.removeAttribute('data-mobile-notice-suppressed');
+        partnerNotice.removeAttribute('aria-hidden');
+    };
+
+    const showCookieBanner = () => {
+        cookieBanner?.classList.remove('hidden');
+        syncMobileNotices();
+    };
+
     if (!readCookie('pitmetric_cookie_consent')) showCookieBanner();
 
     document.querySelectorAll('[data-cookie-choice]').forEach(button => {
         button.addEventListener('click', () => {
             writeCookie('pitmetric_cookie_consent', button.dataset.cookieChoice);
             cookieBanner?.classList.add('hidden');
+            syncMobileNotices();
         });
     });
     document.querySelectorAll('[data-cookie-settings]').forEach(button => {
         button.addEventListener('click', showCookieBanner);
     });
 
-    const partnerNotice = document.querySelector('[data-partner-notice]');
     if (partnerNotice && sessionStorage.getItem('pitmetric_partner_notice_hidden') === '1') {
         partnerNotice.remove();
+        partnerNotice = null;
     }
 
     document.querySelectorAll('[data-partner-notice-close]').forEach(button => {
         button.addEventListener('click', () => {
             sessionStorage.setItem('pitmetric_partner_notice_hidden', '1');
             button.closest('[data-partner-notice]')?.remove();
+            partnerNotice = null;
         });
     });
+
+    if (typeof mobileNoticeMedia.addEventListener === 'function') {
+        mobileNoticeMedia.addEventListener('change', syncMobileNotices);
+    } else {
+        mobileNoticeMedia.addListener(syncMobileNotices);
+    }
+
+    syncMobileNotices();
 }
 
 if (document.readyState === 'loading') {
