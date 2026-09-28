@@ -9,11 +9,44 @@
         height: 2rem;
     }
 
+    /*
+     * Mobile exploration rail.
+     * Deliberately avoids pills/cards: it borrows the visual language of a
+     * timing screen, with indexed sectors, hard dividers and a live red trace.
+     */
     .pm-public-site [data-pm-public-header] > nav {
-        gap: .4rem;
-        padding: 0 .75rem .65rem;
-        scroll-padding-inline: .75rem;
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+        overflow: visible;
+        padding: 1.55rem .75rem .7rem;
+        border-top: 1px solid rgba(255, 255, 255, .055);
         scrollbar-width: none;
+    }
+
+    .pm-public-site [data-pm-public-header] > nav::before {
+        content: 'EXPLORE / PITMETRIC';
+        position: absolute;
+        top: .42rem;
+        left: 1rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+        font-size: .52rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: .19em;
+        color: rgba(255, 255, 255, .38);
+    }
+
+    .pm-public-site [data-pm-public-header] > nav::after {
+        content: '';
+        position: absolute;
+        top: .62rem;
+        right: 1rem;
+        width: 2.85rem;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(225, 6, 0, .35) 28%, #E10600 100%);
+        box-shadow: 0 0 12px rgba(225, 6, 0, .36);
     }
 
     .pm-public-site [data-pm-public-header] > nav::-webkit-scrollbar {
@@ -21,20 +54,80 @@
     }
 
     .pm-public-site [data-pm-public-header] > nav a {
-        flex: 0 0 auto;
-        min-height: 38px;
-        display: inline-flex;
-        align-items: center;
-        padding: .5rem .72rem;
-        border: 1px solid rgba(255, 255, 255, .08);
-        border-radius: .72rem;
-        background: rgba(255, 255, 255, .035);
-        white-space: nowrap;
+        position: relative;
+        min-width: 0;
+        min-height: 49px;
+        display: grid;
+        align-content: end;
+        gap: .22rem;
+        padding: .42rem .38rem .38rem;
+        border: 0;
+        border-left: 1px solid rgba(255, 255, 255, .09);
+        border-radius: 0;
+        background: transparent;
+        color: rgba(255, 255, 255, .48);
+        font-size: clamp(.56rem, 2.35vw, .66rem);
+        font-weight: 750;
+        line-height: 1.08;
+        letter-spacing: .025em;
+        text-align: left;
+        white-space: normal;
+        transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+    }
+
+    .pm-public-site [data-pm-public-header] > nav a:last-child {
+        border-right: 1px solid rgba(255, 255, 255, .09);
+    }
+
+    .pm-public-site [data-pm-public-header] > nav a::before {
+        display: block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+        font-size: .49rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: .14em;
+        color: rgba(255, 255, 255, .22);
+        transition: color 160ms ease;
+    }
+
+    .pm-public-site [data-pm-public-header] > nav a:nth-child(1)::before { content: '01'; }
+    .pm-public-site [data-pm-public-header] > nav a:nth-child(2)::before { content: '02'; }
+    .pm-public-site [data-pm-public-header] > nav a:nth-child(3)::before { content: '03'; }
+    .pm-public-site [data-pm-public-header] > nav a:nth-child(4)::before { content: '04'; }
+
+    .pm-public-site [data-pm-public-header] > nav a::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -.7rem;
+        height: 2px;
+        background: #E10600;
+        opacity: 0;
+        transform: scaleX(.22);
+        transform-origin: left center;
+        box-shadow: 0 0 10px rgba(225, 6, 0, .5);
+        transition: opacity 160ms ease, transform 180ms ease;
     }
 
     .pm-public-site [data-pm-public-header] > nav a.text-white {
-        border-color: rgba(225, 6, 0, .42);
-        background: rgba(225, 6, 0, .12);
+        color: #fff;
+        background: linear-gradient(180deg, rgba(225, 6, 0, .09), rgba(225, 6, 0, .015));
+    }
+
+    .pm-public-site [data-pm-public-header] > nav a.text-white::before {
+        color: #ff625e;
+    }
+
+    .pm-public-site [data-pm-public-header] > nav a.text-white::after {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+
+    .pm-public-site [data-pm-public-header] > nav a:active {
+        color: #fff;
+        background: rgba(255, 255, 255, .045);
+        transform: translateY(1px);
     }
 
     .pm-public-site .pm-public-language {
