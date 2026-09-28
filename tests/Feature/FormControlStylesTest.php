@@ -21,8 +21,9 @@ test('app form controls are native first and keep the PitMetric visual system', 
         ->toContain('prefers-reduced-motion');
 });
 
-test('the custom picker framework has been removed from the app runtime', function () {
+test('the custom picker framework has been removed from the app runtime and mobile css', function () {
     $javascript = file_get_contents(resource_path('js/app.js'));
+    $mobileCss = file_get_contents(resource_path('css/mobile.css'));
 
     expect($javascript)
         ->toContain("import '../css/forms.css';")
@@ -30,6 +31,15 @@ test('the custom picker framework has been removed from the app runtime', functi
         ->not->toContain('form-controls')
         ->not->toContain('form-control-guard')
         ->not->toContain('public-site');
+
+    expect($mobileCss)
+        ->not->toContain('.pm-control-trigger')
+        ->not->toContain('.pm-custom-control')
+        ->not->toContain('.pm-control-popover')
+        ->not->toContain('.pm-calendar-popover')
+        ->not->toContain('.pm-time-popover')
+        ->not->toContain('.pm-number-control')
+        ->not->toContain('.pm-native-control-source');
 
     expect(file_exists(resource_path('js/form-controls.js')))->toBeFalse()
         ->and(file_exists(resource_path('js/form-controls-composite.js')))->toBeFalse()
