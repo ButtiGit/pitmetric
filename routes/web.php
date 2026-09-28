@@ -5,6 +5,7 @@ use App\Http\Controllers\ComponentController;
 use App\Http\Controllers\ComponentInstallationController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoManagerController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
@@ -24,7 +25,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'public.home')->name('home');
-Route::view('/demo', 'public.demo')->name('demo.public');
+Route::get('/demo', [DemoManagerController::class, 'index'])->name('demo.public');
+Route::get('/demo/manager/{section}', [DemoManagerController::class, 'show'])
+    ->whereIn('section', ['events', 'sessions', 'circuits', 'garage', 'components', 'configurations', 'setups', 'maintenance', 'timing', 'telemetry', 'insights', 'expenses', 'team'])
+    ->name('demo.manager');
 Route::view('/about', 'public.about')->name('about');
 Route::view('/cookies', 'public.cookies')->name('cookies');
 Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
