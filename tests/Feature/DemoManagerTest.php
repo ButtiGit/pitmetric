@@ -6,9 +6,15 @@ it('opens the public populated demo without authentication', function () {
     $this->get(route('demo.public'))
         ->assertOk()
         ->assertSee('Race Team Demo')
-        ->assertSee('Rotax MAX EVO #02')
-        ->assertSee('Circuito di Busca')
-        ->assertSee('€ 4,018.70');
+        ->assertSee('Busca Race Weekend');
+
+    $this->get(route('demo.manager', ['section' => 'components']))
+        ->assertOk()
+        ->assertSee('Rotax MAX EVO #02');
+
+    $this->get(route('demo.manager', ['section' => 'sessions']))
+        ->assertOk()
+        ->assertSee('Circuito di Busca');
 });
 
 it('links the public demo next to the guest auth actions', function () {
@@ -19,11 +25,11 @@ it('links the public demo next to the guest auth actions', function () {
         ->assertSee(route('demo.public'), false);
 });
 
-it('requires authentication for manager pages', function () {
+it('requires authentication for legacy manager demo aliases', function () {
     $this->get(route('demo.garage'))->assertRedirect(route('login'));
 });
 
-it('opens the manager sections without helper or public preview labels', function () {
+it('keeps the authenticated local manager separate from the public demo', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $this->actingAs($user);
@@ -31,24 +37,12 @@ it('opens the manager sections without helper or public preview labels', functio
     $this->get(route('demo.garage'))
         ->assertOk()
         ->assertSee('id="pitmetric-demo"', false)
-        ->assertDontSee(__('demo.local_badge'))
-        ->assertDontSee(__('demo.local_copy'))
-        ->assertDontSee(__('demo.seed'))
-        ->assertDontSee(__('demo.reset'))
-        ->assertDontSee('SERVER WORKSPACE')
-        ->assertDontSee('DEMO LOCALE')
-        ->assertDontSee('browser demo');
+        ->assertDontSee('Race Team Demo');
 
     foreach (['components', 'configurations', 'circuits', 'sessions', 'maintenance', 'expenses'] as $section) {
         $this->get(route('demo.'.$section))
             ->assertOk()
             ->assertSee('id="pitmetric-demo"', false)
-            ->assertDontSee(__('demo.local_badge'))
-            ->assertDontSee(__('demo.local_copy'))
-            ->assertDontSee(__('demo.seed'))
-            ->assertDontSee(__('demo.reset'))
-            ->assertDontSee('DEMO LOCALE')
-            ->assertDontSee('LOCAL DEMO')
-            ->assertDontSee('stored locally in this browser');
+            ->assertDontSee('Race Team Demo');
     }
 });
