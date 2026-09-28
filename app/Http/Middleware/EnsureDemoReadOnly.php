@@ -14,6 +14,10 @@ class EnsureDemoReadOnly
             return $next($request);
         }
 
+        if ($request->routeIs('newsletter.unsubscribe', 'team.invitations.accept')) {
+            abort(403, 'Demo mode is read-only.');
+        }
+
         if (in_array($request->method(), ['GET', 'HEAD', 'OPTIONS'], true)) {
             return $next($request);
         }
