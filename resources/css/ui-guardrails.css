@@ -1,0 +1,36 @@
+/* Layout guardrails for dense dashboard and manager surfaces. */
+.pitmetric-app :where(.grid, .flex) > * {
+    min-width: 0;
+}
+
+.pitmetric-app :where(.pm-panel, .pm-stat-card, .pm-race-card) {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.pitmetric-app :where(h1, h2, h3, h4, p, a, button, span, td, th) {
+    overflow-wrap: anywhere;
+}
+
+.pitmetric-app :where(.pm-race-button, .pm-ghost-button, .pm-danger-button) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+}
+
+.pitmetric-app :where(table, [class*="overflow-x-auto"]) {
+    max-width: 100%;
+}
+
+#pitmetric-demo article > :where(.flex, .grid),
+#pitmetric-demo section > :where(.flex, .grid) {
+    min-width: 0;
+}
+
+@media (max-width: 39.999rem) {
+    .pitmetric-app [data-pm-primary-action] {
+        width: 100%;
+        justify-content: center;
+    }
+}

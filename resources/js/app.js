@@ -6,6 +6,7 @@ import '../css/mobile-shell-compat.css';
 import '../css/pit-mode.css';
 import '../css/onboarding.css';
 import '../css/workspace.css';
+import '../css/ui-guardrails.css';
 
 import './pitmetric-demo';
 import './onboarding';

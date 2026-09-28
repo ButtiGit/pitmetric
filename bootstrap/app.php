@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuthenticateMobileToken;
 use App\Http\Middleware\EnsureDatabaseAccess;
+use App\Http\Middleware\EnsureDemoReadOnly;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        $middleware->appendToGroup('web', [SetLocale::class]);
+        $middleware->appendToGroup('web', [SetLocale::class, EnsureDemoReadOnly::class]);
         $middleware->alias([
             'database.access' => EnsureDatabaseAccess::class,
             'mobile.auth' => AuthenticateMobileToken::class,

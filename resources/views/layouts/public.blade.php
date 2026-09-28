@@ -21,30 +21,56 @@
 
     <div class="min-h-screen">
         <header data-pm-public-header class="sticky top-0 z-50 border-b border-white/10 bg-[#07090c]/90 backdrop-blur-xl">
-            <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 lg:px-8">
-                <a href="{{ route('home') }}" class="inline-flex items-center" aria-label="PitMetric home">
+            <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-3 lg:px-8">
+                <a href="{{ route('home') }}" class="inline-flex min-w-0 shrink-0 items-center" aria-label="PitMetric home">
                     <img src="{{ asset('brand/pitmetric-compact-dark.svg') }}" alt="PitMetric" class="h-9 w-auto sm:hidden">
                     <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="hidden h-10 w-auto sm:block">
                 </a>
-                <nav class="hidden items-center gap-8 text-sm font-semibold md:flex" aria-label="Main navigation">
+                <nav class="hidden min-w-0 items-center gap-6 text-sm font-semibold md:flex xl:gap-8" aria-label="Main navigation">
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('home') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('home') }}">{{ __('pitmetric.nav.home') }}</a>
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('updates.*') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('updates.index') }}">{{ __('pitmetric.nav.updates') }}</a>
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('app') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('app') }}">App</a>
                     <a class="border-b-2 pb-1 transition {{ request()->routeIs('about') ? 'border-[#E10600] text-white' : 'border-transparent text-zinc-400 hover:text-white' }}" href="{{ route('about') }}">{{ __('pitmetric.nav.about') }}</a>
                 </nav>
-                <div class="flex items-center gap-2">
+                <div class="flex shrink-0 items-center gap-2">
                     <button type="button" data-language-open class="pm-public-language inline-flex items-center" aria-label="{{ __('pitmetric.language.title') }}">
                         <span class="pm-public-language__label" aria-hidden="true">LANG</span>
                         <span>{{ strtoupper(app()->getLocale()) }}</span>
                     </button>
                     @auth
-                        <a href="{{ route('dashboard') }}" class="pm-public-header-action pm-public-header-action--primary">{{ __('pitmetric.nav.dashboard') }}</a>
+                        <a href="{{ route('dashboard') }}" class="pm-public-header-action pm-public-header-action--primary inline-flex items-center">{{ __('pitmetric.nav.dashboard') }}</a>
                     @else
-                        <a href="{{ route('login') }}" class="pm-public-header-action">{{ __('pitmetric.nav.login') }}</a>
+                        <a href="{{ route('login') }}" class="pm-public-header-action hidden items-center xl:inline-flex">{{ __('pitmetric.nav.login') }}</a>
+                        @if (Route::has('register'))
+                            <a href="{{ route('register') }}" class="pm-public-header-action hidden items-center xl:inline-flex">{{ app()->getLocale() === 'it' ? 'Registrati' : 'Register' }}</a>
+                        @endif
+                        <form method="POST" action="{{ route('demo.enter') }}" class="hidden shrink-0 xl:block">
+                            @csrf
+                            <button type="submit" class="pm-public-header-action pm-public-header-action--primary inline-flex items-center">Demo</button>
+                        </form>
                     @endauth
                 </div>
             </div>
-            <nav class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-5 pb-3 text-xs font-semibold text-zinc-400 md:hidden" aria-label="Mobile navigation"><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-white' : '' }}">{{ __('pitmetric.nav.home') }}</a><a href="{{ route('updates.index') }}" class="{{ request()->routeIs('updates.*') ? 'text-white' : '' }}">{{ __('pitmetric.nav.updates') }}</a><a href="{{ route('app') }}" class="{{ request()->routeIs('app') ? 'text-white' : '' }}">App</a><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'text-white' : '' }}">{{ __('pitmetric.nav.about') }}</a></nav>
+            <nav class="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-5 pb-3 text-xs font-semibold text-zinc-400 md:hidden" aria-label="Mobile navigation">
+                <a href="{{ route('home') }}" class="shrink-0 {{ request()->routeIs('home') ? 'text-white' : '' }}">{{ __('pitmetric.nav.home') }}</a>
+                <a href="{{ route('updates.index') }}" class="shrink-0 {{ request()->routeIs('updates.*') ? 'text-white' : '' }}">{{ __('pitmetric.nav.updates') }}</a>
+                <a href="{{ route('app') }}" class="shrink-0 {{ request()->routeIs('app') ? 'text-white' : '' }}">App</a>
+                <a href="{{ route('about') }}" class="shrink-0 {{ request()->routeIs('about') ? 'text-white' : '' }}">{{ __('pitmetric.nav.about') }}</a>
+            </nav>
+            @guest
+                <div class="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-5 pb-3 xl:hidden lg:px-8" aria-label="Authentication actions">
+                    <a href="{{ route('login') }}" class="min-w-0 rounded-lg border border-white/10 px-2 py-2 text-center text-xs font-bold text-zinc-200 transition hover:border-white/25 hover:text-white">{{ __('pitmetric.nav.login') }}</a>
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}" class="min-w-0 rounded-lg border border-white/10 px-2 py-2 text-center text-xs font-bold text-zinc-200 transition hover:border-white/25 hover:text-white">{{ app()->getLocale() === 'it' ? 'Registrati' : 'Register' }}</a>
+                    @else
+                        <span></span>
+                    @endif
+                    <form method="POST" action="{{ route('demo.enter') }}" class="min-w-0">
+                        @csrf
+                        <button type="submit" class="w-full min-w-0 rounded-lg bg-[#E10600] px-2 py-2 text-center text-xs font-black text-white transition hover:bg-[#f01812]">Demo</button>
+                    </form>
+                </div>
+            @endguest
         </header>
 
         <aside data-partner-notice class="pm-partner-notice" aria-label="{{ app()->getLocale() === 'it' ? 'Collaborazione PitMetric' : 'PitMetric collaboration' }}">
