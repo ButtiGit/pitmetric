@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\URL;
 
 it('starts a verified read-only demo session from the public entry point', function () {
     $this->post(route('demo.enter'))
@@ -22,6 +23,15 @@ it('blocks mutations while the demo session is active', function () {
     $this->post(route('newsletter.update'), [
         'subscribed' => '1',
     ])->assertForbidden();
+});
+
+it('blocks signed get routes that mutate data in demo mode', function () {
+    $this->post(route('demo.enter'));
+
+    $user = User::query()->where('email', 'demo@pitmetric.app')->firstOrFail();
+    $url = URL::signedRoute('newsletter.unsubscribe', $user);
+
+    $this->get($url)->assertForbidden();
 });
 
 it('keeps harmless locale switching available in demo mode', function () {
