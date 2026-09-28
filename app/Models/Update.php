@@ -104,6 +104,15 @@ class Update extends Model
 
     public function mediaSource(): ?string
     {
+        $slug = $this->getAttributes()['slug'] ?? null;
+
+        if (is_string($slug) && in_array($slug, [
+            'pitmetric-sta-prendendo-forma',
+            'pitmetric-is-taking-shape',
+        ], true)) {
+            return '/media/devlog-001-hq.webp?v=20260915';
+        }
+
         $mediaPath = $this->stringAttribute('media_path');
         $mediaUrl = $this->stringAttribute('media_url');
 
@@ -116,15 +125,6 @@ class Update extends Model
 
         if ($mediaUrl !== null && $mediaUrl !== '') {
             return $mediaUrl;
-        }
-
-        $slug = $this->getAttributes()['slug'] ?? null;
-
-        if (is_string($slug) && in_array($slug, [
-            'pitmetric-sta-prendendo-forma',
-            'pitmetric-is-taking-shape',
-        ], true)) {
-            return '/media/devlog-001.webp';
         }
 
         return null;
