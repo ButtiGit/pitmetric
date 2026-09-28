@@ -2,6 +2,23 @@
 
 use App\Models\User;
 
+it('opens the public populated demo without authentication', function () {
+    $this->get(route('demo.public'))
+        ->assertOk()
+        ->assertSee('Race Team Demo')
+        ->assertSee('Rotax MAX EVO #02')
+        ->assertSee('Circuito di Busca')
+        ->assertSee('€ 4,018.70');
+});
+
+it('links the public demo next to the guest auth actions', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(route('register'), false)
+        ->assertSee(route('login'), false)
+        ->assertSee(route('demo.public'), false);
+});
+
 it('requires authentication for manager pages', function () {
     $this->get(route('demo.garage'))->assertRedirect(route('login'));
 });

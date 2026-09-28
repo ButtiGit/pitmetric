@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'public.home')->name('home');
+Route::view('/demo', 'public.demo')->name('demo.public');
 Route::view('/about', 'public.about')->name('about');
 Route::view('/cookies', 'public.cookies')->name('cookies');
 Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
