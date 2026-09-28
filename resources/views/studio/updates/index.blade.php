@@ -17,7 +17,7 @@
                         <p class="mt-3 text-xs text-pm-muted">{{ __('pitmetric.studio.signed_in_as') }} <span class="font-semibold text-pm-text-secondary">{{ auth()->user()->email }}</span></p>
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2">
-                        <a href="{{ route('studio.outreach.index') }}" class="pm-ghost-button">✉ Outreach</a>
+                        <a href="{{ route('studio.outreach.index') }}" class="pm-ghost-button">Outreach</a>
                         <a href="{{ route('studio.updates.create') }}" class="pm-race-button">＋ {{ __('pitmetric.studio.new_post') }}</a>
                     </div>
                 </div>
