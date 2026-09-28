@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'public.home')->name('home');
+Route::view('/demo', 'public.demo')->name('demo.public');
 Route::view('/about', 'public.about')->name('about');
 Route::view('/cookies', 'public.cookies')->name('cookies');
 Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
@@ -185,8 +186,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
         });
 });
 
