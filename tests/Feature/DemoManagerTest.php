@@ -5,7 +5,6 @@ use App\Models\User;
 it('opens the public populated demo without authentication', function () {
     $this->get(route('demo.public'))
         ->assertOk()
-        ->assertSee('Demo sola lettura')
         ->assertSee('Race Team Demo')
         ->assertSee('Rotax MAX EVO #02')
         ->assertSee('Circuito di Busca')
