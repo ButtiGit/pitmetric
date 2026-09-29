@@ -8,5 +8,6 @@ import '@ionic/vue/css/typography.css';
 import './theme.css';
 import './trackside.css';
 import './ios-polish.css';
+import './ios-glance.css';
 
 createApp(App).use(IonicVue).mount('#app');
