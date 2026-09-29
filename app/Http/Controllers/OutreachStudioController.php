@@ -21,6 +21,11 @@ class OutreachStudioController extends Controller
 
     public function index(): View
     {
+        $templatesByLocale = [
+            'it' => $this->templates('it'),
+            'en' => $this->templates('en'),
+        ];
+
         return view('studio.outreach.index', [
             'tones' => [
                 'friendly' => 'Amichevole',
@@ -29,7 +34,9 @@ class OutreachStudioController extends Controller
                 'technical' => 'Tecnico / racing',
                 'custom' => 'Altro / personalizzato',
             ],
-            'templates' => $this->templates('it'),
+            'templates' => $templatesByLocale['it'],
+            'templatesByLocale' => $templatesByLocale,
+            'defaultMessage' => $this->replaceCompany($templatesByLocale['it']['professional']['message'], ''),
         ]);
     }
 
