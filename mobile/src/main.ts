@@ -7,5 +7,6 @@ import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/typography.css';
 import './theme.css';
 import './trackside.css';
+import './ios-polish.css';
 
 createApp(App).use(IonicVue).mount('#app');
