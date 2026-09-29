@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
+
+final class ResendStudioMailbox
+{
+    /** @return array{data: list<array<string, mixed>>, has_more?: bool} */
+    public function received(int $limit = 50): array
+    {
+        $payload = $this->request()
+            ->get('/emails/receiving', ['limit' => max(1, min($limit, 100))])
+            ->throw()
+            ->json();
+
+        return is_array($payload) ? $payload : ['data' => []];
+    }
+
+    /** @return array<string, mixed> */
+    public function receivedEmail(string $emailId): array
+    {
+        $payload = $this->request()
+            ->get('/emails/receiving/'.rawurlencode($emailId))
+            ->throw()
+            ->json();
+
+        if (! is_array($payload)) {
+            throw new RuntimeException('Resend returned an invalid inbound email payload.');
+        }
+
+        return $payload;
+    }
+
+    private function request(): PendingRequest
+    {
+        $key = trim((string) config('services.resend.studio_key', ''));
+
+        if ($key === '') {
+            throw new RuntimeException('RESEND_STUDIO_KEY is not configured.');
+        }
+
+        return Http::baseUrl('https://api.resend.com')
+            ->acceptJson()
+            ->withToken($key)
+            ->timeout(15)
+            ->retry(2, 250, throw: false);
+    }
+}
