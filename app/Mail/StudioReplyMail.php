@@ -8,18 +8,18 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
-class OutreachMail extends Mailable
+final class StudioReplyMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /** @param array<string, string> $customHeaders */
     public function __construct(
-        public string $contentLocale,
         public string $subjectLine,
         public string $messageBody,
-        public string $note,
-        public string $unsubscribeUrl,
+        public array $customHeaders = [],
     ) {}
 
     public function envelope(): Envelope
@@ -40,14 +40,14 @@ class OutreachMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.outreach',
-            with: [
-                'locale' => $this->contentLocale,
-                'messageBody' => $this->messageBody,
-                'note' => $this->note,
-                'unsubscribeUrl' => $this->unsubscribeUrl,
-            ],
+            view: 'emails.studio-reply',
+            with: ['messageBody' => $this->messageBody],
         );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(text: $this->customHeaders);
     }
 
     /** @return array<int, Attachment> */

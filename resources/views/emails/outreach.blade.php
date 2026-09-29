@@ -11,35 +11,28 @@
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e4e4e7;">
 <tr>
 <td style="padding:22px 26px;background:#090a0c;color:#ffffff;border-bottom:4px solid #E10600;">
-    <div style="font-size:11px;letter-spacing:2px;color:#a1a1aa;text-transform:uppercase;">PitMetric / Trackside operations</div>
-    <div style="margin-top:6px;font-size:28px;font-weight:800;letter-spacing:-1px;">PIT<span style="color:#E10600;">METRIC</span></div>
+    <img src="{{ url('/brand/pitmetric-primary-dark.svg') }}" width="190" alt="PitMetric" style="display:block;width:190px;max-width:100%;height:auto;border:0;">
+    <div style="margin-top:10px;font-size:10px;letter-spacing:2px;color:#a1a1aa;text-transform:uppercase;">Trackside operations</div>
 </td>
 </tr>
 <tr>
 <td style="padding:32px 26px 12px;">
-@if ($locale === 'it')
-    <div style="font-size:12px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#E10600;">Per piloti e team motorsport</div>
-    <h1 style="margin:12px 0 16px;font-size:30px;line-height:1.08;letter-spacing:-1px;">Quanto del vostro weekend finisce ancora tra note, chat e memoria?</h1>
-    <p style="margin:0 0 18px;font-size:16px;line-height:1.65;color:#3f3f46;">PitMetric riunisce in un unico posto tempi, sessioni, setup, configurazioni, componenti, manutenzione, costi e storico tecnico del mezzo.</p>
+    <div style="font-size:12px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#E10600;">{{ $locale === 'it' ? 'PitMetric / contatto diretto' : 'PitMetric / direct contact' }}</div>
+    <div style="margin-top:16px;white-space:pre-wrap;font-size:16px;line-height:1.7;color:#3f3f46;">{{ $messageBody }}</div>
     @if ($note !== '')
         <div style="margin:22px 0;padding:16px 18px;border-left:4px solid #E10600;background:#fafafa;font-size:15px;line-height:1.6;color:#27272a;">{{ $note }}</div>
     @endif
-    <p style="margin:0 0 18px;font-size:16px;line-height:1.65;color:#3f3f46;">In questa fase non stiamo cercando semplici iscritti: cerchiamo piloti e team che vogliano provarlo davvero in pista e dirci cosa manca. Per chi collabora attivamente allo sviluppo, PitMetric è gratuito.</p>
-@else
-    <div style="font-size:12px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#E10600;">For motorsport drivers and teams</div>
-    <h1 style="margin:12px 0 16px;font-size:30px;line-height:1.08;letter-spacing:-1px;">How much of your race weekend still lives in notes, chats and memory?</h1>
-    <p style="margin:0 0 18px;font-size:16px;line-height:1.65;color:#3f3f46;">PitMetric brings lap times, sessions, setups, configurations, components, maintenance, costs and technical history into one trackside workspace.</p>
-    @if ($note !== '')
-        <div style="margin:22px 0;padding:16px 18px;border-left:4px solid #E10600;background:#fafafa;font-size:15px;line-height:1.6;color:#27272a;">{{ $note }}</div>
-    @endif
-    <p style="margin:0 0 18px;font-size:16px;line-height:1.65;color:#3f3f46;">At this stage we are not looking for passive signups. We are looking for drivers and teams willing to test PitMetric in real trackside workflows and tell us what is missing. Active development partners use PitMetric free of charge.</p>
-@endif
 </td>
 </tr>
 <tr>
 <td style="padding:8px 26px 28px;">
-    <a href="{{ route('home') }}" style="display:inline-block;background:#E10600;color:#ffffff;text-decoration:none;font-weight:800;font-size:15px;padding:14px 20px;">{{ $locale === 'it' ? 'Scopri PitMetric' : 'Explore PitMetric' }}</a>
-    <p style="margin:22px 0 0;font-size:14px;line-height:1.6;color:#52525b;">{{ $locale === 'it' ? 'Se preferite, rispondete direttamente a questa email con due righe sul vostro team: ci interessa capire come lavorate davvero in pista.' : 'If you prefer, reply directly to this email with a few lines about your team. We want to understand how you actually work at the track.' }}</p>
+    <a href="{{ route('demo.public') }}" style="display:inline-block;background:#E10600;color:#ffffff;text-decoration:none;font-weight:800;font-size:15px;padding:14px 20px;">{{ $locale === 'it' ? 'Esplora la Demo' : 'Explore the Demo' }}</a>
+    <p style="margin:22px 0 0;font-size:14px;line-height:1.7;color:#52525b;">{{ $locale === 'it' ? 'Se volete confrontarvi sul progetto, rispondete direttamente a questa email: il messaggio arriva a me nello Studio PitMetric, senza intermediari.' : 'If you would like to discuss the project, reply directly to this email. Your message reaches me in the PitMetric Studio, with no intermediaries.' }}</p>
+    <div style="margin-top:22px;padding-top:20px;border-top:1px solid #e4e4e7;font-size:14px;line-height:1.6;color:#52525b;">
+        <strong style="color:#18181b;">Simone Buttice</strong><br>
+        {{ $locale === 'it' ? 'Sviluppatore e ideatore di PitMetric' : 'Developer and creator of PitMetric' }}<br>
+        <a href="{{ route('home') }}" style="color:#E10600;text-decoration:none;font-weight:700;">pitmetric.it</a>
+    </div>
 </td>
 </tr>
 <tr>
