@@ -86,6 +86,8 @@
                             </summary>
                             <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
                                 <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
+                                <flux:sidebar.item icon="inbox" :href="route('studio.mail.index')" :current="request()->routeIs('studio.mail.*')">Inbox</flux:sidebar.item>
+                                <flux:sidebar.item icon="paper-airplane" :href="route('studio.outreach.index')" :current="request()->routeIs('studio.outreach.*')">Outreach</flux:sidebar.item>
                                 <flux:sidebar.item icon="users" :href="route('studio.users.index')" :current="request()->routeIs('studio.users.*')">{{ __('users.nav') }}</flux:sidebar.item>
                             </div>
                         </details>
