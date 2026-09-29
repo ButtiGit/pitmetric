@@ -58,7 +58,9 @@ final class StudioMailboxController extends Controller
 
         if ($body === '') {
             $html = (string) ($email['html'] ?? '');
-            $body = trim(html_entity_decode(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $html) ?? $html)));
+            $html = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', '', $html) ?? $html;
+            $html = preg_replace('/<br\s*\/?>/i', "\n", $html) ?? $html;
+            $body = trim(html_entity_decode(strip_tags($html)));
         }
 
         return view('studio.mail.show', [
