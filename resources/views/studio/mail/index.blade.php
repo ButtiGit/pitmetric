@@ -16,7 +16,8 @@
                         <p class="mt-3 max-w-2xl text-sm leading-7 text-pm-text-secondary">Tutte le email ricevute tramite <span class="font-mono text-pm-text">@reply.pitmetric.it</span>, lette direttamente da Resend. Apri un messaggio per leggerlo e rispondere senza uscire da PitMetric.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="{{ route('studio.outreach.index') }}" class="pm-race-button">Nuova pubblicità</a>
+                        <a href="{{ route('studio.mail.compose') }}" class="pm-race-button">Nuova mail</a>
+                        <a href="{{ route('studio.outreach.index') }}" class="pm-ghost-button">Nuova pubblicità</a>
                         <a href="{{ route('studio.updates.index') }}" class="pm-ghost-button">Pubblicazione</a>
                     </div>
                 </div>
