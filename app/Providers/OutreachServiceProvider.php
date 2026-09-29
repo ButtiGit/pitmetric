@@ -27,6 +27,10 @@ class OutreachServiceProvider extends ServiceProvider
                         ->name('outreach.send');
 
                     Route::get('/mail', [StudioMailboxController::class, 'index'])->name('mail.index');
+                    Route::get('/mail/compose', [StudioMailboxController::class, 'compose'])->name('mail.compose');
+                    Route::post('/mail/send', [StudioMailboxController::class, 'send'])
+                        ->middleware('throttle:10,1')
+                        ->name('mail.send');
                     Route::get('/mail/{emailId}', [StudioMailboxController::class, 'show'])
                         ->where('emailId', '[A-Za-z0-9_-]+')
                         ->name('mail.show');
