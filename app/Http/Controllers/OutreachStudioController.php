@@ -65,8 +65,12 @@ class OutreachStudioController extends Controller
         $message = trim((string) ($data['message'] ?? '')) ?: $this->replaceCompany($template['message'], $company);
         $note = trim((string) ($data['note'] ?? ''));
 
-        if ($tone === 'custom' && $message === '') {
-            throw ValidationException::withMessages(['message' => 'Scrivi il testo della mail per il formato personalizzato.']);
+        if ($subject === '') {
+            throw ValidationException::withMessages(['subject' => 'Inserisci un oggetto per la mail.']);
+        }
+
+        if ($message === '') {
+            throw ValidationException::withMessages(['message' => 'Scrivi il testo della mail.']);
         }
 
         $sent = 0;
@@ -150,9 +154,13 @@ class OutreachStudioController extends Controller
 
     private function replaceCompany(string $value, string $company): string
     {
-        $label = $company !== '' ? $company : ($value === '' ? '' : '');
+        $value = str_replace('{{company}}', $company, $value);
 
-        return str_replace('{{company}}', $label, $value);
+        return str_replace(
+            ['Ciao ,', 'Buongiorno ,', 'Hi ,', 'Hello ,'],
+            ['Ciao,', 'Buongiorno,', 'Hi,', 'Hello,'],
+            $value,
+        );
     }
 
     /** @return list<string> */
