@@ -1,0 +1,42 @@
+/* Final responsive tuning for the glance-first dashboard. */
+.stat-card.featured {
+  grid-row: span 3;
+  min-height: 270px;
+}
+
+.stat-card:not(.featured) {
+  min-height: 84px;
+  padding-block: 11px;
+}
+
+.stat-card:not(.featured) > span {
+  margin-bottom: 3px;
+}
+
+.stat-card:not(.featured) strong {
+  margin-top: 0;
+  font-size: clamp(19px, 5.3vw, 27px);
+}
+
+.stat-card:nth-child(4) {
+  grid-column: 2;
+}
+
+@media (min-width: 650px) {
+  .stat-grid {
+    grid-template-columns: 1.25fr repeat(3, 1fr);
+  }
+
+  .stat-card.featured {
+    grid-row: auto;
+    min-height: 132px;
+  }
+
+  .stat-card:not(.featured) {
+    min-height: 132px;
+  }
+
+  .stat-card:nth-child(4) {
+    grid-column: auto;
+  }
+}
