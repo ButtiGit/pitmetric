@@ -51,7 +51,7 @@ it('lists received Resend emails for an editor', function () {
     Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'Bearer re_test_studio'));
 });
 
-it('shows a received message without rendering inbound html', function () {
+it('shows a received message without rendering active inbound html', function () {
     Http::fake([
         'https://api.resend.com/emails/receiving/*' => Http::response([
             'id' => 'email_in_123',
@@ -71,7 +71,7 @@ it('shows a received message without rendering inbound html', function () {
     $this->actingAs($editor)->get(route('studio.mail.show', 'email_in_123'))
         ->assertOk()
         ->assertSee('Ciao Simone')
-        ->assertDontSee('<script>', false);
+        ->assertDontSee('alert(1)');
 });
 
 it('lets an editor send a direct email from Studio', function () {
