@@ -73,13 +73,6 @@
                                 </div>
                                 <button id="apply-template" type="button" class="pm-ghost-button">Rigenera testo</button>
                             </div>
-                            @php
-                                $defaultMessage = str_replace(
-                                    ['{{company}}', 'Buongiorno ,'],
-                                    ['', 'Buongiorno,'],
-                                    $templates['professional']['message'],
-                                );
-                            @endphp
                             <textarea id="message" name="message" rows="11" maxlength="6000" class="mt-3 w-full rounded-xl border border-pm-border bg-pm-subtle px-4 py-3 text-sm leading-6 text-pm-text outline-none transition focus:border-pm-accent">{{ old('message', $defaultMessage) }}</textarea>
                             @error('message')<p class="mt-2 text-sm font-semibold text-pm-danger">{{ $message }}</p>@enderror
                         </div>
@@ -132,15 +125,8 @@
 
     <script>
         (() => {
-            const templatesIt = @json($templates);
-            const templatesEn = {
-                friendly: {subject: 'Can I show you what I am building for motorsport?', message: 'Hi {{company}},\n\nI am Simone, the developer behind PitMetric. I am building it to keep the practical side of track work in one place: vehicles, components, setups, sessions, maintenance, costs, timing and telemetry.\n\nI would genuinely value your feedback and would be happy if you explored the demo to see whether any part could be useful in your day-to-day work.'},
-                professional: {subject: 'PitMetric - motorsport technical management platform', message: 'Hello {{company}},\n\nMy name is Simone Buttice and I am the developer of PitMetric, a platform designed to organise technical motorsport operations in one workspace.\n\nPitMetric covers vehicles, components and usage history, configurations, setups, sessions, maintenance, costs, timing and telemetry. I am contacting selected motorsport organisations to gather concrete feedback and understand where the product can create real value.'},
-                local: {subject: 'A local motorsport software project I would like to show you', message: 'Hello {{company}},\n\nI am Simone, the developer of PitMetric. I am reaching out personally because I prefer speaking directly with motorsport organisations rather than sending anonymous campaigns.\n\nPitMetric is built around real trackside workflows: vehicle history, components, setups, sessions, maintenance, costs, timing and telemetry. I would be glad if you took a look at the demo and told me what you would change or need in practice.'},
-                technical: {subject: 'PitMetric - setups, components, sessions and technical history', message: 'Hello {{company}},\n\nPitMetric is a technical workspace for teams, drivers and preparers who need traceability across a vehicle\'s life. It connects component usage, configurations, setup changes, sessions, maintenance, expenses, timing and telemetry so information remains linked instead of scattered across notes and chats.\n\nI am looking for experienced motorsport feedback to validate the workflow against real track operations.'},
-                custom: {subject: '', message: ''}
-            };
-
+            const templatesByLocale = @json($templatesByLocale);
+            const companyToken = String.fromCharCode(123, 123) + 'company' + String.fromCharCode(125, 125);
             const form = document.getElementById('outreach-form');
             const company = document.getElementById('company');
             const locale = document.getElementById('locale');
@@ -151,9 +137,9 @@
             const previewNote = document.getElementById('preview-note');
 
             const tone = () => form.querySelector('input[name="tone"]:checked')?.value || 'professional';
-            const templates = () => locale.value === 'en' ? templatesEn : templatesIt;
+            const templates = () => templatesByLocale[locale.value] || templatesByLocale.it;
             const personalise = (value) => value
-                .replaceAll('{{company}}', company.value.trim())
+                .replaceAll(companyToken, company.value.trim())
                 .replace('Ciao ,', 'Ciao,')
                 .replace('Buongiorno ,', 'Buongiorno,')
                 .replace('Hi ,', 'Hi,')
