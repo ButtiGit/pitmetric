@@ -30,6 +30,27 @@ final class StudioMailboxController extends Controller
         ]);
     }
 
+    public function compose(): View
+    {
+        return view('studio.mail.compose');
+    }
+
+    public function send(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'to' => ['required', 'email:rfc', 'max:254'],
+            'subject' => ['required', 'string', 'max:180'],
+            'message' => ['required', 'string', 'max:12000'],
+        ]);
+
+        Mail::to((string) $data['to'])->send(new StudioReplyMail(
+            (string) $data['subject'],
+            (string) $data['message'],
+        ));
+
+        return redirect()->route('studio.mail.index')->with('status', 'Email inviata a '.$data['to'].'.');
+    }
+
     public function show(string $emailId, ResendStudioMailbox $mailbox): View
     {
         $email = $mailbox->receivedEmail($emailId);
