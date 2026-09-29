@@ -74,6 +74,26 @@ it('shows a received message without rendering inbound html', function () {
         ->assertDontSee('<script>', false);
 });
 
+it('lets an editor send a direct email from Studio', function () {
+    Mail::fake();
+    $editor = User::factory()->create(['email' => 'editor@pitmetric.test']);
+
+    $this->actingAs($editor)->get(route('studio.mail.compose'))
+        ->assertOk()
+        ->assertSee('Nuova mail');
+
+    $this->actingAs($editor)->post(route('studio.mail.send'), [
+        'to' => 'contact@example.com',
+        'subject' => 'PitMetric - informazioni',
+        'message' => 'Ciao, ti scrivo direttamente dallo Studio PitMetric.',
+    ])->assertRedirect(route('studio.mail.index'));
+
+    Mail::assertSent(StudioReplyMail::class, function (StudioReplyMail $mail): bool {
+        return $mail->hasTo('contact@example.com')
+            && $mail->subjectLine === 'PitMetric - informazioni';
+    });
+});
+
 it('lets an editor reply to a received email', function () {
     Mail::fake();
     Http::fake([
