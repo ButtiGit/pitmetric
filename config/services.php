@@ -21,6 +21,10 @@ return [
     'resend' => [
         'key' => env('RESEND_KEY'),
         'webhook_secret' => env('RESEND_WEBHOOK_SECRET'),
+        'studio_key' => env('RESEND_STUDIO_KEY', env('RESEND_KEY')),
+        'studio_from_address' => env('PITMETRIC_STUDIO_FROM_ADDRESS', 'hello@pitmetric.it'),
+        'studio_from_name' => env('PITMETRIC_STUDIO_FROM_NAME', 'Simone | PitMetric'),
+        'studio_reply_to' => env('PITMETRIC_STUDIO_REPLY_TO', 'outreach@reply.pitmetric.it'),
     ],
 
     'ses' => [
