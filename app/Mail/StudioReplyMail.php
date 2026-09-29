@@ -8,17 +8,18 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 final class StudioReplyMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /** @param array<string, string> $headers */
+    /** @param array<string, string> $customHeaders */
     public function __construct(
         public string $subjectLine,
         public string $messageBody,
-        public array $headers = [],
+        public array $customHeaders = [],
     ) {}
 
     public function envelope(): Envelope
@@ -44,17 +45,9 @@ final class StudioReplyMail extends Mailable
         );
     }
 
-    public function build(): static
+    public function headers(): Headers
     {
-        parent::build();
-
-        foreach ($this->headers as $name => $value) {
-            $this->withSymfonyMessage(static function ($message) use ($name, $value): void {
-                $message->getHeaders()->addTextHeader($name, $value);
-            });
-        }
-
-        return $this;
+        return new Headers(text: $this->customHeaders);
     }
 
     /** @return array<int, Attachment> */
