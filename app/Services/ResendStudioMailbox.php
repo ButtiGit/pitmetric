@@ -16,7 +16,25 @@ final class ResendStudioMailbox
             ->throw()
             ->json();
 
-        return is_array($payload) ? $payload : ['data' => []];
+        /** @var list<array<string, mixed>> $emails */
+        $emails = [];
+
+        if (is_array($payload) && isset($payload['data']) && is_array($payload['data'])) {
+            foreach ($payload['data'] as $item) {
+                if (is_array($item)) {
+                    /** @var array<string, mixed> $item */
+                    $emails[] = $item;
+                }
+            }
+        }
+
+        $result = ['data' => $emails];
+
+        if (is_array($payload) && array_key_exists('has_more', $payload)) {
+            $result['has_more'] = (bool) $payload['has_more'];
+        }
+
+        return $result;
     }
 
     /** @return array<string, mixed> */
@@ -31,6 +49,7 @@ final class ResendStudioMailbox
             throw new RuntimeException('Resend returned an invalid inbound email payload.');
         }
 
+        /** @var array<string, mixed> $payload */
         return $payload;
     }
 
