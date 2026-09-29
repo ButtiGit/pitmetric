@@ -42,7 +42,7 @@
                     <div class="overflow-hidden rounded-[2.55rem] bg-[#F2F2F7] text-[#0B0B0F]">
                         <div class="flex items-center justify-between bg-[#F2F2F7]/95 px-5 pb-3 pt-6">
                             <img src="{{ asset('brand/pitmetric-primary-light.svg') }}" alt="PitMetric" class="h-6 w-auto">
-                            <span class="grid h-9 w-9 place-items-center rounded-full bg-black/[.06] text-[#E10600]">↻</span>
+                            <span class="grid h-9 min-w-9 place-items-center rounded-full bg-black/[.06] px-2 font-mono text-[7px] font-black text-[#E10600]">SYNC</span>
                         </div>
 
                         <div class="px-4 pb-5">
@@ -52,7 +52,7 @@
                                     <p class="mt-1 text-[36px] font-black tracking-[-.055em]">1:12.438</p>
                                     <p class="m-0 text-[11px] text-zinc-500">Personal best locale</p>
                                 </div>
-                                <span class="mb-1 rounded-full bg-[#E10600] px-4 py-3 text-[10px] font-black text-white">▶ START</span>
+                                <span class="mb-1 rounded-full bg-[#E10600] px-4 py-3 text-[10px] font-black text-white">START</span>
                             </div>
 
                             <div class="grid grid-cols-[1.25fr_.85fr] gap-2">
@@ -75,7 +75,7 @@
                                     <div class="flex items-center gap-3 border-b border-black/[.06] px-3 py-2.5 last:border-0">
                                         <span class="grid h-8 w-8 place-items-center rounded-xl {{ $index === 0 ? 'bg-[#E10600] text-white' : 'bg-[#FFF1F0] text-[#E10600]' }} text-[10px] font-black">{{ $index + 1 }}</span>
                                         <div class="min-w-0 flex-1"><strong class="block text-[11px]">{{ $label }}</strong><span class="text-[8px] text-zinc-400">{{ $index === 0 ? 'Cronometro o manuale' : ($index === 1 ? 'Salvataggio rapido' : 'Due tocchi') }}</span></div>
-                                        <span class="text-zinc-300">›</span>
+                                        <span class="text-zinc-300">&rsaquo;</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -83,7 +83,7 @@
 
                         <div class="mx-3 mb-3 grid grid-cols-5 rounded-[1.35rem] border border-black/[.07] bg-white/90 px-1 py-2 shadow-xl shadow-black/10">
                             @foreach (['Home', 'Timer', 'Sessioni', 'Garage', 'Altro'] as $index => $label)
-                                <div class="text-center {{ $index === 0 ? 'text-[#E10600]' : 'text-zinc-400' }}"><div class="text-base">{{ ['●','◴','⚑','◆','•••'][$index] }}</div><div class="mt-0.5 text-[7px] font-semibold">{{ $label }}</div></div>
+                                <div class="text-center {{ $index === 0 ? 'text-[#E10600]' : 'text-zinc-400' }}"><div class="text-[9px] font-black uppercase">{{ ['H','T','S','G','A'][$index] }}</div><div class="mt-1 text-[7px] font-semibold">{{ $label }}</div></div>
                             @endforeach
                         </div>
                     </div>
