@@ -47,7 +47,7 @@
                         </div>
 
                         <div>
-                            <label for="tone" class="text-sm font-bold text-pm-text">Formato</label>
+                            <label class="text-sm font-bold text-pm-text">Formato</label>
                             <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                 @foreach ($tones as $value => $label)
                                     <label class="cursor-pointer rounded-xl border border-pm-border bg-pm-subtle px-4 py-3 text-sm font-semibold text-pm-text-secondary transition hover:border-pm-accent/50">
@@ -73,7 +73,14 @@
                                 </div>
                                 <button id="apply-template" type="button" class="pm-ghost-button">Rigenera testo</button>
                             </div>
-                            <textarea id="message" name="message" rows="11" maxlength="6000" class="mt-3 w-full rounded-xl border border-pm-border bg-pm-subtle px-4 py-3 text-sm leading-6 text-pm-text outline-none transition focus:border-pm-accent">{{ old('message', $templates['professional']['message']) }}</textarea>
+                            @php
+                                $defaultMessage = str_replace(
+                                    ['{{company}}', 'Buongiorno ,'],
+                                    ['', 'Buongiorno,'],
+                                    $templates['professional']['message'],
+                                );
+                            @endphp
+                            <textarea id="message" name="message" rows="11" maxlength="6000" class="mt-3 w-full rounded-xl border border-pm-border bg-pm-subtle px-4 py-3 text-sm leading-6 text-pm-text outline-none transition focus:border-pm-accent">{{ old('message', $defaultMessage) }}</textarea>
                             @error('message')<p class="mt-2 text-sm font-semibold text-pm-danger">{{ $message }}</p>@enderror
                         </div>
 
@@ -145,7 +152,12 @@
 
             const tone = () => form.querySelector('input[name="tone"]:checked')?.value || 'professional';
             const templates = () => locale.value === 'en' ? templatesEn : templatesIt;
-            const personalise = (value) => value.replaceAll('{{company}}', company.value.trim());
+            const personalise = (value) => value
+                .replaceAll('{{company}}', company.value.trim())
+                .replace('Ciao ,', 'Ciao,')
+                .replace('Buongiorno ,', 'Buongiorno,')
+                .replace('Hi ,', 'Hi,')
+                .replace('Hello ,', 'Hello,');
 
             const refreshPreview = () => {
                 previewMessage.textContent = message.value;
