@@ -18,14 +18,14 @@ final class StudioMailboxController extends Controller
         $mailboxError = null;
 
         try {
-            $emails = $mailbox->received(60)['data'] ?? [];
+            $emails = $mailbox->received(60)['data'];
         } catch (Throwable $exception) {
             report($exception);
             $mailboxError = 'Impossibile leggere la posta da Resend. Controlla RESEND_STUDIO_KEY e i suoi permessi.';
         }
 
         return view('studio.mail.index', [
-            'emails' => is_array($emails) ? $emails : [],
+            'emails' => $emails,
             'mailboxError' => $mailboxError,
         ]);
     }
