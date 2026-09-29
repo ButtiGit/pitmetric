@@ -59,7 +59,7 @@
                                 </div>
                                 <div class="flex items-center gap-3 pl-12 sm:pl-0">
                                     <span class="text-xs text-pm-muted">{{ $createdAt !== '' ? \Illuminate\Support\Carbon::parse($createdAt)->format('d/m/Y H:i') : '' }}</span>
-                                    <span class="text-pm-muted transition group-hover:translate-x-0.5 group-hover:text-pm-text">→</span>
+                                    <span class="text-pm-muted transition group-hover:translate-x-0.5 group-hover:text-pm-text">&gt;</span>
                                 </div>
                             </a>
                         @endif
