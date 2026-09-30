@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>@include('partials.head')</head>
-    <body class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
+    <body data-pm-app-shell class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
         @php
             $demoUrl = fn (string $target) => $target === 'dashboard'
                 ? route('demo.public')
