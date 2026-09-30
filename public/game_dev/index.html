@@ -1,12 +1,116 @@
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark"><title>PitMetric · Open Wheel Career 26 V2</title><link rel="stylesheet" href="/game_dev/v2.css"></head><body>
-<div class="app" id="app"><header class="topbar"><div class="brand"><div class="brandmark">P</div><div><strong>OPEN WHEEL CAREER 26 · V2</strong><small>PitMetric experimental career game</small></div></div><div class="topactions"><span class="pill" id="savePill">● autosave</span><button class="btn" id="newCareerBtn">Nuova carriera</button></div></header>
-<main class="hub" id="hub"><section style="display:flex;flex-direction:column;gap:16px"><section class="card hero"><div><div class="ey" id="heroEy">CAREER HUB</div><h1 id="heroTitle">Il weekend deve sembrare una gara.</h1><p id="heroText">Fuori dalla pista gestisci carriera, rapporti e crescita. Quando entri nel weekend, il gestionale sparisce e restano soltanto macchina, pista, radio e decisioni sotto pressione.</p><div class="chips" id="heroChips"></div><div class="heroactions"><button class="btn primary" id="playWeekendBtn">Entra nel weekend</button><button class="btn" id="garageBtn">Garage & setup</button></div></div></section>
-<section class="card"><div class="weekendtop"><div><div class="ey">PROSSIMO EVENTO</div><div class="weekendname" id="weekendName">—</div><div class="weekendmeta" id="weekendMeta">—</div></div><button class="btn primary" id="continueBtn">Gioca sessione</button></div><div class="sessionrail" id="sessionRail"></div></section>
-<section class="card"><div class="cardhead"><div><div class="ey">CALENDARIO 2026</div><div class="title" id="calendarTitle">Formula 1</div></div></div><div class="calendar" id="calendar"></div></section></section>
-<aside style="display:flex;flex-direction:column;gap:16px"><section class="card"><div class="cardhead"><div><div class="ey">PROFILO</div><div class="title" id="profileName">Nuovo pilota</div></div><span class="chip" id="roleChip">—</span></div><div class="careergrid"><div class="metric"><small>Overall</small><b id="overall">—</b></div><div class="metric"><small>Reputazione</small><b id="reputation">—</b></div><div class="metric"><small>Campionato</small><b id="champPoints">0</b></div><div class="metric"><small>Rapporto team</small><b id="teamTrust">—</b></div></div></section><section class="card"><div class="cardhead"><div><div class="ey">CRESCITA</div><div class="title">Abilità</div></div></div><div class="skills" id="skills"></div></section></aside></main></div>
-<div class="racegame hidden" id="raceGame"><header class="gamebar"><div class="gamebar-left"><button class="btn" id="exitSessionBtn">← Hub</button><div><div class="sessionname" id="gameSessionName">RACE</div><div class="muted" style="font-size:8px" id="gameVenue">Melbourne</div></div><span class="flag green" id="flagState">GREEN</span></div><div class="gamebar-right"><span class="pill" id="weatherHud">☀ 27°C</span><span class="pill" id="clockHud">00:00</span></div></header><div class="gamemain"><aside class="leaderboard"><div class="lbhead"><div class="ey">LIVE TIMING</div><div class="title" style="font-size:11px">Classifica</div></div><div id="leaderboardRows"></div></aside><section class="trackpane"><svg class="tracksvg" viewBox="0 0 1000 600" aria-label="Circuito"><path id="trackShadow" class="trackshadow"></path><path id="trackRoad" class="trackroad"></path><path id="trackRubber" class="trackrubber"></path><path id="trackEdge" class="trackedge"></path><g id="carsLayer"></g></svg><div class="raceinfo"><div class="infobox"><small>GIRO</small><b><span id="lapHud">0</span>/<span id="lapsHud">0</span></b></div><div class="infobox"><small>POSIZIONE</small><b id="posHud">P—</b></div><div class="infobox"><small>GAP</small><b id="gapHud">—</b></div></div><div class="lights hidden" id="startLights"><i class="light"></i><i class="light"></i><i class="light"></i><i class="light"></i><i class="light"></i></div><div class="battle hidden" id="battleBox"><div class="battletop"><div><div class="ey">DUELLO</div><h3 id="battleTitle">Attacco</h3></div><span class="chip" id="battleTimer">3.0s</span></div><div class="battlechoices" id="battleChoices"></div></div></section><aside class="pitwall"><div class="pithead"><div class="ey">RADIO</div><div class="title" style="font-size:11px" id="radioTitle">Pilota ↔ ingegnere</div></div><div class="radio" id="radioLog"></div><div class="radiochoices" id="radioChoices"></div></aside></div><footer class="cockpit"><div class="telemetry"><div class="telem"><small>VELOCITÀ</small><b id="speedHud">0 km/h</b></div><div class="telem"><small>MARCIA</small><b id="gearHud">N</b></div><div class="telem"><small>GOMMA</small><b id="tyreHud">M</b></div><div class="telem"><small>BATTERIA</small><b id="batteryHud">100%</b></div></div><div class="commands" id="commands"></div><div class="speedbox"><button class="active" data-gamespeed="1">1×</button><button data-gamespeed="2">2×</button><button data-gamespeed="4">4×</button></div></footer></div>
-<div class="overlay" id="careerOverlay"><div class="modal"><div class="modalhead"><div class="ey">NUOVA CARRIERA 2026</div><h2>Crea il tuo personaggio</h2></div><div class="modalbody"><div id="careerStep1"><div class="roles"><button class="rolecard selected" data-role="driver"><div class="ey">ABITACOLO</div><h3>Pilota</h3><p>Guida la gara con ritmo, boost, difesa e decisioni nei duelli. Il tuo ingegnere ti parla e la fiducia reciproca cambia ciò che succede in pista.</p></button><button class="rolecard" data-role="engineer"><div class="ey">PIT WALL</div><h3>Ingegnere di gara</h3><p>Controlla ritmo, strategia, gomme e comunicazione. Il pilota può ascoltarti o ignorarti in base al rapporto costruito.</p></button></div><div class="fields"><div class="field"><label>NOME</label><input id="careerName" value="Simone Buttice" maxlength="32"></div><div class="field"><label>NAZIONALITÀ</label><select id="careerNation"><option>Italia</option><option>Regno Unito</option><option>Francia</option><option>Germania</option><option>Spagna</option><option>Paesi Bassi</option><option>Brasile</option><option>Australia</option></select></div><div class="field"><label>STAGIONE PRECEDENTE</label><select id="careerHistory"><option value="rookie">Rookie</option><option value="f3top">F3 · Top 10</option><option value="f3champ">F3 · Campione</option><option value="f2top">F2 · Top 10</option><option value="f2winner">F2 · Vincitore</option><option value="f2champ">F2 · Campione</option></select></div></div></div><div id="careerStep2" class="hidden"><div class="ey">ABILITÀ INIZIALI</div><p class="muted" style="font-size:10px">Distribuisci 24 punti. Il mercato usa davvero l'overall per decidere chi ti offre un contratto.</p><div class="skillbuilder" id="skillBuilder"></div><p><b>Punti disponibili: <span id="skillBudget">24</span></b></p></div><div id="careerStep3" class="hidden"><div class="ey">MERCATO</div><h3>Scegli il contratto</h3><div class="offers" id="offers"></div></div></div><div class="modalfoot"><button class="btn hidden" id="careerBack">Indietro</button><button class="btn primary" id="careerNext">Continua</button></div></div></div>
-<div class="overlay hidden" id="garageOverlay"><div class="modal"><div class="modalhead"><div class="ey">GARAGE</div><h2 id="garageTitle">Setup weekend</h2></div><div class="modalbody"><p class="muted" style="font-size:10px">Scegli una direzione semplice, poi senti in pista se hai fatto la scelta giusta.</p><div class="garagegrid"><div class="setupbox"><label><span>Ala</span><b id="wingValue">50</b></label><input id="wingSetup" type="range" min="0" max="100" value="50"></div><div class="setupbox"><label><span>Bilanciamento freni</span><b id="brakeValue">55</b></label><input id="brakeSetup" type="range" min="48" max="62" value="55"></div><div class="setupbox"><label><span>Rigidità</span><b id="stiffValue">50</b></label><input id="stiffSetup" type="range" min="0" max="100" value="50"></div><div class="setupbox"><label><span>Differenziale</span><b id="diffValue">50</b></label><input id="diffSetup" type="range" min="0" max="100" value="50"></div></div><div class="briefgrid" id="garageBrief"></div></div><div class="modalfoot"><button class="btn" id="closeGarageBtn">Chiudi</button><button class="btn primary" id="saveSetupBtn">Salva setup</button></div></div></div>
-<div class="overlay hidden" id="briefOverlay"><div class="modal"><div class="modalhead"><div class="ey">SESSION BRIEFING</div><h2 id="briefTitle">Australian GP · FP1</h2></div><div class="modalbody"><p class="muted" id="briefText" style="font-size:11px;line-height:1.6"></p><div class="briefgrid" id="briefStats"></div></div><div class="modalfoot"><button class="btn" id="briefBackBtn">Torna al paddock</button><button class="btn primary" id="startSessionBtn">Vai in pista</button></div></div></div>
-<div class="overlay hidden" id="resultOverlay"><div class="modal"><div class="modalhead"><div class="ey">SESSION COMPLETE</div><h2 id="resultTitle">Risultato</h2></div><div class="modalbody"><div class="resultgrid"><div class="result"><small>POSIZIONE</small><b id="resultPos">P—</b></div><div class="result"><small>PUNTI</small><b id="resultPoints">+0</b></div><div class="result"><small>REPUTAZIONE</small><b id="resultRep">+0</b></div><div class="result"><small>FIDUCIA</small><b id="resultTrust">+0</b></div></div><div id="resultCopy" style="margin-top:14px;font-size:11px;line-height:1.6;color:#b6c0c4"></div></div><div class="modalfoot"><span></span><button class="btn primary" id="resultContinueBtn">Continua weekend</button></div></div></div><div class="toast" id="toast"></div><script src="/game_dev/v2-data.js"></script><script src="/game_dev/v2.js"></script></body></html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>PitMetric · Open Wheel Career 26 V2</title>
+<link rel="stylesheet" href="/game_dev/v2.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><div class="brandmark">P</div><div><strong>OPEN WHEEL CAREER 26</strong><small>Career game · V2</small></div></div>
+    <div class="topactions"><span class="pill" id="savePill">● autosave</span><button class="btn ghost" id="rulesBtn">Regole 2026</button><button class="btn" id="newCareerBtn">Nuova carriera</button></div>
+  </header>
+
+  <main class="hub" id="hub">
+    <section class="hub-main">
+      <section class="hero card">
+        <div class="hero-copy">
+          <div class="ey" id="heroEy">CAREER HUB</div>
+          <h1 id="heroTitle">Vivi il weekend, non un foglio Excel.</h1>
+          <p id="heroText">Nel paddock prepari carriera, setup e rapporti. Quando inizia una sessione il gestionale sparisce: rimangono pista, macchina, radio e decisioni in tempo reale.</p>
+          <div class="chips" id="heroChips"></div>
+          <div class="heroactions"><button class="btn primary big" id="playWeekendBtn">▶ Entra nel weekend</button><button class="btn big" id="garageBtn">Garage & setup</button></div>
+        </div>
+        <div class="hero-car" aria-hidden="true"><div class="hero-wheel w1"></div><div class="hero-wheel w2"></div><div class="hero-wheel w3"></div><div class="hero-wheel w4"></div><div class="hero-body"></div><div class="hero-wing"></div></div>
+      </section>
+
+      <section class="card weekend-card">
+        <div class="weekendtop">
+          <div><div class="ey">PROSSIMO EVENTO</div><div class="weekendname" id="weekendName">—</div><div class="weekendmeta" id="weekendMeta">—</div></div>
+          <button class="btn primary" id="continueBtn">Gioca sessione</button>
+        </div>
+        <div class="sessionrail" id="sessionRail"></div>
+      </section>
+
+      <section class="hub-columns">
+        <section class="card"><div class="cardhead"><div><div class="ey">PADDOCK</div><div class="title">Rapporto col team</div></div></div><div class="relationship-list" id="relationships"></div></section>
+        <section class="card"><div class="cardhead"><div><div class="ey">STAGIONE</div><div class="title">Obiettivi</div></div></div><div class="objective-list" id="careerObjectives"></div></section>
+      </section>
+
+      <section class="card"><div class="cardhead"><div><div class="ey">CALENDARIO 2026</div><div class="title" id="calendarTitle">Formula 1</div></div></div><div class="calendar" id="calendar"></div></section>
+    </section>
+
+    <aside class="hub-side">
+      <section class="card profile-card"><div class="profile-banner"><div class="helmet">◉</div><div><div class="ey">PROFILO</div><div class="profile-name" id="profileName">Nuovo profilo</div><div class="muted" id="profileTeam">—</div></div></div><div class="careergrid"><div class="metric focus"><small>OVERALL</small><b id="overall">—</b></div><div class="metric"><small>REPUTAZIONE</small><b id="reputation">—</b></div><div class="metric"><small>PUNTI</small><b id="champPoints">0</b></div><div class="metric"><small>TEAM TRUST</small><b id="teamTrust">—</b></div></div></section>
+      <section class="card"><div class="cardhead"><div><div class="ey">CRESCITA</div><div class="title">Abilità</div></div><span class="chip" id="roleChip">—</span></div><div class="skills" id="skills"></div></section>
+      <section class="card"><div class="cardhead"><div><div class="ey">AUTO 2026</div><div class="title">Stato weekend</div></div></div><div class="car-status" id="carStatus"></div></section>
+    </aside>
+  </main>
+</div>
+
+<div class="racegame hidden" id="raceGame">
+  <header class="gamebar">
+    <div class="gamebar-left"><button class="iconbtn" id="exitSessionBtn" aria-label="Torna al paddock">←</button><div><div class="sessionname" id="gameSessionName">RACE</div><div class="gamevenue" id="gameVenue">Melbourne</div></div><span class="flag green" id="flagState">GREEN</span></div>
+    <div class="gamebar-center"><div class="lap-main"><small id="sessionModeLabel">GIRO</small><b><span id="lapHud">0</span><em>/</em><span id="lapsHud">0</span></b></div><div class="position-main"><small>POS</small><b id="posHud">P—</b></div><div class="delta-main"><small>DELTA</small><b id="deltaHud">—</b></div></div>
+    <div class="gamebar-right"><button class="camera-btn" id="cameraBtn">CAM: FOLLOW</button><span class="pill" id="weatherHud">☀ 27°C</span><span class="pill" id="clockHud">00:00</span></div>
+  </header>
+
+  <div class="gamefield">
+    <aside class="leaderboard"><div class="lbhead"><div class="ey">LIVE TIMING</div><div class="title smalltitle">Classifica</div></div><div class="lbrows" id="leaderboardRows"></div></aside>
+
+    <section class="trackpane" id="trackPane">
+      <div class="track-environment"></div>
+      <svg class="tracksvg" id="trackSvg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-label="Circuito">
+        <path id="trackRunoff" class="trackrunoff"></path>
+        <path id="trackShadow" class="trackshadow"></path>
+        <path id="trackRoad" class="trackroad"></path>
+        <path id="trackKerbRed" class="trackkerb red"></path>
+        <path id="trackKerbWhite" class="trackkerb white"></path>
+        <path id="trackEdge" class="trackedge"></path>
+        <path id="trackRubber" class="trackrubber"></path>
+        <path id="trackLine" class="trackline"></path>
+        <g id="carsLayer"></g>
+      </svg>
+
+      <div class="objective-hud" id="objectiveHud"><small>OBIETTIVO</small><b id="objectiveTitle">Preparati</b><span id="objectiveText">—</span><div class="objective-progress"><i id="objectiveProgress"></i></div></div>
+
+      <div class="minimap"><svg viewBox="0 0 1000 600"><path id="miniTrack" class="mini-track"></path><circle id="miniPlayer" r="13" class="mini-player"></circle></svg></div>
+
+      <div class="sector-hud"><div><small>S1</small><b id="sector1">—</b></div><div><small>S2</small><b id="sector2">—</b></div><div><small>S3</small><b id="sector3">—</b></div><div class="best"><small>BEST</small><b id="bestLapHud">—</b></div></div>
+
+      <div class="lights hidden" id="startLights"><i class="light"></i><i class="light"></i><i class="light"></i><i class="light"></i><i class="light"></i></div>
+      <div class="flash-message hidden" id="flashMessage">OVERTAKE</div>
+
+      <div class="battle hidden" id="battleBox"><div class="battle-head"><div><div class="ey">DUELLO IN PISTA</div><h3 id="battleTitle">Attacco</h3><p id="battleHint">Scegli prima che scada il tempo.</p></div><div class="battle-clock"><span id="battleTimer">3.0</span><small>SEC</small></div></div><div class="battlechoices" id="battleChoices"></div></div>
+
+      <div class="tyre-menu hidden" id="tyreMenu"><div class="ey">PIT STOP · MESCOLA</div><div class="tyre-buttons"><button data-tyre="S"><i class="tyre-dot soft"></i>Soft</button><button data-tyre="M"><i class="tyre-dot medium"></i>Medium</button><button data-tyre="H"><i class="tyre-dot hard"></i>Hard</button><button data-tyre="I"><i class="tyre-dot inter"></i>Inter</button></div></div>
+    </section>
+
+    <aside class="pitwall"><div class="pithead"><div><div class="ey">TEAM RADIO</div><div class="title smalltitle" id="radioTitle">Pilota ↔ ingegnere</div></div><div class="signal">● LIVE</div></div><div class="radio" id="radioLog"></div><div class="radiochoices" id="radioChoices"></div><div class="strategy-live" id="strategyLive"></div></aside>
+  </div>
+
+  <footer class="cockpit">
+    <div class="telemetry"><div class="speed-gauge"><small>KM/H</small><b id="speedHud">0</b><span id="gearHud">N</span></div><div class="telem"><small>GOMMA</small><b id="tyreHud">M · 100%</b></div><div class="telem"><small>BATTERIA</small><b id="batteryHud">100%</b><i><span id="batteryBar"></span></i></div><div class="telem"><small>CAR</small><b id="damageHud">OK</b><i><span id="damageBar"></span></i></div></div>
+    <div class="commands" id="commands"></div>
+    <div class="speedbox"><button class="active" data-gamespeed="1">1×</button><button data-gamespeed="2">2×</button><button data-gamespeed="4">4×</button></div>
+  </footer>
+</div>
+
+<div class="overlay" id="careerOverlay"><div class="modal career-modal"><div class="modalhead"><div class="ey">NUOVA CARRIERA · 2026</div><h2>Crea il tuo personaggio</h2><p>Puoi essere il pilota oppure l'ingegnere. Il contratto iniziale dipende davvero da abilità e curriculum.</p></div><div class="modalbody"><div id="careerStep1"><div class="roles"><button class="rolecard selected" data-role="driver"><span>01</span><div class="ey">ABITACOLO</div><h3>Pilota</h3><p>Controlla ritmo, Boost, difesa, gestione gomme e duelli. Le scelte di guida hanno conseguenze immediate.</p></button><button class="rolecard" data-role="engineer"><span>02</span><div class="ey">PIT WALL</div><h3>Ingegnere di gara</h3><p>Leggi gara, ordina push o saving, chiama il pit stop e costruisci abbastanza fiducia da essere ascoltato.</p></button></div><div class="fields"><div class="field"><label>NOME</label><input id="careerName" value="Simone Buttice" maxlength="32"></div><div class="field"><label>NAZIONALITÀ</label><select id="careerNation"><option>Italia</option><option>Regno Unito</option><option>Francia</option><option>Germania</option><option>Spagna</option><option>Paesi Bassi</option><option>Brasile</option><option>Australia</option><option>Altro</option></select></div><div class="field"><label>STAGIONE PRECEDENTE</label><select id="careerHistory"><option value="rookie">Rookie / Academy</option><option value="f3top">F3 · Top 10</option><option value="f3champ">F3 · Campione</option><option value="f2top">F2 · Top 10</option><option value="f2winner">F2 · Vincitore di gare</option><option value="f2champ">F2 · Campione</option></select></div></div></div><div id="careerStep2" class="hidden"><div class="ey">ABILITÀ INIZIALI</div><h3>Costruisci il tuo profilo</h3><p class="muted">Distribuisci 24 punti. Le skill crescono al termine di ogni weekend in base a ciò che hai fatto.</p><div class="skillbuilder" id="skillBuilder"></div><div class="budget">Punti disponibili <b id="skillBudget">24</b></div></div><div id="careerStep3" class="hidden"><div class="ey">MERCATO</div><h3>Le offerte per il tuo profilo</h3><div class="offers" id="offers"></div></div></div><div class="modalfoot"><button class="btn hidden" id="careerBack">Indietro</button><button class="btn primary" id="careerNext">Continua</button></div></div></div>
+
+<div class="overlay hidden" id="garageOverlay"><div class="modal"><div class="modalhead"><div class="ey">GARAGE</div><h2 id="garageTitle">Setup weekend</h2><p>Quattro scelte leggibili. Non serve essere un aerodinamico: il feedback in pista ti dice se stai andando nella direzione giusta.</p></div><div class="modalbody"><div class="garagegrid"><div class="setupbox"><label><span>Carico ala</span><b id="wingValue">50</b></label><input id="wingSetup" type="range" min="0" max="100" value="50"></div><div class="setupbox"><label><span>Brake bias</span><b id="brakeValue">55</b></label><input id="brakeSetup" type="range" min="48" max="62" value="55"></div><div class="setupbox"><label><span>Rigidità</span><b id="stiffValue">50</b></label><input id="stiffSetup" type="range" min="0" max="100" value="50"></div><div class="setupbox"><label><span>Differenziale</span><b id="diffValue">50</b></label><input id="diffSetup" type="range" min="0" max="100" value="50"></div></div><div class="briefgrid" id="garageBrief"></div></div><div class="modalfoot"><button class="btn" id="closeGarageBtn">Chiudi</button><button class="btn primary" id="saveSetupBtn">Salva setup</button></div></div></div>
+
+<div class="overlay hidden" id="briefOverlay"><div class="modal"><div class="modalhead"><div class="ey">SESSION BRIEFING</div><h2 id="briefTitle">Australian GP · FP1</h2><p id="briefText">—</p></div><div class="modalbody"><div class="briefgrid" id="briefStats"></div><div class="brief-note" id="briefNote"></div></div><div class="modalfoot"><button class="btn" id="briefBackBtn">Torna al paddock</button><button class="btn primary big" id="startSessionBtn">▶ Vai in pista</button></div></div></div>
+
+<div class="overlay hidden" id="resultOverlay"><div class="modal"><div class="modalhead"><div class="ey">SESSION COMPLETE</div><h2 id="resultTitle">Risultato</h2></div><div class="modalbody"><div class="resultgrid"><div class="result"><small>POSIZIONE</small><b id="resultPos">P—</b></div><div class="result"><small>PUNTI</small><b id="resultPoints">+0</b></div><div class="result"><small>REPUTAZIONE</small><b id="resultRep">+0</b></div><div class="result"><small>FIDUCIA</small><b id="resultTrust">+0</b></div></div><div class="debrief" id="resultCopy"></div><div class="skill-ups hidden" id="skillUps"></div></div><div class="modalfoot"><span></span><button class="btn primary" id="resultContinueBtn">Continua weekend</button></div></div></div>
+
+<div class="overlay hidden" id="rulesOverlay"><div class="modal"><div class="modalhead"><div class="ey">RIFERIMENTO 2026</div><h2>Regole usate dal gioco</h2></div><div class="modalbody rules-copy"><p><b>F1:</b> niente vecchio DRS nel modello di gioco: l'attacco usa i sistemi 2026 di energia/Overtake Mode. I weekend Sprint hanno FP1, Sprint Qualifying, Sprint, Qualifying e Grand Prix.</p><p><b>Punteggi:</b> GP 25–18–15–12–10–8–6–4–2–1; Sprint F1 8–7–6–5–4–3–2–1. In F2 la Sprint usa 10–8–6–5–4–3–2–1 e la Feature il sistema 25–18–15–12–10–8–6–4–2–1.</p><p><b>Nota gameplay:</b> i tempi sono compressi per rendere un GP completo giocabile in pochi minuti, mantenendo degrado, pit stop, neutralizzazioni, traffico e rapporti umani.</p></div><div class="modalfoot"><span></span><button class="btn primary" id="closeRulesBtn">Chiudi</button></div></div></div>
+
+<div class="toast" id="toast"></div>
+<script src="/game_dev/v2-data.js"></script>
+<script src="/game_dev/v2.js"></script>
+</body>
+</html>
