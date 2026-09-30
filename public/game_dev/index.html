@@ -1,117 +1,498 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<title>PitMetric · Open Wheel Career 26 V4</title>
-<link rel="stylesheet" href="/game_dev/v2.css?v=4">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII Drive Simulator</title>
+<style>
+  :root {
+    --bg: #050505;
+    --fg: #e8ffe8;
+    --muted: #7da87d;
+    --accent: #b9ff66;
+    --danger: #ff6b6b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at center, #111 0%, #050505 60%, #000 100%);
+    color: var(--fg);
+    font-family: "Courier New", Consolas, monospace;
+    overflow: hidden;
+  }
+
+  .game-shell {
+    width: min(1180px, 100vw);
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .topbar, .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    user-select: none;
+  }
+
+  .title {
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+
+  .screen {
+    position: relative;
+    min-height: 0;
+    border: 1px solid #244224;
+    background: #020402;
+    box-shadow:
+      0 0 0 1px #071507 inset,
+      0 0 35px rgba(140,255,100,.07);
+    overflow: hidden;
+  }
+
+  #ascii {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    white-space: pre;
+    text-align: left;
+    line-height: 1;
+    font-size: clamp(7px, 1.05vw, 14px);
+    letter-spacing: 0;
+    color: var(--fg);
+    text-shadow: 0 0 7px rgba(180,255,160,.2);
+    user-select: none;
+  }
+
+  .hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 3;
+    pointer-events: none;
+    font-size: 13px;
+    color: var(--accent);
+    background: rgba(0, 0, 0, .45);
+    border: 1px solid #2a502a;
+    padding: 7px 9px;
+    min-width: 190px;
+  }
+
+  .hud .danger { color: var(--danger); }
+
+  .help {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 3;
+    color: #9fcf9f;
+    font-size: 12px;
+    text-align: right;
+    background: rgba(0,0,0,.42);
+    padding: 7px 9px;
+    border: 1px solid #1f3a1f;
+  }
+
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,.015) 0,
+      rgba(255,255,255,.015) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+    mix-blend-mode: screen;
+  }
+
+  button {
+    font: inherit;
+    color: var(--fg);
+    background: #0a130a;
+    border: 1px solid #2d512d;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  button:hover { background: #102010; }
+
+  @media (max-width: 700px) {
+    .game-shell { padding: 6px; }
+    .help { display: none; }
+    .topbar { font-size: 11px; }
+    .footer { font-size: 10px; }
+    #ascii { font-size: 7px; }
+  }
+</style>
 </head>
 <body>
-<div class="app" id="app">
-  <header class="topbar">
-    <div class="brand"><div class="brandmark">P</div><div><strong>OPEN WHEEL CAREER 26</strong><small>Career game · V4</small></div></div>
-    <div class="topactions"><span class="pill" id="savePill">● autosave</span><button class="btn ghost" id="rulesBtn">Regole 2026</button><button class="btn" id="newCareerBtn">Nuova carriera</button></div>
-  </header>
-
-  <main class="hub" id="hub">
-    <section class="hub-main">
-      <section class="hero card">
-        <div class="hero-copy">
-          <div class="ey" id="heroEy">CAREER HUB</div>
-          <h1 id="heroTitle">Vivi il weekend, non un foglio Excel.</h1>
-          <p id="heroText">Nel paddock prepari carriera, setup e rapporti. Quando inizia una sessione il gestionale sparisce: rimangono pista, macchina, radio e decisioni in tempo reale.</p>
-          <div class="chips" id="heroChips"></div>
-          <div class="heroactions"><button class="btn primary big" id="playWeekendBtn">▶ Entra nel weekend</button><button class="btn big" id="garageBtn">Garage & setup</button></div>
-        </div>
-        <div class="hero-car" aria-hidden="true"><div class="hero-wheel w1"></div><div class="hero-wheel w2"></div><div class="hero-wheel w3"></div><div class="hero-wheel w4"></div><div class="hero-body"></div><div class="hero-wing"></div></div>
-      </section>
-
-      <section class="card weekend-card">
-        <div class="weekendtop">
-          <div><div class="ey">PROSSIMO EVENTO</div><div class="weekendname" id="weekendName">—</div><div class="weekendmeta" id="weekendMeta">—</div></div>
-          <button class="btn primary" id="continueBtn">Gioca sessione</button>
-        </div>
-        <div class="sessionrail" id="sessionRail"></div>
-      </section>
-
-      <section class="hub-columns">
-        <section class="card"><div class="cardhead"><div><div class="ey">PADDOCK</div><div class="title">Rapporto col team</div></div></div><div class="relationship-list" id="relationships"></div></section>
-        <section class="card"><div class="cardhead"><div><div class="ey">STAGIONE</div><div class="title">Obiettivi</div></div></div><div class="objective-list" id="careerObjectives"></div></section>
-      </section>
-
-      <section class="card"><div class="cardhead"><div><div class="ey">CALENDARIO 2026</div><div class="title" id="calendarTitle">Formula 1</div></div></div><div class="calendar" id="calendar"></div></section>
-    </section>
-
-    <aside class="hub-side">
-      <section class="card profile-card"><div class="profile-banner"><div class="helmet">◉</div><div><div class="ey">PROFILO</div><div class="profile-name" id="profileName">Nuovo profilo</div><div class="muted" id="profileTeam">—</div></div></div><div class="careergrid"><div class="metric focus"><small>OVERALL</small><b id="overall">—</b></div><div class="metric"><small>REPUTAZIONE</small><b id="reputation">—</b></div><div class="metric"><small>PUNTI</small><b id="champPoints">0</b></div><div class="metric"><small>TEAM TRUST</small><b id="teamTrust">—</b></div></div></section>
-      <section class="card"><div class="cardhead"><div><div class="ey">CRESCITA</div><div class="title">Abilità</div></div><span class="chip" id="roleChip">—</span></div><div class="skills" id="skills"></div></section>
-      <section class="card"><div class="cardhead"><div><div class="ey">AUTO 2026</div><div class="title">Stato weekend</div></div></div><div class="car-status" id="carStatus"></div></section>
-    </aside>
-  </main>
-</div>
-
-<div class="racegame hidden" id="raceGame">
-  <header class="gamebar">
-    <div class="gamebar-left"><button class="iconbtn" id="exitSessionBtn" aria-label="Torna al paddock">←</button><div><div class="sessionname" id="gameSessionName">RACE</div><div class="gamevenue" id="gameVenue">Melbourne</div></div><span class="flag green" id="flagState">GREEN</span></div>
-    <div class="gamebar-center"><div class="lap-main"><small id="sessionModeLabel">GIRO</small><b><span id="lapHud">0</span><em>/</em><span id="lapsHud">0</span></b></div><div class="position-main"><small>POS</small><b id="posHud">P—</b></div><div class="delta-main"><small>DELTA</small><b id="deltaHud">—</b></div></div>
-    <div class="gamebar-right"><button class="camera-btn" id="cameraBtn">CAM: FOLLOW</button><span class="pill" id="weatherHud">☀ 27°C</span><span class="pill" id="clockHud">00:00</span></div>
-  </header>
-
-  <div class="gamefield">
-    <aside class="leaderboard"><div class="lbhead"><div class="ey">LIVE TIMING</div><div class="title smalltitle">Classifica</div></div><div class="lbrows" id="leaderboardRows"></div></aside>
-
-    <section class="trackpane" id="trackPane">
-      <div class="track-environment"></div>
-      <svg class="tracksvg" id="trackSvg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-label="Circuito">
-        <path id="trackRunoff" class="trackrunoff"></path>
-        <path id="trackShadow" class="trackshadow"></path>
-        <path id="trackRoad" class="trackroad"></path>
-        <path id="trackKerbRed" class="trackkerb red"></path>
-        <path id="trackKerbWhite" class="trackkerb white"></path>
-        <path id="trackEdge" class="trackedge"></path>
-        <path id="trackRubber" class="trackrubber"></path>
-        <path id="trackLine" class="trackline"></path>
-        <g id="carsLayer"></g>
-      </svg>
-
-      <div class="objective-hud" id="objectiveHud"><small>OBIETTIVO</small><b id="objectiveTitle">Preparati</b><span id="objectiveText">—</span><div class="objective-progress"><i id="objectiveProgress"></i></div></div>
-
-      <div class="minimap"><svg viewBox="0 0 1000 600"><path id="miniTrack" class="mini-track"></path><circle id="miniPlayer" r="13" class="mini-player"></circle></svg></div>
-
-      <div class="sector-hud"><div><small>S1</small><b id="sector1">—</b></div><div><small>S2</small><b id="sector2">—</b></div><div><small>S3</small><b id="sector3">—</b></div><div class="best"><small>BEST</small><b id="bestLapHud">—</b></div></div>
-
-      <div class="lights hidden" id="startLights"><i class="light"></i><i class="light"></i><i class="light"></i><i class="light"></i><i class="light"></i></div>
-      <div class="flash-message hidden" id="flashMessage">OVERTAKE</div>
-
-      <div class="battle hidden" id="battleBox"><div class="battle-head"><div><div class="ey">DUELLO IN PISTA</div><h3 id="battleTitle">Attacco</h3><p id="battleHint">Scegli prima che scada il tempo.</p></div><div class="battle-clock"><span id="battleTimer">3.0</span><small>SEC</small></div></div><div class="battlechoices" id="battleChoices"></div></div>
-
-      <div class="tyre-menu hidden" id="tyreMenu"><div class="ey">PIT STOP · MESCOLA</div><div class="tyre-buttons"><button data-tyre="S"><i class="tyre-dot soft"></i>Soft</button><button data-tyre="M"><i class="tyre-dot medium"></i>Medium</button><button data-tyre="H"><i class="tyre-dot hard"></i>Hard</button><button data-tyre="I"><i class="tyre-dot inter"></i>Inter</button></div></div>
-    </section>
-
-    <aside class="pitwall"><div class="pithead"><div><div class="ey">TEAM RADIO</div><div class="title smalltitle" id="radioTitle">Pilota ↔ ingegnere</div></div><div class="signal">● LIVE</div></div><div class="radio" id="radioLog"></div><div class="radiochoices" id="radioChoices"></div><div class="strategy-live" id="strategyLive"></div></aside>
+<div class="game-shell">
+  <div class="topbar">
+    <div class="title">ASCII // DRIVE</div>
+    <div>SIMULATORE IN PRIMA PERSONA</div>
+    <button id="restart">RESTART</button>
   </div>
 
-  <footer class="cockpit">
-    <div class="telemetry"><div class="speed-gauge"><small>KM/H</small><b id="speedHud">0</b><span id="gearHud">N</span></div><div class="telem"><small>GOMMA</small><b id="tyreHud">M · 100%</b></div><div class="telem"><small>BATTERIA</small><b id="batteryHud">100%</b><i><span id="batteryBar"></span></i></div><div class="telem"><small>CAR</small><b id="damageHud">OK</b><i><span id="damageBar"></span></i></div></div>
-    <div class="commands" id="commands"></div>
-    <div class="speedbox"><button class="active" data-gamespeed="1">1×</button><button data-gamespeed="2">2×</button><button data-gamespeed="4">4×</button></div>
-  </footer>
+  <div class="screen" id="screen">
+    <pre id="ascii" aria-label="Simulatore di guida ASCII"></pre>
+
+    <div class="hud" id="hud"></div>
+
+    <div class="help">
+      W / ↑ = ACCELERA<br>
+      S / ↓ = FRENA<br>
+      A D / ← → = STERZA<br>
+      SPAZIO = FRENO A MANO<br>
+      R = RESET
+    </div>
+
+    <div class="scanlines"></div>
+  </div>
+
+  <div class="footer">
+    <span>Grafica composta esclusivamente da caratteri.</span>
+    <span>Evita i bordi della strada e mantieni il controllo in curva.</span>
+  </div>
 </div>
 
-<div class="overlay" id="careerOverlay"><div class="modal career-modal"><div class="modalhead"><div class="ey">NUOVA CARRIERA · 2026</div><h2>Crea il tuo personaggio</h2><p>Puoi essere il pilota oppure l'ingegnere. Il contratto iniziale dipende davvero da abilità e curriculum.</p></div><div class="modalbody"><div id="careerStep1"><div class="roles"><button class="rolecard selected" data-role="driver"><span>01</span><div class="ey">ABITACOLO</div><h3>Pilota</h3><p>Controlla ritmo, Boost, difesa, gestione gomme e duelli. Le scelte di guida hanno conseguenze immediate.</p></button><button class="rolecard" data-role="engineer"><span>02</span><div class="ey">PIT WALL</div><h3>Ingegnere di gara</h3><p>Leggi gara, ordina push o saving, chiama il pit stop e costruisci abbastanza fiducia da essere ascoltato.</p></button></div><div class="fields"><div class="field"><label>NOME</label><input id="careerName" value="Simone Buttice" maxlength="32"></div><div class="field"><label>NAZIONALITÀ</label><select id="careerNation"><option>Italia</option><option>Regno Unito</option><option>Francia</option><option>Germania</option><option>Spagna</option><option>Paesi Bassi</option><option>Brasile</option><option>Australia</option><option>Altro</option></select></div><div class="field"><label>STAGIONE PRECEDENTE</label><select id="careerHistory"><option value="rookie">Rookie / Academy</option><option value="f3top">F3 · Top 10</option><option value="f3champ">F3 · Campione</option><option value="f2top">F2 · Top 10</option><option value="f2winner">F2 · Vincitore di gare</option><option value="f2champ">F2 · Campione</option></select></div></div></div><div id="careerStep2" class="hidden"><div class="ey">ABILITÀ INIZIALI</div><h3>Costruisci il tuo profilo</h3><p class="muted">Distribuisci 24 punti. Le skill crescono al termine di ogni weekend in base a ciò che hai fatto.</p><div class="skillbuilder" id="skillBuilder"></div><div class="budget">Punti disponibili <b id="skillBudget">24</b></div></div><div id="careerStep3" class="hidden"><div class="ey">MERCATO</div><h3>Le offerte per il tuo profilo</h3><div class="offers" id="offers"></div></div></div><div class="modalfoot"><button class="btn hidden" id="careerBack">Indietro</button><button class="btn primary" id="careerNext">Continua</button></div></div></div>
+<script>
+(() => {
+  const out = document.getElementById('ascii');
+  const hud = document.getElementById('hud');
+  const restart = document.getElementById('restart');
 
-<div class="overlay hidden" id="garageOverlay"><div class="modal"><div class="modalhead"><div class="ey">GARAGE</div><h2 id="garageTitle">Setup weekend</h2><p>Quattro scelte leggibili. Non serve essere un aerodinamico: il feedback in pista ti dice se stai andando nella direzione giusta.</p></div><div class="modalbody"><div class="garagegrid"><div class="setupbox"><label><span>Carico ala</span><b id="wingValue">50</b></label><input id="wingSetup" type="range" min="0" max="100" value="50"></div><div class="setupbox"><label><span>Brake bias</span><b id="brakeValue">55</b></label><input id="brakeSetup" type="range" min="48" max="62" value="55"></div><div class="setupbox"><label><span>Rigidità</span><b id="stiffValue">50</b></label><input id="stiffSetup" type="range" min="0" max="100" value="50"></div><div class="setupbox"><label><span>Differenziale</span><b id="diffValue">50</b></label><input id="diffSetup" type="range" min="0" max="100" value="50"></div></div><div class="briefgrid" id="garageBrief"></div></div><div class="modalfoot"><button class="btn" id="closeGarageBtn">Chiudi</button><button class="btn primary" id="saveSetupBtn">Salva setup</button></div></div></div>
+  const COLS = 110;
+  const ROWS = 42;
+  const HORIZON = 11;
 
-<div class="overlay hidden" id="briefOverlay"><div class="modal"><div class="modalhead"><div class="ey">SESSION BRIEFING</div><h2 id="briefTitle">Australian GP · FP1</h2><p id="briefText">—</p></div><div class="modalbody"><div class="briefgrid" id="briefStats"></div><div class="brief-note" id="briefNote"></div></div><div class="modalfoot"><button class="btn" id="briefBackBtn">Torna al paddock</button><button class="btn primary big" id="startSessionBtn">▶ Vai in pista</button></div></div></div>
+  const keys = Object.create(null);
 
-<div class="overlay hidden" id="resultOverlay"><div class="modal"><div class="modalhead"><div class="ey">SESSION COMPLETE</div><h2 id="resultTitle">Risultato</h2></div><div class="modalbody"><div class="resultgrid"><div class="result"><small>POSIZIONE</small><b id="resultPos">P—</b></div><div class="result"><small>PUNTI</small><b id="resultPoints">+0</b></div><div class="result"><small>REPUTAZIONE</small><b id="resultRep">+0</b></div><div class="result"><small>FIDUCIA</small><b id="resultTrust">+0</b></div></div><div class="debrief" id="resultCopy"></div><div class="skill-ups hidden" id="skillUps"></div></div><div class="modalfoot"><span></span><button class="btn primary" id="resultContinueBtn">Continua weekend</button></div></div></div>
+  let speed = 0;
+  let playerX = 0;
+  let steer = 0;
+  let distance = 0;
+  let score = 0;
+  let damage = 0;
+  let offroad = false;
+  let shake = 0;
+  let curveSeed = Math.random() * 1000;
+  let last = performance.now();
 
-<div class="overlay hidden" id="rulesOverlay"><div class="modal"><div class="modalhead"><div class="ey">RIFERIMENTO 2026</div><h2>Regole usate dal gioco</h2></div><div class="modalbody rules-copy"><p><b>F1:</b> niente vecchio DRS nel modello di gioco: l'attacco usa i sistemi 2026 di energia/Overtake Mode. I weekend Sprint hanno FP1, Sprint Qualifying, Sprint, Qualifying e Grand Prix.</p><p><b>Punteggi:</b> GP 25–18–15–12–10–8–6–4–2–1; Sprint F1 8–7–6–5–4–3–2–1. In F2 la Sprint usa 10–8–6–5–4–3–2–1 e la Feature il sistema 25–18–15–12–10–8–6–4–2–1.</p><p><b>Nota gameplay:</b> i tempi sono compressi per rendere un GP completo giocabile in pochi minuti, mantenendo degrado, pit stop, neutralizzazioni, traffico e rapporti umani.</p></div><div class="modalfoot"><span></span><button class="btn primary" id="closeRulesBtn">Chiudi</button></div></div></div>
+  const maxSpeed = 235;
 
-<div class="toast" id="toast"></div>
-<script src="/game_dev/v2-data.js?v=4"></script>
-<script src="/game_dev/v2.js?v=4"></script>
-<script src="/game_dev/v2-runtime.js?v=2"></script>
+  function reset() {
+    speed = 0;
+    playerX = 0;
+    steer = 0;
+    distance = 0;
+    score = 0;
+    damage = 0;
+    offroad = false;
+    shake = 0;
+    curveSeed = Math.random() * 1000;
+  }
+
+  restart.addEventListener('click', reset);
+
+  addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    keys[e.code] = true;
+
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
+      e.preventDefault();
+    }
+
+    if (e.key.toLowerCase() === 'r') reset();
+  });
+
+  addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
+    keys[e.code] = false;
+  });
+
+  function clamp(v, a, b) {
+    return Math.max(a, Math.min(b, v));
+  }
+
+  function noiseCurve(z) {
+    const p = distance * 0.0012 + z * 0.025 + curveSeed;
+    return (
+      Math.sin(p * 0.75) * 0.75 +
+      Math.sin(p * 0.31 + 1.4) * 0.45 +
+      Math.sin(p * 1.66 + 4.0) * 0.16
+    );
+  }
+
+  function roadCenterAt(row) {
+    const depth = (row - HORIZON) / Math.max(1, ROWS - HORIZON - 1);
+    const farZ = (1 - depth) * 70;
+    const nearZ = depth * 10;
+
+    const curvature = noiseCurve(farZ);
+    const steeringBias = playerX * Math.pow(depth, 1.4) * 18;
+    const curveShift = curvature * Math.pow(depth, 1.45) * 18;
+
+    return COLS / 2 + curveShift - steeringBias;
+  }
+
+  function roadHalfWidthAt(row) {
+    const depth = clamp((row - HORIZON) / (ROWS - HORIZON), 0, 1);
+    return 2.2 + Math.pow(depth, 1.26) * 43;
+  }
+
+  function makeGrid() {
+    return Array.from({length: ROWS}, () => Array(COLS).fill(' '));
+  }
+
+  function put(grid, x, y, ch) {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (y >= 0 && y < ROWS && x >= 0 && x < COLS) grid[y][x] = ch;
+  }
+
+  function text(grid, x, y, str) {
+    for (let i = 0; i < str.length; i++) put(grid, x + i, y, str[i]);
+  }
+
+  function drawSky(grid) {
+    for (let y = 0; y < HORIZON; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const starNoise = Math.sin(x * 12.9898 + y * 78.233 + Math.floor(distance * .02)) * 43758.5453;
+        const f = starNoise - Math.floor(starNoise);
+        if (f > 0.992) grid[y][x] = '.';
+        else if (f > 0.998) grid[y][x] = '*';
+      }
+    }
+
+    const horizon = HORIZON - 1;
+    for (let x = 0; x < COLS; x++) {
+      const hill =
+        HORIZON - 2
+        - Math.floor(2.0 * Math.sin(x * 0.12 + distance * 0.0002))
+        - Math.floor(1.1 * Math.sin(x * 0.035 + 1.7));
+
+      if (hill >= 0 && hill < HORIZON) {
+        grid[hill][x] = '^';
+        if (hill + 1 < HORIZON) grid[hill + 1][x] = '/';
+      }
+    }
+
+    for (let x = 0; x < COLS; x++) grid[horizon][x] = '=';
+  }
+
+  function drawRoad(grid) {
+    for (let y = HORIZON; y < ROWS; y++) {
+      const center = roadCenterAt(y);
+      const half = roadHalfWidthAt(y);
+      const left = center - half;
+      const right = center + half;
+      const depth = (y - HORIZON) / (ROWS - HORIZON);
+
+      for (let x = 0; x < COLS; x++) {
+        if (x < left || x > right) {
+          const rumble = ((Math.floor(distance * .06) + y * 2 + x) % 9 < 2);
+          grid[y][x] = rumble ? '"' : (depth > .7 ? ',' : '.');
+        } else {
+          grid[y][x] = depth > .82 ? ' ' : '.';
+        }
+      }
+
+      put(grid, left, y, '|');
+      put(grid, left - 1, y, '/');
+      put(grid, right, y, '|');
+      put(grid, right + 1, y, '\\');
+
+      const segment = Math.floor(distance / 18 + (ROWS - y) * 1.25);
+      if (segment % 7 < 3) {
+        const laneSpread = half * .34;
+        put(grid, center - laneSpread, y, ':');
+        put(grid, center + laneSpread, y, ':');
+      }
+
+      if (y % 4 === 0 && depth > .3) {
+        const markerOffset = half + 3 + depth * 4;
+        put(grid, center - markerOffset, y, '#');
+        put(grid, center + markerOffset, y, '#');
+      }
+    }
+  }
+
+  function drawObjects(grid) {
+    // roadside poles
+    for (let y = HORIZON + 2; y < ROWS - 5; y += 4) {
+      const center = roadCenterAt(y);
+      const half = roadHalfWidthAt(y);
+      const depth = (y - HORIZON) / (ROWS - HORIZON);
+      const phase = Math.floor(distance / 35 + y);
+
+      if (phase % 5 === 0) {
+        const h = depth > .7 ? 3 : 1;
+        const lx = center - half - 5;
+        const rx = center + half + 5;
+        for (let i = 0; i < h; i++) {
+          put(grid, lx, y - i, '|');
+          put(grid, rx, y - i, '|');
+        }
+        put(grid, lx, y - h, '+');
+        put(grid, rx, y - h, '+');
+      }
+    }
+  }
+
+  function drawCockpit(grid) {
+    const baseY = ROWS - 1;
+    const cx = COLS / 2 + (Math.random() - .5) * shake;
+
+    const dash = [
+      "                    ______________________________                    ",
+      "               ____/                              \\____               ",
+      "            __/                                      \\__            ",
+      "          _/                                              \\_          ",
+      "        _/          .--------------------------.            \\_        ",
+      "_______/____________|       ASCII  DRIVE       |______________\\_______",
+      "\\                    '--------------------------'                     /",
+      " \\__________________________________________________________________/ "
+    ];
+
+    for (let i = 0; i < dash.length; i++) {
+      text(grid, Math.round(cx - dash[i].length / 2), ROWS - dash.length + i, dash[i]);
+    }
+
+    // steering wheel
+    const wheelY = ROWS - 4;
+    const wheelX = cx + steer * 3;
+    text(grid, wheelX - 8, wheelY - 2, " .---------. ");
+    text(grid, wheelX - 9, wheelY - 1, "/    ___    \\");
+    text(grid, wheelX - 9, wheelY,     "|---/   \\---|");
+    text(grid, wheelX - 8, wheelY + 1, "\\    |    /");
+    text(grid, wheelX - 4, wheelY + 2,  "\\___/");
+  }
+
+  function update(dt) {
+    const accel = keys['w'] || keys['ArrowUp'];
+    const brake = keys['s'] || keys['ArrowDown'];
+    const left = keys['a'] || keys['ArrowLeft'];
+    const right = keys['d'] || keys['ArrowRight'];
+    const handbrake = keys['Space'];
+
+    if (accel) {
+      speed += (72 - speed * .16) * dt;
+    } else {
+      speed -= (11 + speed * .015) * dt;
+    }
+
+    if (brake) speed -= 105 * dt;
+    if (handbrake) speed -= 150 * dt;
+
+    speed = clamp(speed, 0, maxSpeed - damage * .55);
+
+    const steerInput = (right ? 1 : 0) - (left ? 1 : 0);
+    const steerStrength = (0.85 + speed / maxSpeed * 1.15);
+
+    steer += (steerInput - steer) * Math.min(1, dt * 8);
+    playerX += steer * steerStrength * dt * 0.9;
+
+    // Road naturally moves beneath the driver in curves.
+    const currentCurve = noiseCurve(0);
+    playerX += currentCurve * (speed / maxSpeed) * dt * 0.12;
+
+    // Slight self-centering at low speed
+    if (!left && !right && speed < 20) {
+      playerX *= Math.pow(.985, dt * 60);
+    }
+
+    offroad = Math.abs(playerX) > 0.92;
+
+    if (offroad) {
+      speed -= 65 * dt;
+      damage += (Math.abs(playerX) > 1.22 ? 7 : 1.7) * dt;
+      shake = Math.min(3.5, shake + dt * 8);
+    } else {
+      shake = Math.max(0, shake - dt * 10);
+    }
+
+    // Hard collision beyond road boundary
+    if (Math.abs(playerX) > 1.48) {
+      speed *= Math.pow(0.35, dt * 8);
+      damage += 18 * dt;
+      shake = 5;
+      playerX = clamp(playerX, -1.65, 1.65);
+    }
+
+    damage = clamp(damage, 0, 100);
+    distance += speed * dt * 0.32;
+    score += speed * dt * (offroad ? .05 : .18);
+  }
+
+  function render() {
+    const g = makeGrid();
+
+    drawSky(g);
+    drawRoad(g);
+    drawObjects(g);
+    drawCockpit(g);
+
+    if (damage >= 100) {
+      const msg = [
+        "######################################",
+        "#                                    #",
+        "#          VEICOLO DISTRUTTO         #",
+        "#         premi R per ripartire      #",
+        "#                                    #",
+        "######################################"
+      ];
+      const y0 = 16;
+      msg.forEach((line, i) => text(g, COLS/2 - line.length/2, y0+i, line));
+      speed = 0;
+    }
+
+    out.textContent = g.map(r => r.join('')).join('\n');
+
+    const kph = Math.round(speed);
+    const speedBarLen = 24;
+    const filled = Math.round((kph / maxSpeed) * speedBarLen);
+    const speedBar = '[' + '#'.repeat(filled) + '-'.repeat(speedBarLen - filled) + ']';
+
+    hud.innerHTML = `
+      VELOCITÀ&nbsp; ${String(kph).padStart(3, '0')} km/h<br>
+      ${speedBar}<br>
+      DISTANZA&nbsp; ${(distance / 1000).toFixed(2)} km<br>
+      PUNTI&nbsp;&nbsp;&nbsp;&nbsp; ${Math.floor(score)}<br>
+      DANNO&nbsp;&nbsp;&nbsp;&nbsp; <span class="${damage > 60 ? 'danger' : ''}">${Math.round(damage)}%</span><br>
+      STATO&nbsp;&nbsp;&nbsp;&nbsp; <span class="${offroad ? 'danger' : ''}">${offroad ? 'FUORI PISTA' : 'IN PISTA'}</span>
+    `;
+  }
+
+  function frame(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    dt = Math.min(dt, 0.05);
+
+    if (damage < 100) update(dt);
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
