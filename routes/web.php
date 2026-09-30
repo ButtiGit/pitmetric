@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'public.home')->name('home');
+Route::view('/game_dev', 'game-dev')->name('game-dev');
 Route::get('/demo', [DemoManagerController::class, 'index'])->name('demo.public');
 Route::get('/demo/manager/{section}', [DemoManagerController::class, 'show'])
     ->whereIn('section', ['events', 'sessions', 'circuits', 'garage', 'components', 'configurations', 'setups', 'maintenance', 'timing', 'telemetry', 'insights', 'expenses', 'team'])
@@ -190,8 +191,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
         });
 });
 
