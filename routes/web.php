@@ -172,8 +172,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/maintenance/work-orders', [MaintenanceController::class, 'storeWorkOrder'])
                 ->name('maintenance.work-orders.store');
             Route::patch('/maintenance/work-orders/{maintenanceWorkOrder}', [MaintenanceController::class, 'updateWorkOrder'])->name('maintenance.work-orders.update');
-            Route::post('/maintenance/work-orders/{maintenanceWorkOrder}/complete', [MaintenanceController::class, 'completeWorkOrder'])
-                ->name('maintenance.work-orders.complete');
+            Route::post('/maintenance/work-orders/{maintenanceWorkOrder}/complete', [MaintenanceController::class, 'completeWorkOrder'])->name('maintenance.work-orders.complete');
             Route::post('/maintenance/{maintenanceSchedule}/complete', [MaintenanceController::class, 'complete'])
                 ->name('maintenance.complete');
 
@@ -191,8 +190,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
-            Route::get('users', [UserStudioController::class, 'index'])->name('studio.users.index');
-            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('studio.users.access');
+            Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
+            Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
         });
 });
 
