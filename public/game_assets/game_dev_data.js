@@ -19,6 +19,7 @@ window.GameDevData = (() => {
         Monza:'M218 470 L172 339 L203 162 L313 125 L369 199 L511 187 L571 129 L753 158 L825 282 L775 405 L642 452 L557 399 L421 481 L313 427 Z',
         Madrid:'M177 353 C142 247 211 147 331 137 L455 133 C533 128 584 175 652 155 C730 132 820 194 828 284 C836 375 758 451 670 451 C586 451 540 412 466 444 C371 485 260 474 198 408 Z',
         Baku:'M171 402 L172 247 L270 172 L417 173 L417 111 L492 111 L493 254 L615 254 L615 191 L744 191 L816 278 L779 401 L672 459 L553 412 L439 482 L306 456 Z',
+        Sepang:'M210 460 C155 390 171 295 236 236 C279 197 300 117 391 119 C470 121 498 198 552 213 C626 234 679 163 760 180 C826 194 851 270 812 330 C776 385 704 377 662 421 C608 478 520 486 454 452 C390 418 325 482 260 481 C238 481 220 472 210 460 Z',
         Singapore:'M169 383 L193 204 L307 156 L399 202 L476 126 L575 173 L672 139 L821 224 L786 323 L835 394 L715 466 L620 418 L534 474 L432 429 L328 475 L229 442 Z',
         Austin:'M161 337 L198 190 L320 129 L423 197 L520 151 L612 215 L721 158 L825 240 L778 341 L820 413 L688 461 L585 416 L489 481 L387 423 L267 472 L190 413 Z',
         MexicoCity:'M183 414 L160 289 L229 171 L361 151 L444 203 L553 151 L693 178 L812 255 L775 344 L821 420 L690 459 L596 416 L486 476 L368 438 L273 474 Z',
@@ -57,7 +58,29 @@ window.GameDevData = (() => {
     ];
 
     const f1CalendarRaw = [
-        ['Australian GP','Melbourne','6-8 Mar',58,false],['Chinese GP','Shanghai','13-15 Mar',56,true],['Japanese GP','Suzuka','27-29 Mar',53,false],['Bahrain GP','Sakhir','10-12 Apr',57,false],['Saudi Arabian GP','Jeddah','17-19 Apr',50,false],['Miami GP','Miami','1-3 May',57,true],['Canadian GP','Montreal','22-24 May',70,true],['Monaco GP','Monaco','5-7 Jun',78,false],['Spanish GP','Barcelona','12-14 Jun',66,false],['Austrian GP','Spielberg','26-28 Jun',71,false],['British GP','Silverstone','3-5 Jul',52,true],['Belgian GP','Spa','17-19 Jul',44,false],['Hungarian GP','Budapest','24-26 Jul',70,false],['Dutch GP','Zandvoort','21-23 Aug',72,true],['Italian GP','Monza','4-6 Sep',53,false],['Spanish GP - Madrid','Madrid','11-13 Sep',57,false],['Azerbaijan GP','Baku','24-26 Sep',51,false],['Singapore GP','Singapore','9-11 Oct',62,true],['United States GP','Austin','23-25 Oct',56,false],['Mexico City GP','MexicoCity','30 Oct-1 Nov',71,false],['Sao Paulo GP','SaoPaulo','6-8 Nov',71,false],['Las Vegas GP','LasVegas','19-21 Nov',50,false],['Qatar GP','Lusail','27-29 Nov',57,false],['Abu Dhabi GP','YasMarina','4-6 Dec',58,false]
+        ['Australian GP','Melbourne','6-8 Mar',58,false],
+        ['Chinese GP','Shanghai','13-15 Mar',56,true],
+        ['Japanese GP','Suzuka','27-29 Mar',53,false],
+        ['Miami GP','Miami','1-3 May',57,true],
+        ['Canadian GP','Montreal','22-24 May',70,true],
+        ['Monaco GP','Monaco','5-7 Jun',78,false],
+        ['Spanish GP','Barcelona','12-14 Jun',66,false],
+        ['Austrian GP','Spielberg','26-28 Jun',71,false],
+        ['British GP','Silverstone','3-5 Jul',52,true],
+        ['Belgian GP','Spa','17-19 Jul',44,false],
+        ['Hungarian GP','Budapest','24-26 Jul',70,false],
+        ['Dutch GP','Zandvoort','21-23 Aug',72,true],
+        ['Italian GP','Monza','4-6 Sep',53,false],
+        ['Spanish GP - Madrid','Madrid','11-13 Sep',57,false],
+        ['Azerbaijan GP','Baku','24-26 Sep',51,false],
+        ['Bahrain GP in Malaysia','Sepang','2-4 Oct',56,false],
+        ['Singapore GP','Singapore','9-11 Oct',62,true],
+        ['United States GP','Austin','23-25 Oct',56,false],
+        ['Mexico City GP','MexicoCity','30 Oct-1 Nov',71,false],
+        ['Sao Paulo GP','SaoPaulo','6-8 Nov',71,false],
+        ['Las Vegas GP','LasVegas','19-21 Nov',50,false],
+        ['Qatar GP','Lusail','27-29 Nov',57,false],
+        ['Abu Dhabi GP','YasMarina','4-6 Dec',58,false]
     ];
 
     const f2CalendarRaw = [
