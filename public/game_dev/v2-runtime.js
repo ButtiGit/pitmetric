@@ -4,7 +4,7 @@ const STORE='pitmetric.openwheel26.v2';
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-let corrected=false;
+let corrected=false,lastLivePos=null;
 
 document.addEventListener('keydown',e=>{
   if(e.repeat||document.querySelector('#raceGame.hidden')) return;
@@ -19,6 +19,14 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+function rememberLivePosition(){
+  if($('#raceGame')?.classList.contains('hidden')||!$('#resultOverlay')?.classList.contains('hidden')) return;
+  const rows=$$('#leaderboardRows .lbrow');
+  const index=rows.findIndex(r=>r.classList.contains('player'));
+  if(index>=0) lastLivePos=index+1;
+}
+setInterval(rememberLivePosition,80);
+
 function points(pos,type,series){
   if(type==='race') return [25,18,15,12,10,8,6,4,2,1][pos-1]||0;
   if(type==='sprint') return series==='F1'?([8,7,6,5,4,3,2,1][pos-1]||0):([10,8,6,5,4,3,2,1][pos-1]||0);
@@ -30,8 +38,7 @@ function gains(pos,teamPerf,type){
   return {
     rep:type==='practice'?0:clamp(Math.round(delta/2)+(pos<=target?1:0),-2,5),
     trust:clamp(Math.round(delta/3),-2,4),
-    partner:pos<=target?1:0,
-    target
+    partner:pos<=target?1:0
   };
 }
 function sessionType(){
@@ -42,11 +49,8 @@ function sessionType(){
 }
 function correctResult(){
   const type=sessionType();
-  if(!type) return;
-  const rows=$$('#leaderboardRows .lbrow');
-  const playerIndex=rows.findIndex(r=>r.classList.contains('player'));
-  if(playerIndex<0) return;
-  const actual=playerIndex+1;
+  if(!type||!lastLivePos) return;
+  const actual=lastLivePos;
   const shown=Number(($('#resultPos')?.textContent||'').replace(/\D/g,''));
   if(!shown||shown===actual) return;
   let s;
@@ -75,5 +79,7 @@ if(result){
 }
 $('#resultContinueBtn')?.addEventListener('click',()=>{
   if(corrected) setTimeout(()=>location.reload(),0);
+  lastLivePos=null;
 });
+$('#startSessionBtn')?.addEventListener('click',()=>{corrected=false;lastLivePos=null;});
 })();
