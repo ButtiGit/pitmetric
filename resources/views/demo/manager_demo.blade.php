@@ -21,7 +21,7 @@
                     </div>
                 </section>
 
-                <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-pm-dashboard-stats>
                     <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Mezzi' : 'Vehicles' }}</p><p class="mt-3 text-3xl font-black text-pm-text sm:mt-4">{{ count($demo['vehicles']) }}</p></article>
                     <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Configurazioni' : 'Configurations' }}</p><p class="mt-3 text-3xl font-black text-pm-text sm:mt-4">{{ count($demo['configurations']) }}</p></article>
                     <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Sessioni' : 'Sessions' }}</p><p class="mt-3 text-3xl font-black text-pm-text sm:mt-4">18</p></article>

@@ -105,7 +105,6 @@ const uniqueSteps = (steps) => {
 
 const buildPageTour = (guide, copy) => {
     const pageTitle = firstVisible('[data-pm-page-header]', 'main h1', '[data-pm-workspace] h1');
-    const workflow = firstVisible('[data-pm-workflow-nav]');
     const primaryAction = firstVisible(
         '[data-pm-primary-action]',
         'main .pm-race-button',
@@ -128,11 +127,6 @@ const buildPageTour = (guide, copy) => {
             body: copy.page.description,
         },
         {
-            target: workflow,
-            title: copy.page.workflow_title,
-            body: copy.page.workflow_body,
-        },
-        {
             target: primaryAction,
             title: copy.page.action_title,
             body: copy.page.action_body,
@@ -153,7 +147,7 @@ const buildPageTour = (guide, copy) => {
 const buildFullTour = (guide, copy) => {
     const sidebar = firstVisible('[data-pm-tour-sidebar]', '.pm-mobile-sidebar', '[data-pm-mobile-header]');
     const nextAction = firstVisible('[data-pm-dashboard-next]', '[data-demo-dashboard] h1');
-    const workflow = firstVisible('[data-pm-dashboard-workflow]', '[data-pm-workflow-nav]');
+    const workflow = firstVisible('[data-pm-dashboard-workflow]');
     const stats = firstVisible('[data-pm-dashboard-stats]');
     const event = firstVisible('[data-pm-dashboard-event]');
     const help = guide.querySelector('[data-pm-guide-toggle]');

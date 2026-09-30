@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   IonApp, IonPage, IonContent, IonButton, IonInput, IonTextarea, IonIcon, IonBadge,
-  IonTabBar, IonTabButton, IonSelect, IonSelectOption, IonLabel, IonSpinner
+  IonSelect, IonSelectOption, IonLabel, IonSpinner, alertController
 } from '@ionic/vue';
 import {
   addOutline, analyticsOutline, buildOutline, cameraOutline, carSportOutline,
@@ -58,7 +58,8 @@ const sessionConfigurationId = ref<number | null>(null);
 const sessionEventId = ref<number | null>(null);
 const sessionEntryId = ref<number | null>(null);
 const sessionType = ref('practice');
-const sessionStartedAt = ref(new Date().toISOString().slice(0, 16));
+const localNow = new Date();
+const sessionStartedAt = ref(new Date(localNow.getTime() - localNow.getTimezoneOffset() * 60_000).toISOString().slice(0, 16));
 const sessionLaps = ref<number | null>(null);
 const sessionDuration = ref<number | null>(null);
 const sessionBestLap = ref('');
@@ -227,10 +228,19 @@ async function saveManualLap() {
 }
 
 async function saveSession() {
+  const startedAt = new Date(sessionStartedAt.value);
+  if (!sessionStartedAt.value || Number.isNaN(startedAt.getTime())) {
+    actionMessage.value = 'Inserisci una data e un orario validi per la sessione.';
+    return;
+  }
   const bestLapMs = parseLapTime(sessionBestLap.value);
+  if (sessionBestLap.value.trim() && bestLapMs === null) {
+    actionMessage.value = 'Inserisci un tempo valido, ad esempio 1:23.456.';
+    return;
+  }
   const common = {
     session_type: sessionType.value,
-    started_at: new Date(sessionStartedAt.value).toISOString(),
+    started_at: startedAt.toISOString(),
     completed_laps: sessionLaps.value,
     duration_minutes: sessionDuration.value,
     best_lap_ms: bestLapMs,
@@ -325,9 +335,13 @@ async function saveSetup() {
 }
 
 async function addPhoto() {
-  await addGalleryPhoto(mediaTitle.value.trim() || 'Foto trackside', mediaDescription.value.trim());
-  mediaTitle.value = ''; mediaDescription.value = '';
-  await refreshLocal();
+  try {
+    await addGalleryPhoto(mediaTitle.value.trim() || 'Foto trackside', mediaDescription.value.trim());
+    mediaTitle.value = ''; mediaDescription.value = '';
+    await refreshLocal();
+  } catch (error) {
+    actionMessage.value = error instanceof Error ? error.message : 'Fotocamera non disponibile.';
+  }
 }
 async function addMedia() {
   try {
@@ -339,8 +353,25 @@ async function addMedia() {
   }
 }
 async function removeQuick(id: string) {
-  await deleteQuickRecord(id);
-  quick.value = await quickRecords();
+  const alert = await alertController.create({
+    header: 'Eliminare la registrazione?',
+    message: 'La registrazione locale verrà eliminata. I dati già sincronizzati restano nel cloud.',
+    buttons: [
+      { text: 'Annulla', role: 'cancel' },
+      { text: 'Elimina', role: 'destructive', handler: () => {
+        void (async () => {
+          try {
+            await deleteQuickRecord(id);
+            quick.value = await quickRecords();
+            actionMessage.value = 'Registrazione eliminata.';
+          } catch {
+            actionMessage.value = 'Eliminazione non riuscita. Riprova.';
+          }
+        })();
+      } },
+    ],
+  });
+  await alert.present();
 }
 async function forceSync() {
   if (!session.value?.cloudEnabled) {
@@ -348,11 +379,14 @@ async function forceSync() {
     actionMessage.value = 'Il cloud è opzionale: collega un account solo se vuoi sincronizzare.';
     return;
   }
+  if (syncing.value) return;
   syncing.value = true;
   try {
     const result = await syncNow();
     await refreshLocal(true);
     actionMessage.value = result.synced > 0 ? `${result.synced} elementi sincronizzati.` : 'Dati già aggiornati.';
+  } catch (error) {
+    actionMessage.value = error instanceof Error ? error.message : 'Sincronizzazione non riuscita. Riprova quando sei online.';
   } finally { syncing.value = false; }
 }
 async function signOut() {
@@ -381,22 +415,22 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
       <ion-content :fullscreen="true" class="app-content">
         <header class="app-topbar">
           <div class="brand-mini"><div class="mark" /><span class="wordmark">PitMetric</span></div>
-          <button class="sync-pill" type="button" @click="forceSync">
+          <button class="sync-pill" type="button" :disabled="syncing" :aria-label="syncing ? 'Sincronizzazione in corso' : session?.cloudEnabled ? 'Sincronizza dati' : 'Collega account cloud'" @click="forceSync">
             <ion-icon :icon="session?.cloudEnabled ? cloudDoneOutline : cloudOfflineOutline" />
-            <span>{{ cloudLabel }}</span>
+            <span>{{ syncing ? 'Sincronizzo…' : cloudLabel }}</span>
           </button>
         </header>
 
-        <button v-if="actionMessage" class="toast" type="button" @click="actionMessage = ''">{{ actionMessage }}</button>
+        <button v-if="actionMessage" class="toast" role="status" type="button" @click="actionMessage = ''">{{ actionMessage }}</button>
 
         <main v-if="active === 'home'" class="screen dashboard-screen">
           <section class="dashboard-hero">
             <div>
               <p class="eyebrow">RACE DASHBOARD</p>
-              <h1>{{ bestLap !== null ? formatLapTime(bestLap) : 'Pronto a girare' }}</h1>
-              <p>{{ bestLap !== null ? 'Personal best locale' : `Ciao ${firstName}. Inizia dal primo giro, senza configurare nulla.` }}</p>
+              <h1>{{ `Ciao, ${firstName}.` }}</h1>
+              <p>Il prossimo giro comincia qui.</p>
             </div>
-            <button class="hero-start" type="button" @click="active = 'timer'"><ion-icon :icon="playOutline" />START</button>
+            <button class="hero-start" type="button" @click="active = 'timer'"><ion-icon :icon="playOutline" />In pista</button>
           </section>
 
           <section class="stat-grid">
@@ -422,8 +456,8 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
 
           <section class="quick-grid">
             <button class="quick-card primary" type="button" @click="active = 'timer'"><span class="quick-icon"><ion-icon :icon="stopwatchOutline" /></span><strong>Nuovo tempo</strong><small>Cronometro o manuale</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
-            <button class="quick-card" type="button" @click="active = 'sessions'"><span class="quick-icon"><ion-icon :icon="flagOutline" /></span><strong>Sessione</strong><small>Senza gerarchie obbligatorie</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
-            <button class="quick-card" type="button" @click="active = 'pit'"><span class="quick-icon"><ion-icon :icon="speedometerOutline" /></span><strong>Nota</strong><small>Trackside in 2 tocchi</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+            <button class="quick-card" type="button" @click="active = 'sessions'"><span class="quick-icon"><ion-icon :icon="flagOutline" /></span><strong>Sessione</strong><small>Registra la tua uscita</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+            <button class="quick-card" type="button" @click="active = 'pit'"><span class="quick-icon"><ion-icon :icon="speedometerOutline" /></span><strong>Nota</strong><small>Annota ciò che conta</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
             <button class="quick-card" type="button" @click="active = 'garage'"><span class="quick-icon"><ion-icon :icon="carSportOutline" /></span><strong>Garage</strong><small>{{ snapshot.vehicles.length }} mezzi cloud</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
           </section>
 
@@ -433,7 +467,7 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
               <article v-for="item in recentQuick" :key="item.id" class="activity-row">
                 <div class="activity-dot"><ion-icon :icon="item.kind === 'lap_time' ? stopwatchOutline : item.kind === 'session' ? flagOutline : item.kind === 'setup' ? settingsOutline : timeOutline" /></div>
                 <div><strong>{{ item.kind === 'lap_time' ? formatLapTime(item.value_ms) : item.title }}</strong><span>{{ item.kind === 'lap_time' ? item.title : quickMeta(item) }}</span></div>
-                <button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline" /></button>
+                <button type="button" class="icon-button" :aria-label="`Elimina ${item.title}`" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline" /></button>
               </article>
             </div>
             <div v-else class="empty-state"><ion-icon :icon="analyticsOutline"/><strong>Nessun dato ancora</strong><span>Il primo tempo apparirà qui e nei grafici.</span></div>
@@ -463,12 +497,12 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
 
           <section class="manual-card">
             <div><span>INSERIMENTO MANUALE</span><strong>Hai già il tempo?</strong></div>
-            <div class="manual-row"><ion-input v-model="manualLap" inputmode="decimal" placeholder="1:23.456"/><button type="button" @click="saveManualLap">Salva</button></div>
+            <div class="manual-row"><ion-input v-model="manualLap" label="Tempo sul giro" label-placement="stacked" inputmode="decimal" placeholder="1:23.456"/><button type="button" @click="saveManualLap">Salva</button></div>
             <small>Nessuna configurazione, vettura o sessione necessaria.</small>
           </section>
 
           <section class="panel"><div class="panel-head"><div><p class="eyebrow">LAP HISTORY</p><h2>Ultimi giri</h2></div><span>{{ lapRecords.length }}</span></div>
-            <div class="lap-list"><article v-for="(item, index) in lapRecords.slice(0, 12)" :key="item.id" class="lap-list-row"><span class="lap-index">{{ String(lapRecords.length - index).padStart(2,'0') }}</span><strong>{{ formatLapTime(item.value_ms) }}</strong><span>{{ item.title }}</span><button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div>
+            <div class="lap-list"><article v-for="(item, index) in lapRecords.slice(0, 12)" :key="item.id" class="lap-list-row"><span class="lap-index">{{ String(lapRecords.length - index).padStart(2,'0') }}</span><strong>{{ formatLapTime(item.value_ms) }}</strong><span>{{ item.title }}</span><button type="button" class="icon-button" :aria-label="`Elimina ${item.title}`" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div>
           </section>
         </main>
 
@@ -481,7 +515,7 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
             <details class="advanced"><summary>Collegamenti avanzati opzionali</summary><div class="advanced-body"><ion-select v-model="sessionConfigurationId" label="Configurazione" label-placement="stacked"><ion-select-option :value="null">Nessuna</ion-select-option><ion-select-option v-for="config in snapshot.configurations" :key="config.id" :value="config.id">{{ config.vehicle }} · {{ config.configuration }} v{{ config.version_number }}</ion-select-option></ion-select><ion-select v-model="sessionEventId" label="Weekend" label-placement="stacked" @ion-change="sessionEntryId = null"><ion-select-option :value="null">Nessuno</ion-select-option><ion-select-option v-for="event in snapshot.events" :key="event.id" :value="event.id">{{ event.name }}</ion-select-option></ion-select><ion-select v-if="selectedSessionEvent" v-model="sessionEntryId" label="Iscrizione" label-placement="stacked"><ion-select-option :value="null">Nessuna</ion-select-option><ion-select-option v-for="entry in selectedSessionEvent.entries" :key="entry.id" :value="entry.id">#{{ entry.entry_number || '—' }} · {{ entry.driver || entry.vehicle }}</ion-select-option></ion-select></div></details>
             <button class="save-button" type="button" @click="saveSession"><ion-icon :icon="addOutline"/>Salva sessione</button>
           </section>
-          <section class="panel"><div class="panel-head"><div><p class="eyebrow">LOCAL SESSIONS</p><h2>Storico</h2></div><span>{{ sessionRecords.length }}</span></div><div class="activity-list"><article v-for="item in sessionRecords.slice(0,12)" :key="item.id" class="activity-row"><div class="activity-dot"><ion-icon :icon="flagOutline"/></div><div><strong>{{ String(item.payload.session_type || 'Sessione') }}</strong><span>{{ quickMeta(item) }} · {{ item.payload.completed_laps || '—' }} giri</span></div><button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div></section>
+          <section class="panel"><div class="panel-head"><div><p class="eyebrow">LOCAL SESSIONS</p><h2>Storico</h2></div><span>{{ sessionRecords.length }}</span></div><div class="activity-list"><article v-for="item in sessionRecords.slice(0,12)" :key="item.id" class="activity-row"><div class="activity-dot"><ion-icon :icon="flagOutline"/></div><div><strong>{{ String(item.payload.session_type || 'Sessione') }}</strong><span>{{ quickMeta(item) }} · {{ item.payload.completed_laps || '—' }} giri</span></div><button type="button" class="icon-button" :aria-label="`Elimina ${item.title}`" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div></section>
         </main>
 
         <main v-else-if="active === 'garage'" class="screen">
@@ -511,13 +545,13 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
         </main>
       </ion-content>
 
-      <ion-tab-bar slot="bottom" class="bottom-nav">
-        <ion-tab-button :selected="active === 'home'" @click="active='home'"><ion-icon :icon="homeOutline"/><ion-label>Home</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'timer'" @click="active='timer'"><ion-icon :icon="stopwatchOutline"/><ion-label>Timer</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'sessions'" @click="active='sessions'"><ion-icon :icon="flagOutline"/><ion-label>Sessioni</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'garage'" @click="active='garage'"><ion-icon :icon="carSportOutline"/><ion-label>Garage</ion-label></ion-tab-button>
-        <ion-tab-button :selected="moreSelected" @click="active='more'"><ion-icon :icon="ellipsisHorizontalOutline"/><ion-label>Altro</ion-label></ion-tab-button>
-      </ion-tab-bar>
+      <nav class="bottom-nav" aria-label="Navigazione principale">
+        <button type="button" :aria-current="active === 'home' ? 'page' : undefined" @click="active='home'"><ion-icon :icon="homeOutline"/><span>Home</span></button>
+        <button type="button" :aria-current="active === 'timer' ? 'page' : undefined" @click="active='timer'"><ion-icon :icon="stopwatchOutline"/><span>Timer</span></button>
+        <button type="button" :aria-current="active === 'sessions' ? 'page' : undefined" @click="active='sessions'"><ion-icon :icon="flagOutline"/><span>Sessioni</span></button>
+        <button type="button" :aria-current="active === 'garage' ? 'page' : undefined" @click="active='garage'"><ion-icon :icon="carSportOutline"/><span>Garage</span></button>
+        <button type="button" :aria-current="moreSelected ? 'page' : undefined" @click="active='more'"><ion-icon :icon="ellipsisHorizontalOutline"/><span>Altro</span></button>
+      </nav>
     </ion-page>
   </ion-app>
 </template>
