@@ -8,8 +8,8 @@
         <div class="pm-mobile-cockpit-hero">
             <div class="min-w-0">
                 <p class="pm-mobile-cockpit-eyebrow">{{ $it ? 'IL TUO COCKPIT' : 'YOUR COCKPIT' }}</p>
-                <h1 class="pm-mobile-cockpit-title">{{ $it ? 'Il tuo team. La tua pista.' : 'Your team. Your track.' }}</h1>
-                <p class="pm-mobile-cockpit-copy">{{ $it ? 'Weekend, mezzi e tempi. Tutto a portata di mano.' : 'Weekends, vehicles and timing. Everything within reach.' }}</p>
+                <h1 class="pm-mobile-cockpit-title">{{ $it ? 'Cosa devi fare adesso?' : 'What do you need right now?' }}</h1>
+                <p class="pm-mobile-cockpit-copy">{{ $it ? 'Tocca un riquadro per aprire le azioni veloci. Puoi cambiare priorità e nascondere quello che non usi.' : 'Tap a card to reveal quick actions. Change priorities and hide what you do not use.' }}</p>
             </div>
             <button type="button" class="pm-mobile-cockpit-customize" data-pm-dashboard-customize aria-haspopup="dialog">
                 <flux:icon.adjustments-horizontal class="size-5" />

@@ -1,11 +1,12 @@
 <?php
 
-test('game dev manager is publicly available with its track and controls', function () {
-    $this->get(route('game-dev'))
-        ->assertOk()
-        ->assertSee('PitMetric Grand Prix Manager')
-        ->assertSee('id="weekendSelect"', false)
-        ->assertSee('id="teamSelect"', false)
-        ->assertSee('id="trackSvg"', false)
-        ->assertSee('/game_dev/v2-runtime.js', false);
+test('game dev career prototype is publicly available', function () {
+    $response = $this->get(route('game-dev'));
+
+    $response->assertOk()
+        ->assertSee('Open Wheel Career 26')
+        ->assertSee('Crea il tuo personaggio')
+        ->assertSee('Regole 2026 implementate')
+        ->assertSee('F1')
+        ->assertSee('F2');
 });

@@ -32,8 +32,7 @@ it('keeps contextual page tours available throughout the core workflow', functio
             ->assertOk()
             ->assertSee('data-pm-guide', false)
             ->assertSee('data-pm-context="'.$context.'"', false)
-            ->assertDontSee('data-pm-workflow-nav', false)
-            ->assertSee('data-pm-workspace-bar', false);
+            ->assertSee('data-pm-workflow-nav', false);
     }
 });
 

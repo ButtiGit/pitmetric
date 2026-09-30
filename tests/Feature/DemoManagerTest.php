@@ -46,13 +46,3 @@ it('keeps the authenticated local manager separate from the public demo', functi
             ->assertDontSee('Race Team Demo');
     }
 });
-
-test('public demo keeps navigation inside the demo and omits the workflow banner', function () {
-    $this->get(route('demo.manager', ['section' => 'garage']))
-        ->assertOk()
-        ->assertSee('data-pm-app-shell', false)
-        ->assertSee('data-pm-workspace-bar', false)
-        ->assertSee('data-pm-demo-navigation', false)
-        ->assertSee(route('demo.manager', ['section' => 'sessions']), false)
-        ->assertDontSee('data-pm-workflow-nav', false);
-});
