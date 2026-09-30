@@ -326,11 +326,11 @@
             const safetyFactor=race.safetyCar?.64:1;
             const overtakeFactor=car.player&&race.overtake&&car.energy>10&&overtakeEligible(car)?1.028:1;
             car.progress+=base*paceFactor*tyreFactor(car)*safetyFactor*(1+rand(-.017,.017))*overtakeFactor;
-            car.wear=clamp(car.wear+(pace==='push'?.065:pace==='conserve'?.036:.049)*(car.tyre==='soft'?1.18:car.tyre==='hard'?.8:1),0,100);
-            car.energy=clamp(car.energy+(car.player&&race.overtake&&overtakeEligible(car)?-.42:.14),0,100);
+            car.wear=clamp(car.wear+(pace==='push'?.0075:pace==='conserve'?.004:.0055)*(car.tyre==='soft'?1.18:car.tyre==='hard'?.8:1),0,100);
+            car.energy=clamp(car.energy+(car.player&&race.overtake&&overtakeEligible(car)?-.045:.012),0,100);
             if(car.damage>0) car.progress-=base*car.damage*.0015;
         });
-        if(race.pitRequested&&player&&fraction(player.progress)>.82) pitStop(player,true);
+        if(race.pitRequested&&player&&!player.retired&&fraction(player.progress)>.82) pitStop(player,true);
         aiPitStops();
         resolveBattles();
         maybeIncident();
@@ -338,13 +338,13 @@
         enforceDryCompoundWarning();
         updateOrder();
         race.lap=Math.max(0,Math.floor(player?.progress||0)+1);
-        if(player&&player.progress>=race.totalLaps) race.finished=true;
-        if(race.safetyCar&&Math.random()<.012){
+        if(player&&(player.progress>=race.totalLaps||player.retired)) race.finished=true;
+        if(race.safetyCar&&Math.random()<.0012){
             race.safetyCar=false;
             addFeed('safety','Safety Car in questo giro. Ripartenza imminente.');
             addRadio('team','Safety Car in. Prepara la ripartenza e porta le gomme in temperatura.');
         }
-        if(race.elapsed%110===0) maybeRadioPrompt();
+        if(race.elapsed%520===0) maybeRadioPrompt();
         if(race.elapsed%70===0) save();
     }
 
@@ -444,7 +444,7 @@
             next=oldTyre==='medium'?'hard':'medium';
         }
         car.pitCount++;
-        car.progress-=state.series==='F1'?.021:.016;
+        car.progress-=state.series==='F1'?.24:.20;
         car.tyre=next;
         car.wear=0;
         car.damage=Math.max(0,car.damage-10);
