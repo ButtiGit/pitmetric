@@ -23,10 +23,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Unpack Glow Up OS project
+      - name: Restore Glow Up OS source
         run: |
+          cat .glow-build/source.b64.* | base64 -d > /tmp/glow-up-os.zip
+          unzip -t /tmp/glow-up-os.zip
           mkdir -p /tmp/glow-up-os
-          unzip -q glow-up-os-src.zip -d /tmp/glow-up-os
+          unzip -q /tmp/glow-up-os.zip -d /tmp/glow-up-os
       - name: Build debug APK
         working-directory: /tmp/glow-up-os
         run: gradle :app:assembleDebug --stacktrace
