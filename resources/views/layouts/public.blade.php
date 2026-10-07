@@ -4,6 +4,7 @@
     'image' => null,
     'imageAlt' => null,
     'ogType' => 'website',
+    'contentLocale' => null,
 ])
 
 @php
@@ -18,7 +19,8 @@
     $seoImageAlt = $imageAlt ?? (app()->getLocale() === 'it'
         ? 'PitMetric, software gestionale per motorsport'
         : 'PitMetric, motorsport management software');
-    $openGraphLocale = app()->getLocale() === 'it' ? 'it_IT' : 'en_US';
+    $resolvedContentLocale = $contentLocale ?? app()->getLocale();
+    $openGraphLocale = $resolvedContentLocale === 'it' ? 'it_IT' : 'en_US';
 
     $routeName = request()->route()?->getName();
     $routeParameters = request()->route()?->parameters() ?? [];
@@ -102,7 +104,7 @@
     <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:site_name" content="PitMetric">
     <meta property="og:locale" content="{{ $openGraphLocale }}">
-    <meta property="og:locale:alternate" content="{{ app()->getLocale() === 'it' ? 'en_US' : 'it_IT' }}">
+    <meta property="og:locale:alternate" content="{{ $resolvedContentLocale === 'it' ? 'en_US' : 'it_IT' }}">
     <meta property="og:image" content="{{ $seoImage }}">
     <meta property="og:image:alt" content="{{ $seoImageAlt }}">
 
