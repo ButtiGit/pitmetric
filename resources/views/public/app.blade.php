@@ -1,6 +1,6 @@
 <x-layouts::public
-    :title="app()->getLocale() === 'it' ? 'App Android' : 'Android App'"
-    :description="app()->getLocale() === 'it' ? 'Scarica PitMetric per Android: dati essenziali leggibili al volo, lavoro offline e sincronizzazione automatica.' : 'Download PitMetric for Android: glanceable trackside data, offline work and automatic sync.'"
+    :title="app()->getLocale() === 'it' ? 'App Android motorsport per piloti e team' : 'Android motorsport app for drivers and teams'"
+    :description="app()->getLocale() === 'it' ? 'Scarica PitMetric per Android, l’app motorsport per gestire sessioni, setup e manutenzione in pista anche offline, con sincronizzazione automatica.' : 'Download PitMetric for Android, the motorsport app for trackside sessions, setups and maintenance with offline support and automatic sync.'"
 >
     @php($apkUrl = 'https://github.com/ButtiGit/pitmetric/releases/download/android-latest/PitMetric.apk')
 
