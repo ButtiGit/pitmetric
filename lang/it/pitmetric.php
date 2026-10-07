@@ -10,6 +10,8 @@ return [
         'platform' => 'PitMetric',
     ],
     'home' => [
+        'seo_title' => 'Software gestionale motorsport per piloti e team',
+        'seo_description' => 'PitMetric è il software gestionale motorsport per piloti e piccoli team: gestisci mezzi, componenti, configurazioni, manutenzione, sessioni ed eventi.',
         'eyebrow' => 'Dati motorsport, senza rumore',
         'title_1' => 'Conosci ogni giro.',
         'title_2' => 'Traccia ogni componente.',
