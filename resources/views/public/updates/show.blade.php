@@ -1,4 +1,10 @@
-<x-layouts::public :title="$update->titleForLocale()" :description="$update->excerptForLocale()">
+<x-layouts::public
+    :title="$update->titleForLocale()"
+    :description="$update->excerptForLocale()"
+    :image="$update->media_type === 'image' ? $update->mediaSource() : null"
+    :image-alt="$update->mediaAltForLocale()"
+    og-type="article"
+>
     <article class="pm-editorial-page pm-update-article">
         <div class="mx-auto max-w-7xl px-5 pt-10 lg:px-8 lg:pt-14">
             <a href="{{ route('updates.index') }}" class="pm-home-text-link pm-home-text-link--muted">{{ __('pitmetric.updates.back') }}</a>
