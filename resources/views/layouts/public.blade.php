@@ -12,6 +12,7 @@
 
     $openGraphLocale = app()->getLocale() === 'it' ? 'it_IT' : 'en_US';
     $availableLocales = $availableLocales ?? ['en', 'it'];
+    $robots = $robots ?? 'index, follow';
 
     $routeName = request()->route()?->getName();
     $routeParameters = request()->route()?->parameters() ?? [];
@@ -80,6 +81,7 @@
 
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
+    <meta name="robots" content="{{ $robots }}">
 
     <meta property="og:title" content="{{ $seoTitle }}">
     <meta property="og:description" content="{{ $seoDescription }}">

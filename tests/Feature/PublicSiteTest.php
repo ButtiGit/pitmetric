@@ -2,9 +2,10 @@
 
 use App\Models\Update;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
-it('shows the public home page in English with the editorial layout', function () {
-    $this->get(route('home'))
+it('shows the localized public home page in English with the editorial layout', function () {
+    $this->get(route('localized.home', ['locale' => 'en']))
         ->assertOk()
         ->assertSee('History must stay true.')
         ->assertSee('PitMetric is motorsport software')
@@ -12,37 +13,69 @@ it('shows the public home page in English with the editorial layout', function (
         ->assertDontSee('Know every lap.');
 });
 
-it('switches the public site to Italian using the locale cookie', function () {
+it('uses the locale in the URL instead of the locale cookie', function () {
     $this->withCookie('pitmetric_locale', 'it')
-        ->get(route('home'))
+        ->get(route('localized.home', ['locale' => 'en']))
+        ->assertOk()
+        ->assertSee('History must stay true.')
+        ->assertDontSee('Lo storico deve restare vero.');
+
+    $this->withCookie('pitmetric_locale', 'en')
+        ->get(route('localized.home', ['locale' => 'it']))
         ->assertOk()
         ->assertSee('Lo storico deve restare vero.')
         ->assertSee('PitMetric è un software motorsport')
         ->assertSee('Scopri PitMetric');
 });
 
-it('stores a valid language preference', function () {
-    $this->from(route('home'))
-        ->post(route('locale.update'), ['locale' => 'it'])
-        ->assertRedirect(route('home'))
+it('redirects legacy public URLs to their localized versions', function () {
+    $this->get(route('home'))
+        ->assertStatus(301)
+        ->assertRedirect(route('localized.home', ['locale' => 'en']));
+
+    $this->withCookie('pitmetric_locale', 'it')
+        ->get(route('about'))
+        ->assertStatus(301)
+        ->assertRedirect(route('localized.about', ['locale' => 'it']));
+});
+
+it('stores a valid language preference and can redirect to the matching localized page', function () {
+    $this->from(route('localized.home', ['locale' => 'en']))
+        ->post(route('locale.update'), [
+            'locale' => 'it',
+            'redirect' => '/it',
+        ])
+        ->assertRedirect('/it')
         ->assertCookie('pitmetric_locale', 'it');
 });
 
 it('rejects an unsupported locale', function () {
-    $this->from(route('home'))
+    $this->from(route('localized.home', ['locale' => 'en']))
         ->post(route('locale.update'), ['locale' => 'fr'])
-        ->assertRedirect(route('home'))
+        ->assertRedirect(route('localized.home', ['locale' => 'en']))
         ->assertSessionHasErrors('locale');
 });
 
-it('shows the cookie information page', function () {
-    $this->get(route('cookies'))
+it('renders canonical and hreflang metadata for localized pages', function () {
+    $english = route('localized.home', ['locale' => 'en']);
+    $italian = route('localized.home', ['locale' => 'it']);
+
+    $this->get($english)
+        ->assertOk()
+        ->assertSee('<link rel="canonical" href="'.$english.'">', false)
+        ->assertSee('hreflang="en" href="'.$english.'"', false)
+        ->assertSee('hreflang="it" href="'.$italian.'"', false)
+        ->assertSee('hreflang="x-default" href="'.$english.'"', false);
+});
+
+it('shows the localized cookie information page', function () {
+    $this->get(route('localized.cookies', ['locale' => 'en']))
         ->assertOk()
         ->assertSee('Cookies on PitMetric');
 });
 
-it('shows the public about page with Simone profile and safe contacts', function () {
-    $this->get(route('about'))
+it('shows the localized about page with Simone profile and safe contacts', function () {
+    $this->get(route('localized.about', ['locale' => 'en']))
         ->assertOk()
         ->assertSee('Simone Butticè')
         ->assertSee('Junior Full-Stack Web Developer')
@@ -54,7 +87,7 @@ it('shows the public about page with Simone profile and safe contacts', function
         ->assertSee('Active development partners use PitMetric 100% free');
 });
 
-it('lists published updates', function () {
+it('lists published updates on the localized updates index', function () {
     $published = Update::factory()->create([
         'title' => 'Published update',
     ]);
@@ -63,7 +96,7 @@ it('lists published updates', function () {
         'title' => 'Draft update',
     ]);
 
-    $this->get(route('updates.index'))
+    $this->get(route('localized.updates.index', ['locale' => 'en']))
         ->assertOk()
         ->assertSee($published->title)
         ->assertDontSee('Draft update');
@@ -84,13 +117,14 @@ it('keeps legacy update rows readable before the media migration is applied', fu
         expect($update->titleForLocale('it'))->toBe('Legacy update')
             ->and($update->excerptForLocale('it'))->toBe('Legacy excerpt')
             ->and($update->contentForLocale('it'))->toBe('Legacy content')
-            ->and($update->mediaSource())->toBeNull();
+            ->and($update->mediaSource())->toBeNull()
+            ->and($update->hasLocaleVersion('it'))->toBeFalse();
     } finally {
         Model::preventAccessingMissingAttributes(false);
     }
 });
 
-it('shows localized update copy when available', function () {
+it('shows localized update copy when a complete Italian version is available', function () {
     $update = Update::factory()->create([
         'title' => 'English update',
         'title_it' => 'Aggiornamento italiano',
@@ -98,25 +132,75 @@ it('shows localized update copy when available', function () {
         'content_it' => 'Contenuto italiano',
     ]);
 
-    $this->withCookie('pitmetric_locale', 'it')
-        ->get(route('updates.show', $update))
+    $this->get(route('localized.updates.show', ['locale' => 'it', 'update' => $update]))
         ->assertOk()
         ->assertSee('Aggiornamento italiano')
         ->assertSee('Riassunto italiano')
         ->assertSee('Contenuto italiano');
 });
 
-it('shows a published update', function () {
-    $update = Update::factory()->create();
+it('redirects an untranslated Italian update to the English canonical version', function () {
+    $update = Update::factory()->create([
+        'title_it' => null,
+        'excerpt_it' => null,
+        'content_it' => null,
+    ]);
 
-    $this->get(route('updates.show', $update))
-        ->assertOk()
-        ->assertSee($update->title)
-        ->assertSee($update->excerpt);
+    $this->get(route('localized.updates.show', ['locale' => 'it', 'update' => $update]))
+        ->assertStatus(301)
+        ->assertRedirect(route('localized.updates.show', ['locale' => 'en', 'update' => $update]));
 });
 
-it('returns 404 for a draft update', function () {
+it('shows a published update with article structured data', function () {
+    $update = Update::factory()->create();
+
+    $this->get(route('localized.updates.show', ['locale' => 'en', 'update' => $update]))
+        ->assertOk()
+        ->assertSee($update->title)
+        ->assertSee($update->excerpt)
+        ->assertSee('"@type":"Article"', false);
+});
+
+it('uses an absolute social image URL for bundled update artwork', function () {
+    Storage::fake('public');
+
+    $update = Update::factory()->create([
+        'slug' => 'pitmetric-sta-prendendo-forma',
+        'media_type' => 'image',
+        'media_path' => 'updates/missing.webp',
+        'media_url' => null,
+    ]);
+
+    $this->get(route('localized.updates.show', ['locale' => 'en', 'update' => $update]))
+        ->assertOk()
+        ->assertSee('property="og:image" content="'.url('/media/devlog-001.webp').'"', false);
+});
+
+it('returns 404 for a draft localized update', function () {
     $update = Update::factory()->draft()->create();
 
-    $this->get(route('updates.show', $update))->assertNotFound();
+    $this->get(route('localized.updates.show', ['locale' => 'en', 'update' => $update]))
+        ->assertNotFound();
+});
+
+it('publishes a localized sitemap and omits nonexistent update translations', function () {
+    $translated = Update::factory()->create([
+        'title_it' => 'Aggiornamento tradotto',
+        'excerpt_it' => 'Riassunto tradotto',
+        'content_it' => 'Contenuto tradotto',
+    ]);
+
+    $englishOnly = Update::factory()->create([
+        'title_it' => null,
+        'excerpt_it' => null,
+        'content_it' => null,
+    ]);
+
+    $this->get(route('sitemap'))
+        ->assertOk()
+        ->assertSee(route('localized.home', ['locale' => 'en']), false)
+        ->assertSee(route('localized.home', ['locale' => 'it']), false)
+        ->assertSee(route('localized.updates.show', ['locale' => 'it', 'update' => $translated]), false)
+        ->assertSee(route('localized.updates.show', ['locale' => 'en', 'update' => $englishOnly]), false)
+        ->assertDontSee(route('localized.updates.show', ['locale' => 'it', 'update' => $englishOnly]), false);
 });

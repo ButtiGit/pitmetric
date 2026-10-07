@@ -41,7 +41,10 @@ it('supports signed unsubscribe links', function () {
 
     $url = URL::signedRoute('newsletter.unsubscribe', ['user' => $user]);
 
-    $this->get($url)->assertOk();
+    $this->get($url)
+        ->assertOk()
+        ->assertSee('<meta name="robots" content="noindex, follow">', false);
+
     expect($user->fresh()->newsletter_subscribed_at)->toBeNull();
 });
 
