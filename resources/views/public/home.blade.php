@@ -79,6 +79,24 @@
             </div>
         </section>
 
+        <section class="border-b border-white/10">
+            <div class="mx-auto grid max-w-7xl gap-8 px-5 py-14 lg:grid-cols-[.7fr_1.3fr] lg:px-8 lg:py-18">
+                <div>
+                    <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#ff625e]">
+                        {{ __('pitmetric.home.seo_section_eyebrow') }}
+                    </p>
+                </div>
+                <div>
+                    <h2 class="pm-home-editorial-subtitle max-w-3xl text-white">
+                        {{ __('pitmetric.home.seo_section_title') }}
+                    </h2>
+                    <p class="mt-5 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
+                        {{ __('pitmetric.home.seo_section_copy') }}
+                    </p>
+                </div>
+            </div>
+        </section>
+
         <div data-pm-cursor-car class="pm-cursor-car" aria-hidden="true">
             <svg viewBox="0 0 80 40" role="presentation" focusable="false">
                 <rect class="pm-cursor-car__wing" x="5" y="9" width="8" height="22" rx="2" />
