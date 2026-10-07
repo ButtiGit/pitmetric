@@ -39,6 +39,7 @@ Route::prefix('{locale}')
 
 Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()->getLocale()]))->name('home');
 Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()]))->name('about');
+Route::get('/app', fn () => redirect()->route('localized.app', ['locale' => app()->getLocale()]))->name('app');
 Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()]))->name('cookies');
 Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()]))->name('updates.index');
 Route::get('/updates/{update:slug}', fn (\App\Models\Update $update) => redirect()->route('localized.updates.show', [
