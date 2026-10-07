@@ -48,8 +48,8 @@ return [
         'roadmap_3_copy' => 'Lunghezza del layout × giri può generare automaticamente l’utilizzo verificato.',
     ],
     'about' => [
-        'title' => 'Chi sono',
-        'description' => 'Simone Butticè, Junior Full-Stack Web Developer e creatore di PitMetric.',
+        'title' => 'Simone Butticè, sviluppatore e creatore di PitMetric',
+        'description' => 'Simone Butticè è uno sviluppatore full-stack specializzato in gestionali web, PHP, JavaScript e database, e il creatore del software motorsport PitMetric.',
         'creator' => 'Creatore / Sviluppatore',
         'image_alt' => 'Dettaglio di abitacolo e volante da corsa',
         'role' => 'Junior Full-Stack Web Developer con esperienza concreta nello sviluppo di gestionali web su misura con PHP, JavaScript e MySQL. Il mio lavoro si concentra su architetture di database relazionali, logica applicativa e trasformazione dei requisiti funzionali in software pratico.',
