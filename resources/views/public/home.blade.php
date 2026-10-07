@@ -1,4 +1,7 @@
-<x-layouts::public>
+<x-layouts::public
+    :title="__('pitmetric.home.seo_title')"
+    :description="__('pitmetric.home.seo_description')"
+>
     <div class="pm-home-editorial">
         <section data-pm-home-hero class="pm-home-editorial-hero relative isolate overflow-hidden border-b border-white/10">
             <img data-pm-hero-image src="https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=88&w=2400" alt="{{ __('pitmetric.home.hero_image_alt') }}" class="absolute inset-0 -z-20 h-full w-full object-cover object-center">
