@@ -48,7 +48,7 @@ return [
         'roadmap_3_copy' => 'Lunghezza del layout × giri può generare automaticamente l’utilizzo verificato.',
     ],
     'about' => [
-        'title' => 'Simone Butticè, sviluppatore e creatore di PitMetric',
+        'title' => 'Simone Butticè, sviluppatore full-stack',
         'description' => 'Simone Butticè è uno sviluppatore full-stack specializzato in gestionali web, PHP, JavaScript e database, e il creatore del software motorsport PitMetric.',
         'creator' => 'Creatore / Sviluppatore',
         'image_alt' => 'Dettaglio di abitacolo e volante da corsa',
