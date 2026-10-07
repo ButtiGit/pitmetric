@@ -79,6 +79,8 @@ return [
         'interests_copy' => 'Scacchi e strategia · Video editing · Contenuti audiovisivi · Motorsport',
     ],
     'updates' => [
+        'seo_title' => 'Sviluppo e novità del software motorsport',
+        'seo_description' => 'Segui lo sviluppo di PitMetric: nuove funzioni, decisioni di prodotto, progressi tecnici e aggiornamenti sul software gestionale motorsport.',
         'title' => 'Aggiornamenti',
         'description' => 'Aggiornamenti sullo sviluppo di PitMetric.',
         'label' => 'Diario di sviluppo',
