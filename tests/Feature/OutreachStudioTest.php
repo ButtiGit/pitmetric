@@ -89,7 +89,9 @@ it('requires the compliance confirmation before sending', function () {
 it('stores a suppression from a signed opt out link', function () {
     $url = URL::signedRoute('marketing.unsubscribe', ['email' => 'stop@example.com']);
 
-    $this->get($url)->assertOk();
+    $this->get($url)
+        ->assertOk()
+        ->assertSee('<meta name="robots" content="noindex, follow">', false);
 
     expect(MarketingSuppression::query()->where(
         'email_hash',

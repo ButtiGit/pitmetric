@@ -2,4 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/app', 'public.app')->name('app');
+Route::get('/app', fn () => redirect()->route('localized.app', [
+    'locale' => app()->getLocale(),
+], 301))->name('app');

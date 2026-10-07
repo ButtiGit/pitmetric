@@ -10,6 +10,11 @@ return [
         'platform' => 'PitMetric',
     ],
     'home' => [
+        'seo_title' => 'Motorsport management software for drivers and teams',
+        'seo_description' => 'PitMetric is motorsport management software for drivers and small teams to manage vehicles, components, configurations, maintenance, sessions and events.',
+        'seo_section_eyebrow' => 'Software / Motorsport',
+        'seo_section_title' => 'Motorsport management software for drivers and small teams.',
+        'seo_section_copy' => 'PitMetric brings vehicles, components, configurations, sessions, maintenance, events and costs into one place. It is built for people running karts, track cars and other motorsport vehicles who need a clear and reliable technical history.',
         'eyebrow' => 'Motorsport data, without the noise',
         'title_1' => 'Know every lap.',
         'title_2' => 'Track every component.',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Update;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -36,9 +37,19 @@ class PublicUpdateController extends Controller
         return view('public.updates.index', compact('updates'));
     }
 
-    public function show(Update $update): View
+    public function show(string $locale, Update $update): View|RedirectResponse
     {
         $this->abortUnlessPublished($update);
+
+        if (
+            $locale === 'it'
+            && ! $update->hasLocaleVersion('it')
+        ) {
+            return redirect()->route('localized.updates.show', [
+                'locale' => 'en',
+                'update' => $update,
+            ], 301);
+        }
 
         return view('public.updates.show', compact('update'));
     }

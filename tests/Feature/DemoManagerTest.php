@@ -6,7 +6,8 @@ it('opens the public populated demo without authentication', function () {
     $this->get(route('demo.public'))
         ->assertOk()
         ->assertSee('Race Team Demo')
-        ->assertSee('Busca Race Weekend');
+        ->assertSee('Busca Race Weekend')
+        ->assertSee('<meta name="robots" content="noindex, follow">', false);
 
     $this->get(route('demo.manager', ['section' => 'components']))
         ->assertOk()
@@ -18,7 +19,7 @@ it('opens the public populated demo without authentication', function () {
 });
 
 it('links the public demo next to the guest auth actions', function () {
-    $this->get(route('home'))
+    $this->get(route('localized.home', ['locale' => 'en']))
         ->assertOk()
         ->assertSee(route('register'), false)
         ->assertSee(route('login'), false)

@@ -19,6 +19,6 @@
             </article>
         </div>
 
-        <a href="{{ route('home') }}" class="mt-10 inline-flex rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-white/30">{{ __('pitmetric.cookies.back') }}</a>
+        <a href="{{ route('localized.home', ['locale' => app()->getLocale()]) }}" class="mt-10 inline-flex rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-white/30">{{ __('pitmetric.cookies.back') }}</a>
     </section>
 </x-layouts::public>

@@ -91,6 +91,37 @@ class Update extends Model
         );
     }
 
+    public function hasLocaleVersion(string $locale): bool
+    {
+        if ($locale === 'en') {
+            return trim((string) $this->stringAttribute('title')) !== '';
+        }
+
+        if ($locale !== 'it') {
+            return false;
+        }
+
+        $italianTitle = trim((string) $this->stringAttribute('title_it'));
+        $englishExcerpt = trim((string) $this->stringAttribute('excerpt'));
+        $italianExcerpt = trim((string) $this->stringAttribute('excerpt_it'));
+        $englishContent = trim((string) $this->stringAttribute('content'));
+        $italianContent = trim((string) $this->stringAttribute('content_it'));
+
+        if ($italianTitle === '') {
+            return false;
+        }
+
+        if ($englishExcerpt !== '' && $italianExcerpt === '') {
+            return false;
+        }
+
+        if ($englishContent !== '' && $italianContent === '') {
+            return false;
+        }
+
+        return true;
+    }
+
     public function mediaAltForLocale(?string $locale = null): string
     {
         $alt = $this->localizedValue(
