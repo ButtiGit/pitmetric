@@ -80,7 +80,7 @@
         </section>
 
         <section class="border-b border-white/10">
-            <div class="mx-auto grid max-w-7xl gap-8 px-5 py-14 lg:grid-cols-[.7fr_1.3fr] lg:px-8 lg:py-18">
+            <div class="mx-auto grid max-w-7xl gap-8 px-5 py-14 lg:grid-cols-[.7fr_1.3fr] lg:px-8 lg:py-20">
                 <div>
                     <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#ff625e]">
                         {{ __('pitmetric.home.seo_section_eyebrow') }}
