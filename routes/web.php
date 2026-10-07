@@ -22,6 +22,7 @@ use App\Http\Controllers\TimingController;
 use App\Http\Controllers\UpdateStudioController;
 use App\Http\Controllers\UserStudioController;
 use App\Http\Controllers\VehicleController;
+use App\Models\Update;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -41,7 +42,7 @@ Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()-
 Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()], 301))->name('about');
 Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()], 301))->name('cookies');
 Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()], 301))->name('updates.index');
-Route::get('/updates/{update:slug}', fn (\App\Models\Update $update) => redirect()->route('localized.updates.show', [
+Route::get('/updates/{update:slug}', fn (Update $update) => redirect()->route('localized.updates.show', [
     'locale' => app()->getLocale(),
     'update' => $update,
 ], 301))->name('updates.show');
