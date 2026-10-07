@@ -48,7 +48,7 @@ return [
         'roadmap_3_copy' => 'Layout length × laps can generate verified usage automatically.',
     ],
     'about' => [
-        'title' => 'Simone Butticè, developer and creator of PitMetric',
+        'title' => 'Simone Butticè, full-stack developer',
         'description' => 'Simone Butticè is a full-stack developer focused on web management software, PHP, JavaScript and databases, and the creator of PitMetric motorsport software.',
         'creator' => 'Creator / Developer',
         'image_alt' => 'Racing cockpit and steering wheel detail',
