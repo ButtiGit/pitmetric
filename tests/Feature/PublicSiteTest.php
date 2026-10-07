@@ -4,19 +4,26 @@ use App\Models\Update;
 use Illuminate\Database\Eloquent\Model;
 
 it('shows the localized public home page in English with SEO metadata', function () {
-    $englishHome = route('localized.home', ['locale' => 'en']);
-    $italianHome = route('localized.home', ['locale' => 'it']);
+    $englishHome = route('localized.home', ['locale' => 'en'], false);
+    $italianHome = route('localized.home', ['locale' => 'it'], false);
 
-    $this->get($englishHome)
+    $response = $this->get($englishHome)
         ->assertOk()
         ->assertSee('History must stay true.')
         ->assertSee('PitMetric is motorsport software')
         ->assertSee('pm-home-editorial-title', false)
         ->assertDontSee('Know every lap.')
-        ->assertSee('<html lang="en"', false)
-        ->assertSee('<link rel="canonical" href="'.$englishHome.'">', false)
-        ->assertSee('hreflang="en" href="'.$englishHome.'"', false)
-        ->assertSee('hreflang="it" href="'.$italianHome.'"', false);
+        ->assertSee('<html lang="en"', false);
+
+    $html = $response->getContent();
+
+    preg_match('/<link rel="canonical" href="([^"]+)">/', $html, $canonical);
+    preg_match('/<link rel="alternate" hreflang="en" href="([^"]+)">/', $html, $englishAlternate);
+    preg_match('/<link rel="alternate" hreflang="it" href="([^"]+)">/', $html, $italianAlternate);
+
+    expect(parse_url($canonical[1] ?? '', PHP_URL_PATH))->toBe($englishHome)
+        ->and(parse_url($englishAlternate[1] ?? '', PHP_URL_PATH))->toBe($englishHome)
+        ->and(parse_url($italianAlternate[1] ?? '', PHP_URL_PATH))->toBe($italianHome);
 });
 
 it('shows the localized public site in Italian', function () {
