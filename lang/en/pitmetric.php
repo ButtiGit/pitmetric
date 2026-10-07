@@ -48,8 +48,8 @@ return [
         'roadmap_3_copy' => 'Layout length × laps can generate verified usage automatically.',
     ],
     'about' => [
-        'title' => 'About',
-        'description' => 'Simone Butticè, Junior Full-Stack Web Developer and creator of PitMetric.',
+        'title' => 'Simone Butticè, developer and creator of PitMetric',
+        'description' => 'Simone Butticè is a full-stack developer focused on web management software, PHP, JavaScript and databases, and the creator of PitMetric motorsport software.',
         'creator' => 'Creator / Developer',
         'image_alt' => 'Racing cockpit and steering wheel detail',
         'role' => 'Junior Full-Stack Web Developer with hands-on experience building custom web management applications using PHP, JavaScript and MySQL. My work focuses on relational database architecture, application logic and turning functional requirements into practical software.',
