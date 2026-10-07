@@ -86,7 +86,7 @@ it('records a session once, links its cost and raises maintenance attention from
         'configuration_version_id' => $version->id,
         'circuit_layout_id' => $layout->id,
         'session_type' => 'practice',
-        'started_at' => '2026-09-14 12:00:00',
+        'started_at' => now()->subHour()->format('Y-m-d H:i:s'),
         'completed_laps' => 10,
         'duration_minutes' => 20,
         'session_cost' => '75.50',

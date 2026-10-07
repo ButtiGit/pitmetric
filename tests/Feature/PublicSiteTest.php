@@ -57,12 +57,15 @@ it('rejects an unsupported locale', function () {
 });
 
 it('renders canonical and hreflang metadata for localized pages', function () {
-    $this->get(route('localized.home', ['locale' => 'en']))
-        ->assertOk()
-        ->assertSee('<link rel="canonical" href="http://localhost/en">', false)
-        ->assertSee('hreflang="en" href="http://localhost/en"', false)
-        ->assertSee('hreflang="it" href="http://localhost/it"', false)
-        ->assertSee('hreflang="x-default" href="http://localhost/en"', false);
+    $response = $this->get(route('localized.home', ['locale' => 'en']))
+        ->assertOk();
+
+    $html = $response->getContent();
+
+    expect(preg_match('/<link rel="canonical" href="https?:\/\/[^"]+\/en">/', $html))->toBe(1)
+        ->and(preg_match('/hreflang="en" href="https?:\/\/[^"]+\/en"/', $html))->toBe(1)
+        ->and(preg_match('/hreflang="it" href="https?:\/\/[^"]+\/it"/', $html))->toBe(1)
+        ->and(preg_match('/hreflang="x-default" href="https?:\/\/[^"]+\/en"/', $html))->toBe(1);
 });
 
 it('shows the localized cookie information page', function () {

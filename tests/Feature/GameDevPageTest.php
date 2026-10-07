@@ -8,5 +8,5 @@ test('game dev grand prix manager prototype is publicly available', function () 
         ->assertSee('PitMetric Grand Prix Manager')
         ->assertSee('PITMETRIC GP')
         ->assertSee('Pit Wall')
-        ->assertSee('Race Control & Feed');
+        ->assertSee('Race Control & Feed', false);
 });
