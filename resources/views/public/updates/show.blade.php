@@ -54,7 +54,7 @@
         }
     @endphp
 
-    <script type="application/ld+json">{!! json_encode($articleStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($articleStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
     <article class="pm-editorial-page pm-update-article">
         <div class="mx-auto max-w-7xl px-5 pt-10 lg:px-8 lg:pt-14">
