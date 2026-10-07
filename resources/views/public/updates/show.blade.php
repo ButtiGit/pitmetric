@@ -12,19 +12,32 @@
             $articleImage = url($articleImage);
         }
 
+        $hasItalianTranslation = filled($update->title_it)
+            && (blank($update->excerpt) || filled($update->excerpt_it))
+            && (blank($update->content) || filled($update->content_it));
+
+        $articleLanguage = app()->getLocale() === 'it' && $hasItalianTranslation ? 'it' : 'en';
+        $articleUrl = route('localized.updates.show', [
+            'locale' => app()->getLocale(),
+            'update' => $update,
+        ]);
+
         $articleStructuredData = [
             '@context' => 'https://schema.org',
             '@type' => 'Article',
-            '@id' => route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]).'#article',
+            '@id' => $articleUrl.'#article',
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]),
+                '@id' => $articleUrl,
+            ],
+            'isPartOf' => [
+                '@id' => url('/').'#website',
             ],
             'headline' => $update->titleForLocale(),
             'description' => $update->excerptForLocale(),
             'datePublished' => $update->published_at?->toAtomString(),
             'dateModified' => $update->updated_at?->toAtomString(),
-            'inLanguage' => app()->getLocale(),
+            'inLanguage' => $articleLanguage,
             'author' => [
                 '@type' => 'Person',
                 'name' => 'Simone Butticè',
