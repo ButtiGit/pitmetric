@@ -14,6 +14,7 @@ use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TechnicalSetupController;
 use App\Http\Controllers\TelemetryController;
@@ -25,6 +26,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'public.home')->name('home');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::view('/game_dev', 'game-dev')->name('game-dev');
 Route::get('/demo', [DemoManagerController::class, 'index'])->name('demo.public');
 Route::get('/demo/manager/{section}', [DemoManagerController::class, 'show'])
