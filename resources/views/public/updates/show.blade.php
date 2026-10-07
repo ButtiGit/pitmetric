@@ -12,6 +12,7 @@
     :image="$update->media_type === 'image' ? $update->mediaSource() : null"
     :image-alt="$update->mediaAltForLocale()"
     :content-locale="$articleLanguage"
+    :has-italian-alternate="$hasItalianTranslation"
     og-type="article"
 >
     @php
@@ -21,8 +22,12 @@
             $articleImage = url($articleImage);
         }
 
+        $articleLocale = app()->getLocale() === 'it' && ! $hasItalianTranslation
+            ? 'en'
+            : app()->getLocale();
+
         $articleUrl = route('localized.updates.show', [
-            'locale' => app()->getLocale(),
+            'locale' => $articleLocale,
             'update' => $update,
         ]);
 
