@@ -1,7 +1,20 @@
+@props([
+    'title' => null,
+    'description' => null,
+    'image' => null,
+    'imageAlt' => null,
+    'ogType' => 'website',
+])
+
 @php
     $seoTitle = isset($title) ? $title.' · PitMetric' : 'PitMetric';
     $seoDescription = $description ?? __('pitmetric.home.intro');
     $seoImage = $image ?? 'https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=88&w=1600';
+
+    if (! str_starts_with($seoImage, 'http://') && ! str_starts_with($seoImage, 'https://')) {
+        $seoImage = url('/'.ltrim($seoImage, '/'));
+    }
+
     $seoImageAlt = $imageAlt ?? (app()->getLocale() === 'it'
         ? 'PitMetric, software gestionale per motorsport'
         : 'PitMetric, motorsport management software');
@@ -85,7 +98,7 @@
 
     <meta property="og:title" content="{{ $seoTitle }}">
     <meta property="og:description" content="{{ $seoDescription }}">
-    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:type" content="{{ $ogType }}">
     <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:site_name" content="PitMetric">
     <meta property="og:locale" content="{{ $openGraphLocale }}">
