@@ -3,20 +3,23 @@
     :description="__('pitmetric.home.seo_description')"
 >
     @php
+        $websiteId = url('/').'#website';
+        $softwareId = url('/').'#software';
+
         $structuredData = [
             '@context' => 'https://schema.org',
             '@graph' => [
                 [
                     '@type' => 'WebSite',
-                    '@id' => route('localized.home', ['locale' => app()->getLocale()]).'#website',
-                    'url' => route('localized.home', ['locale' => app()->getLocale()]),
+                    '@id' => $websiteId,
+                    'url' => url('/'),
                     'name' => 'PitMetric',
                     'description' => __('pitmetric.home.seo_description'),
-                    'inLanguage' => app()->getLocale(),
+                    'inLanguage' => ['en', 'it'],
                 ],
                 [
                     '@type' => 'WebApplication',
-                    '@id' => route('localized.home', ['locale' => app()->getLocale()]).'#software',
+                    '@id' => $softwareId,
                     'name' => 'PitMetric',
                     'url' => route('localized.home', ['locale' => app()->getLocale()]),
                     'description' => __('pitmetric.home.seo_description'),
@@ -26,6 +29,10 @@
                         : 'Motorsport management software',
                     'operatingSystem' => 'Web',
                     'browserRequirements' => 'Requires a modern web browser',
+                    'inLanguage' => ['en', 'it'],
+                    'isPartOf' => [
+                        '@id' => $websiteId,
+                    ],
                     'featureList' => [
                         app()->getLocale() === 'it' ? 'Storico di mezzi e configurazioni' : 'Vehicle and configuration history',
                         app()->getLocale() === 'it' ? 'Tracking utilizzo componenti' : 'Component usage tracking',
