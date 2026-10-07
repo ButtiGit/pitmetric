@@ -27,7 +27,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'public.home')->name('home');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
-Route::view('/game_dev', 'game-dev')->name('game-dev');
+Route::get('/game_dev', fn () => response()
+    ->view('game-dev')
+    ->header('X-Robots-Tag', 'noindex, nofollow'))
+    ->name('game-dev');
 Route::get('/demo', [DemoManagerController::class, 'index'])->name('demo.public');
 Route::get('/demo/manager/{section}', [DemoManagerController::class, 'show'])
     ->whereIn('section', ['events', 'sessions', 'circuits', 'garage', 'components', 'configurations', 'setups', 'maintenance', 'timing', 'telemetry', 'insights', 'expenses', 'team'])
