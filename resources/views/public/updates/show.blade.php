@@ -1,8 +1,17 @@
+@php
+    $hasItalianTranslation = filled($update->title_it)
+        && (blank($update->excerpt) || filled($update->excerpt_it))
+        && (blank($update->content) || filled($update->content_it));
+
+    $articleLanguage = app()->getLocale() === 'it' && $hasItalianTranslation ? 'it' : 'en';
+@endphp
+
 <x-layouts::public
     :title="$update->titleForLocale()"
     :description="$update->excerptForLocale()"
     :image="$update->media_type === 'image' ? $update->mediaSource() : null"
     :image-alt="$update->mediaAltForLocale()"
+    :content-locale="$articleLanguage"
     og-type="article"
 >
     @php
@@ -12,11 +21,6 @@
             $articleImage = url($articleImage);
         }
 
-        $hasItalianTranslation = filled($update->title_it)
-            && (blank($update->excerpt) || filled($update->excerpt_it))
-            && (blank($update->content) || filled($update->content_it));
-
-        $articleLanguage = app()->getLocale() === 'it' && $hasItalianTranslation ? 'it' : 'en';
         $articleUrl = route('localized.updates.show', [
             'locale' => app()->getLocale(),
             'update' => $update,
