@@ -36,9 +36,19 @@ class PublicUpdateController extends Controller
         return view('public.updates.index', compact('updates'));
     }
 
-    public function show(Update $update): View
+    public function show(Update $update): View|RedirectResponse
     {
         $this->abortUnlessPublished($update);
+
+        if (
+            request()->route('locale') === 'it'
+            && ! $update->hasLocaleVersion('it')
+        ) {
+            return redirect()->route('localized.updates.show', [
+                'locale' => 'en',
+                'update' => $update,
+            ], 301);
+        }
 
         return view('public.updates.show', compact('update'));
     }

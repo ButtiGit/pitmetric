@@ -4,6 +4,7 @@
     :image="$update->media_type === 'image' ? $update->mediaSource() : null"
     :image-alt="$update->mediaAltForLocale()"
     og-type="article"
+    :available-locales="$update->hasLocaleVersion('it') ? ['en', 'it'] : ['en']"
 >
     @php
         $articleImage = $update->media_type === 'image' ? $update->mediaSource() : null;

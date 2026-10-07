@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
-        <meta name="robots" content="noindex, nofollow">
+        <meta name="robots" content="noindex, follow">
     </head>
     <body class="min-h-screen bg-[#07090c] antialiased text-zinc-100">
         <div class="grid min-h-svh lg:grid-cols-[1.05fr_.95fr]">

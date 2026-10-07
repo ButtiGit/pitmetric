@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
-        <meta name="robots" content="noindex, nofollow">
+        <meta name="robots" content="noindex, follow">
     </head>
     <body class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
         <flux:sidebar sticky collapsible="mobile" class="pm-mobile-sidebar border-e border-[#242932] bg-[#111317]">

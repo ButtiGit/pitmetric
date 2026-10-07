@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>@include('partials.head')</head>
+    <head>
+        @include('partials.head')
+        <meta name="robots" content="noindex, follow">
+    </head>
     <body class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
         @php
             $demoUrl = fn (string $target) => $target === 'dashboard'

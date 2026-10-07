@@ -18,11 +18,14 @@
     @endforeach
 
     @foreach ($updates as $update)
-        @foreach (['en', 'it'] as $locale)
+        @php($updateLocales = $update->hasLocaleVersion('it') ? ['en', 'it'] : ['en'])
+        @foreach ($updateLocales as $locale)
             <url>
                 <loc>{{ route('localized.updates.show', ['locale' => $locale, 'update' => $update]) }}</loc>
                 <xhtml:link rel="alternate" hreflang="en" href="{{ route('localized.updates.show', ['locale' => 'en', 'update' => $update]) }}" />
-                <xhtml:link rel="alternate" hreflang="it" href="{{ route('localized.updates.show', ['locale' => 'it', 'update' => $update]) }}" />
+                @if ($update->hasLocaleVersion('it'))
+                    <xhtml:link rel="alternate" hreflang="it" href="{{ route('localized.updates.show', ['locale' => 'it', 'update' => $update]) }}" />
+                @endif
                 <xhtml:link rel="alternate" hreflang="x-default" href="{{ route('localized.updates.show', ['locale' => 'en', 'update' => $update]) }}" />
                 @if ($update->updated_at)
                     <lastmod>{{ $update->updated_at->toAtomString() }}</lastmod>

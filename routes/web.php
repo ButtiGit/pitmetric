@@ -37,14 +37,14 @@ Route::prefix('{locale}')
         Route::get('/updates/{update:slug}', [PublicUpdateController::class, 'show'])->name('updates.show');
     });
 
-Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()->getLocale()]))->name('home');
-Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()]))->name('about');
-Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()]))->name('cookies');
-Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()]))->name('updates.index');
+Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()->getLocale()], 301))->name('home');
+Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()], 301))->name('about');
+Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()], 301))->name('cookies');
+Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()], 301))->name('updates.index');
 Route::get('/updates/{update:slug}', fn (\App\Models\Update $update) => redirect()->route('localized.updates.show', [
     'locale' => app()->getLocale(),
     'update' => $update,
-]))->name('updates.show');
+], 301))->name('updates.show');
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/game_dev', fn () => response()

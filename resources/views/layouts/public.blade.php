@@ -5,7 +5,13 @@
     $seoImageAlt = $imageAlt ?? (app()->getLocale() === 'it'
         ? 'PitMetric, software gestionale per motorsport'
         : 'PitMetric, motorsport management software');
+
+    if (is_string($seoImage) && str_starts_with($seoImage, '/')) {
+        $seoImage = url($seoImage);
+    }
+
     $openGraphLocale = app()->getLocale() === 'it' ? 'it_IT' : 'en_US';
+    $availableLocales = $availableLocales ?? ['en', 'it'];
 
     $routeName = request()->route()?->getName();
     $routeParameters = request()->route()?->parameters() ?? [];
@@ -39,8 +45,8 @@
     };
 
     $canonicalUrl = $localizedUrl(app()->getLocale()) ?? url()->current();
-    $englishUrl = $localizedUrl('en');
-    $italianUrl = $localizedUrl('it');
+    $englishUrl = in_array('en', $availableLocales, true) ? $localizedUrl('en') : null;
+    $italianUrl = in_array('it', $availableLocales, true) ? $localizedUrl('it') : null;
 
     $publicHomeUrl = route('localized.home', ['locale' => app()->getLocale()]);
     $publicUpdatesUrl = route('localized.updates.index', ['locale' => app()->getLocale()]);
@@ -81,7 +87,9 @@
     <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:site_name" content="PitMetric">
     <meta property="og:locale" content="{{ $openGraphLocale }}">
-    <meta property="og:locale:alternate" content="{{ app()->getLocale() === 'it' ? 'en_US' : 'it_IT' }}">
+    @if ($englishUrl && $italianUrl)
+        <meta property="og:locale:alternate" content="{{ app()->getLocale() === 'it' ? 'en_US' : 'it_IT' }}">
+    @endif
     <meta property="og:image" content="{{ $seoImage }}">
     <meta property="og:image:alt" content="{{ $seoImageAlt }}">
 
@@ -92,10 +100,12 @@
     <meta name="twitter:image:alt" content="{{ $seoImageAlt }}">
 
     <link rel="canonical" href="{{ $canonicalUrl }}">
-    @if ($englishUrl && $italianUrl)
+    @if ($englishUrl)
         <link rel="alternate" hreflang="en" href="{{ $englishUrl }}">
-        <link rel="alternate" hreflang="it" href="{{ $italianUrl }}">
         <link rel="alternate" hreflang="x-default" href="{{ $englishUrl }}">
+    @endif
+    @if ($italianUrl)
+        <link rel="alternate" hreflang="it" href="{{ $italianUrl }}">
     @endif
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @fonts
