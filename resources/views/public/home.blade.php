@@ -2,6 +2,48 @@
     :title="__('pitmetric.home.seo_title')"
     :description="__('pitmetric.home.seo_description')"
 >
+    @php
+        $structuredData = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'WebSite',
+                    '@id' => route('home').'#website',
+                    'url' => route('home'),
+                    'name' => 'PitMetric',
+                    'description' => __('pitmetric.home.seo_description'),
+                    'inLanguage' => app()->getLocale(),
+                ],
+                [
+                    '@type' => 'WebApplication',
+                    '@id' => route('home').'#software',
+                    'name' => 'PitMetric',
+                    'url' => route('home'),
+                    'description' => __('pitmetric.home.seo_description'),
+                    'applicationCategory' => 'SportsApplication',
+                    'applicationSubCategory' => app()->getLocale() === 'it'
+                        ? 'Software gestionale motorsport'
+                        : 'Motorsport management software',
+                    'operatingSystem' => 'Web',
+                    'browserRequirements' => 'Requires a modern web browser',
+                    'featureList' => [
+                        app()->getLocale() === 'it' ? 'Storico di mezzi e configurazioni' : 'Vehicle and configuration history',
+                        app()->getLocale() === 'it' ? 'Tracking utilizzo componenti' : 'Component usage tracking',
+                        app()->getLocale() === 'it' ? 'Gestione manutenzione' : 'Maintenance management',
+                        app()->getLocale() === 'it' ? 'Gestione costi motorsport' : 'Motorsport cost tracking',
+                    ],
+                    'creator' => [
+                        '@type' => 'Person',
+                        'name' => 'Simone Butticè',
+                        'url' => route('about'),
+                    ],
+                ],
+            ],
+        ];
+    @endphp
+
+    <script type="application/ld+json">{!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+
     <div class="pm-home-editorial">
         <section data-pm-home-hero class="pm-home-editorial-hero relative isolate overflow-hidden border-b border-white/10">
             <img data-pm-hero-image src="https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=88&w=2400" alt="{{ __('pitmetric.home.hero_image_alt') }}" class="absolute inset-0 -z-20 h-full w-full object-cover object-center">
