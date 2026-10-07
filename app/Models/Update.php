@@ -101,7 +101,6 @@ class Update extends Model
             return false;
         }
 
-        $englishTitle = trim((string) $this->stringAttribute('title'));
         $italianTitle = trim((string) $this->stringAttribute('title_it'));
         $englishExcerpt = trim((string) $this->stringAttribute('excerpt'));
         $italianExcerpt = trim((string) $this->stringAttribute('excerpt_it'));
@@ -109,10 +108,6 @@ class Update extends Model
         $italianContent = trim((string) $this->stringAttribute('content_it'));
 
         if ($italianTitle === '') {
-            return false;
-        }
-
-        if ($englishTitle !== '' && $italianTitle === '') {
             return false;
         }
 
