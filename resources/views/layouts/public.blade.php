@@ -5,6 +5,7 @@
     'imageAlt' => null,
     'ogType' => 'website',
     'contentLocale' => null,
+    'hasItalianAlternate' => true,
 ])
 
 @php
@@ -61,9 +62,12 @@
         ));
     };
 
-    $canonicalUrl = $localizedUrl(app()->getLocale()) ?? url()->current();
     $englishUrl = $localizedUrl('en');
     $italianUrl = $localizedUrl('it');
+
+    $canonicalUrl = ! $hasItalianAlternate && app()->getLocale() === 'it' && $englishUrl !== null
+        ? $englishUrl
+        : ($localizedUrl(app()->getLocale()) ?? url()->current());
 
     $publicHomeUrl = route('localized.home', ['locale' => app()->getLocale()]);
     $publicUpdatesUrl = route('localized.updates.index', ['locale' => app()->getLocale()]);
@@ -104,7 +108,9 @@
     <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:site_name" content="PitMetric">
     <meta property="og:locale" content="{{ $openGraphLocale }}">
-    <meta property="og:locale:alternate" content="{{ $resolvedContentLocale === 'it' ? 'en_US' : 'it_IT' }}">
+    @if ($hasItalianAlternate)
+        <meta property="og:locale:alternate" content="{{ $resolvedContentLocale === 'it' ? 'en_US' : 'it_IT' }}">
+    @endif
     <meta property="og:image" content="{{ $seoImage }}">
     <meta property="og:image:alt" content="{{ $seoImageAlt }}">
 
@@ -115,9 +121,11 @@
     <meta name="twitter:image:alt" content="{{ $seoImageAlt }}">
 
     <link rel="canonical" href="{{ $canonicalUrl }}">
-    @if ($englishUrl && $italianUrl)
+    @if ($englishUrl)
         <link rel="alternate" hreflang="en" href="{{ $englishUrl }}">
-        <link rel="alternate" hreflang="it" href="{{ $italianUrl }}">
+        @if ($hasItalianAlternate && $italianUrl)
+            <link rel="alternate" hreflang="it" href="{{ $italianUrl }}">
+        @endif
         <link rel="alternate" hreflang="x-default" href="{{ $englishUrl }}">
     @endif
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
