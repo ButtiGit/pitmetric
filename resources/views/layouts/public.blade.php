@@ -27,7 +27,14 @@
     ];
 
     $localizedRouteName = $localizedRouteMap[$routeName] ?? null;
-    $localizedUrl = function (string $locale) use ($localizedRouteName, $routeParameters): ?string {
+
+    $seoQueryParameters = [];
+
+    if ($localizedRouteName === 'localized.updates.index' && request()->integer('page') > 1) {
+        $seoQueryParameters['page'] = request()->integer('page');
+    }
+
+    $localizedUrl = function (string $locale) use ($localizedRouteName, $routeParameters, $seoQueryParameters): ?string {
         if ($localizedRouteName === null) {
             return null;
         }
@@ -35,6 +42,7 @@
         return route($localizedRouteName, array_merge(
             ['locale' => $locale],
             $routeParameters,
+            $seoQueryParameters,
         ));
     };
 
