@@ -10,7 +10,7 @@
                 <img src="https://images.unsplash.com/photo-1765202661219-cec5ad98f324?auto=format&fit=crop&fm=jpg&q=82&w=1800" alt="" class="absolute inset-0 h-full w-full object-cover">
                 <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,9,.18),rgba(5,7,9,.88))]"></div>
                 <div class="relative flex h-full flex-col justify-between p-10 xl:p-14">
-                    <a href="{{ route('home') }}" class="inline-flex" wire:navigate aria-label="PitMetric home"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-11 w-auto"></a>
+                    <a href="{{ route('localized.home', ['locale' => app()->getLocale()]) }}" class="inline-flex" wire:navigate aria-label="PitMetric home"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-11 w-auto"></a>
                     <div class="max-w-xl"><p class="font-mono text-xs uppercase tracking-[0.2em] text-[#ff4b47]">PitMetric</p><p class="mt-4 text-4xl font-black leading-tight tracking-[-0.04em] text-white">{{ __('pitmetric.home.title_1') }}<br>{{ __('pitmetric.home.title_2') }}</p><p class="mt-5 max-w-lg text-sm leading-7 text-zinc-300">{{ __('pitmetric.home.track_note') }}</p></div>
                 </div>
             </aside>
@@ -22,7 +22,7 @@
                     @endforeach
                 </div>
                 <div class="w-full max-w-sm">
-                    <a href="{{ route('home') }}" class="mb-8 flex items-center justify-center lg:hidden" wire:navigate aria-label="PitMetric home"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-11 w-auto"></a>
+                    <a href="{{ route('localized.home', ['locale' => app()->getLocale()]) }}" class="mb-8 flex items-center justify-center lg:hidden" wire:navigate aria-label="PitMetric home"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-11 w-auto"></a>
                     <div class="border border-white/10 bg-white/[0.025] p-6 shadow-2xl shadow-black/20 [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,12px_100%,0_calc(100%-12px))] sm:p-8">
                         {{ $slot }}
                     </div>
