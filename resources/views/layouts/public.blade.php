@@ -1,16 +1,38 @@
+@php
+    $seoTitle = isset($title) ? $title.' · PitMetric' : 'PitMetric';
+    $seoDescription = $description ?? __('pitmetric.home.intro');
+    $seoImage = $image ?? 'https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=88&w=1600';
+    $seoImageAlt = $imageAlt ?? (app()->getLocale() === 'it'
+        ? 'PitMetric, software gestionale per motorsport'
+        : 'PitMetric, motorsport management software');
+    $openGraphLocale = app()->getLocale() === 'it' ? 'it_IT' : 'en_US';
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#080a0d">
-    <title>{{ $title ?? 'PitMetric' }}{{ isset($title) ? ' · PitMetric' : '' }}</title>
-    <meta name="description" content="{{ $description ?? __('pitmetric.home.intro') }}">
-    <meta property="og:title" content="{{ $title ?? 'PitMetric' }}">
-    <meta property="og:description" content="{{ $description ?? __('pitmetric.home.intro') }}">
-    <meta property="og:type" content="website">
+
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
+
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:site_name" content="PitMetric">
+    <meta property="og:locale" content="{{ $openGraphLocale }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta property="og:image:alt" content="{{ $seoImageAlt }}">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
+    <meta name="twitter:image:alt" content="{{ $seoImageAlt }}">
+
     <link rel="canonical" href="{{ url()->current() }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @fonts
