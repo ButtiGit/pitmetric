@@ -195,7 +195,7 @@ test('mobile domain sync is idempotent and writes real garage records', function
 });
 
 test('public app page exposes the stable android apk download', function () {
-    $this->get('/app')
+    $this->get(route('localized.app', ['locale' => 'en']))
         ->assertOk()
         ->assertSee('PitMetric.apk')
         ->assertSee('android-latest');
