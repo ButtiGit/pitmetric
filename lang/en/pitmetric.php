@@ -79,6 +79,8 @@ return [
         'interests_copy' => 'Chess & strategy · Video editing · Audiovisual content · Motorsport',
     ],
     'updates' => [
+        'seo_title' => 'Motorsport software development updates',
+        'seo_description' => 'Follow PitMetric development with new features, product decisions, technical progress and updates from the motorsport management software.',
         'title' => 'Updates',
         'description' => 'Development updates from PitMetric.',
         'label' => 'Development log',
