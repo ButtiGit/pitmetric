@@ -10,7 +10,11 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->cookie('pitmetric_locale', config('app.locale', 'en'));
+        $routeLocale = $request->route('locale');
+
+        $locale = is_string($routeLocale) && in_array($routeLocale, ['en', 'it'], true)
+            ? $routeLocale
+            : $request->cookie('pitmetric_locale', config('app.locale', 'en'));
 
         if (! in_array($locale, ['en', 'it'], true)) {
             $locale = 'en';

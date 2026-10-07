@@ -8,17 +8,17 @@
             '@graph' => [
                 [
                     '@type' => 'WebSite',
-                    '@id' => route('home').'#website',
-                    'url' => route('home'),
+                    '@id' => route('localized.home', ['locale' => app()->getLocale()]).'#website',
+                    'url' => route('localized.home', ['locale' => app()->getLocale()]),
                     'name' => 'PitMetric',
                     'description' => __('pitmetric.home.seo_description'),
                     'inLanguage' => app()->getLocale(),
                 ],
                 [
                     '@type' => 'WebApplication',
-                    '@id' => route('home').'#software',
+                    '@id' => route('localized.home', ['locale' => app()->getLocale()]).'#software',
                     'name' => 'PitMetric',
-                    'url' => route('home'),
+                    'url' => route('localized.home', ['locale' => app()->getLocale()]),
                     'description' => __('pitmetric.home.seo_description'),
                     'applicationCategory' => 'SportsApplication',
                     'applicationSubCategory' => app()->getLocale() === 'it'
@@ -35,7 +35,7 @@
                     'creator' => [
                         '@type' => 'Person',
                         'name' => 'Simone Butticè',
-                        'url' => route('about'),
+                        'url' => route('localized.about', ['locale' => app()->getLocale()]),
                     ],
                 ],
             ],
@@ -176,7 +176,7 @@
             <div class="grid gap-12 lg:grid-cols-[.55fr_1.45fr] lg:gap-16">
                 <div>
                     <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#ff625e]">03 / {{ __('pitmetric.home.roadmap') }}</p>
-                    <a href="{{ route('updates.index') }}" class="pm-home-text-link mt-7">{{ __('pitmetric.home.follow_updates') }}</a>
+                    <a href="{{ route('localized.updates.index', ['locale' => app()->getLocale()]) }}" class="pm-home-text-link mt-7">{{ __('pitmetric.home.follow_updates') }}</a>
                 </div>
 
                 <div class="relative border-l border-white/15 pl-7 sm:pl-10">

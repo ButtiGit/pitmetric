@@ -25,7 +25,27 @@ use App\Http\Controllers\VehicleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'public.home')->name('home');
+Route::prefix('{locale}')
+    ->where(['locale' => 'en|it'])
+    ->name('localized.')
+    ->group(function () {
+        Route::view('/', 'public.home')->name('home');
+        Route::view('/about', 'public.about')->name('about');
+        Route::view('/app', 'public.app')->name('app');
+        Route::view('/cookies', 'public.cookies')->name('cookies');
+        Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
+        Route::get('/updates/{update:slug}', [PublicUpdateController::class, 'show'])->name('updates.show');
+    });
+
+Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()->getLocale()]))->name('home');
+Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()]))->name('about');
+Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()]))->name('cookies');
+Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()]))->name('updates.index');
+Route::get('/updates/{update:slug}', fn (\App\Models\Update $update) => redirect()->route('localized.updates.show', [
+    'locale' => app()->getLocale(),
+    'update' => $update,
+]))->name('updates.show');
+
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/game_dev', fn () => response()
     ->view('game-dev')
@@ -35,19 +55,25 @@ Route::get('/demo', [DemoManagerController::class, 'index'])->name('demo.public'
 Route::get('/demo/manager/{section}', [DemoManagerController::class, 'show'])
     ->whereIn('section', ['events', 'sessions', 'circuits', 'garage', 'components', 'configurations', 'setups', 'maintenance', 'timing', 'telemetry', 'insights', 'expenses', 'team'])
     ->name('demo.manager');
-Route::view('/about', 'public.about')->name('about');
-Route::view('/cookies', 'public.cookies')->name('cookies');
-Route::get('/updates', [PublicUpdateController::class, 'index'])->name('updates.index');
 Route::get('/updates/{update:slug}/media', [PublicUpdateController::class, 'media'])->name('updates.media');
-Route::get('/updates/{update:slug}', [PublicUpdateController::class, 'show'])->name('updates.show');
 Route::get('/newsletter/unsubscribe/{user}', [NewsletterPreferencesController::class, 'unsubscribe'])
     ->middleware('signed')
     ->name('newsletter.unsubscribe');
 
 Route::post('/locale', function (Request $request) {
-    $validated = $request->validate(['locale' => ['required', 'in:en,it']]);
+    $validated = $request->validate([
+        'locale' => ['required', 'in:en,it'],
+        'redirect' => ['nullable', 'string'],
+    ]);
 
-    return back()->withCookie(cookie(
+    $redirect = $validated['redirect'] ?? null;
+    $response = back();
+
+    if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+        $response = redirect($redirect);
+    }
+
+    return $response->withCookie(cookie(
         'pitmetric_locale',
         $validated['locale'],
         60 * 24 * 365,

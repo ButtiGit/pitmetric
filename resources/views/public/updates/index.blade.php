@@ -19,7 +19,7 @@
             @if ($featured)
                 <article class="pm-journal-feature border-y border-white/15">
                     <div class="grid lg:grid-cols-[1.08fr_.92fr]">
-                        <a href="{{ route('updates.show', $featured) }}" class="relative min-h-[300px] overflow-hidden bg-[#0d1014] lg:min-h-[520px] lg:border-r lg:border-white/10">
+                        <a href="{{ route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $featured]) }}" class="relative min-h-[300px] overflow-hidden bg-[#0d1014] lg:min-h-[520px] lg:border-r lg:border-white/10">
                             @if ($featured->mediaSource() && $featured->media_type === 'image')
                                 <img src="{{ $featured->mediaSource() }}" alt="{{ $featured->mediaAltForLocale() }}" class="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-[1.018]">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/15"></div>
@@ -43,12 +43,12 @@
                             </div>
 
                             <h2 class="pm-editorial-section-title mt-8 text-white">
-                                <a href="{{ route('updates.show', $featured) }}" class="transition hover:text-[#ff625e]">{{ $featured->titleForLocale() }}</a>
+                                <a href="{{ route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $featured]) }}" class="transition hover:text-[#ff625e]">{{ $featured->titleForLocale() }}</a>
                             </h2>
                             <p class="pm-editorial-copy mt-6 text-base leading-7 text-zinc-300">{{ $featured->excerptForLocale() }}</p>
 
                             <div class="mt-auto pt-10">
-                                <a href="{{ route('updates.show', $featured) }}" class="pm-home-text-link">{{ __('pitmetric.updates.read') }}</a>
+                                <a href="{{ route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $featured]) }}" class="pm-home-text-link">{{ __('pitmetric.updates.read') }}</a>
                             </div>
                         </div>
                     </div>
@@ -71,13 +71,13 @@
 
                             <div class="md:pr-8">
                                 <h2 class="text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
-                                    <a href="{{ route('updates.show', $update) }}" class="transition hover:text-[#ff625e]">{{ $update->titleForLocale() }}</a>
+                                    <a href="{{ route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]) }}" class="transition hover:text-[#ff625e]">{{ $update->titleForLocale() }}</a>
                                 </h2>
                                 <p class="pm-editorial-copy mt-3 max-w-2xl text-sm leading-6 text-zinc-400">{{ $update->excerptForLocale() }}</p>
-                                <a href="{{ route('updates.show', $update) }}" class="pm-home-text-link mt-4">{{ __('pitmetric.updates.read') }}</a>
+                                <a href="{{ route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]) }}" class="pm-home-text-link mt-4">{{ __('pitmetric.updates.read') }}</a>
                             </div>
 
-                            <a href="{{ route('updates.show', $update) }}" class="relative hidden aspect-[4/3] overflow-hidden border border-white/10 bg-[#0d1014] md:block">
+                            <a href="{{ route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]) }}" class="relative hidden aspect-[4/3] overflow-hidden border border-white/10 bg-[#0d1014] md:block">
                                 @if ($update->mediaSource() && $update->media_type === 'image')
                                     <img src="{{ $update->mediaSource() }}" alt="{{ $update->mediaAltForLocale() }}" class="h-full w-full object-cover transition duration-500 hover:scale-[1.025]">
                                 @elseif ($update->media_type === 'video')

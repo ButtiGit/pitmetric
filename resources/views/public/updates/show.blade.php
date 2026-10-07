@@ -15,10 +15,10 @@
         $articleStructuredData = [
             '@context' => 'https://schema.org',
             '@type' => 'Article',
-            '@id' => route('updates.show', $update).'#article',
+            '@id' => route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]).'#article',
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => route('updates.show', $update),
+                '@id' => route('localized.updates.show', ['locale' => app()->getLocale(), 'update' => $update]),
             ],
             'headline' => $update->titleForLocale(),
             'description' => $update->excerptForLocale(),
@@ -28,7 +28,7 @@
             'author' => [
                 '@type' => 'Person',
                 'name' => 'Simone Butticè',
-                'url' => route('about'),
+                'url' => route('localized.about', ['locale' => app()->getLocale()]),
             ],
         ];
 
@@ -41,7 +41,7 @@
 
     <article class="pm-editorial-page pm-update-article">
         <div class="mx-auto max-w-7xl px-5 pt-10 lg:px-8 lg:pt-14">
-            <a href="{{ route('updates.index') }}" class="pm-home-text-link pm-home-text-link--muted">{{ __('pitmetric.updates.back') }}</a>
+            <a href="{{ route('localized.updates.index', ['locale' => app()->getLocale()]) }}" class="pm-home-text-link pm-home-text-link--muted">{{ __('pitmetric.updates.back') }}</a>
         </div>
 
         <header class="mx-auto max-w-7xl px-5 pb-10 pt-12 lg:px-8 lg:pb-14 lg:pt-16">
@@ -89,7 +89,7 @@
 
         <footer class="mx-auto max-w-7xl px-5 pb-16 lg:px-8 lg:pb-20">
             <div class="border-t border-white/15 pt-7">
-                <a href="{{ route('updates.index') }}" class="pm-home-text-link">{{ __('pitmetric.updates.back_to_log') }}</a>
+                <a href="{{ route('localized.updates.index', ['locale' => app()->getLocale()]) }}" class="pm-home-text-link">{{ __('pitmetric.updates.back_to_log') }}</a>
             </div>
         </footer>
     </article>
