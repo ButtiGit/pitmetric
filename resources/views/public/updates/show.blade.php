@@ -5,6 +5,40 @@
     :image-alt="$update->mediaAltForLocale()"
     og-type="article"
 >
+    @php
+        $articleImage = $update->media_type === 'image' ? $update->mediaSource() : null;
+
+        if (is_string($articleImage) && str_starts_with($articleImage, '/')) {
+            $articleImage = url($articleImage);
+        }
+
+        $articleStructuredData = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            '@id' => route('updates.show', $update).'#article',
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => route('updates.show', $update),
+            ],
+            'headline' => $update->titleForLocale(),
+            'description' => $update->excerptForLocale(),
+            'datePublished' => $update->published_at?->toAtomString(),
+            'dateModified' => $update->updated_at?->toAtomString(),
+            'inLanguage' => app()->getLocale(),
+            'author' => [
+                '@type' => 'Person',
+                'name' => 'Simone Butticè',
+                'url' => route('about'),
+            ],
+        ];
+
+        if ($articleImage !== null) {
+            $articleStructuredData['image'] = [$articleImage];
+        }
+    @endphp
+
+    <script type="application/ld+json">{!! json_encode($articleStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+
     <article class="pm-editorial-page pm-update-article">
         <div class="mx-auto max-w-7xl px-5 pt-10 lg:px-8 lg:pt-14">
             <a href="{{ route('updates.index') }}" class="pm-home-text-link pm-home-text-link--muted">{{ __('pitmetric.updates.back') }}</a>
