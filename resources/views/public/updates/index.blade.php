@@ -1,4 +1,4 @@
-<x-layouts::public :title="__('pitmetric.updates.title')" :description="__('pitmetric.updates.description')">
+<x-layouts::public :title="__('pitmetric.updates.seo_title')" :description="__('pitmetric.updates.seo_description')">
     @php
         $updateCollection = $updates->getCollection();
         $featured = $updateCollection->first();
