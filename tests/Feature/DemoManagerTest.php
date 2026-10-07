@@ -18,7 +18,7 @@ it('opens the public populated demo without authentication', function () {
 });
 
 it('links the public demo next to the guest auth actions', function () {
-    $this->get(route('home'))
+    $this->get(route('localized.home', ['locale' => 'en']))
         ->assertOk()
         ->assertSee(route('register'), false)
         ->assertSee(route('login'), false)
