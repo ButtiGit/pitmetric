@@ -201,6 +201,8 @@ return [
         'italian' => 'Italiano',
     ],
     'cookies' => [
+        'seo_title' => 'Cookie policy e preferenze',
+        'seo_description' => 'Consulta la cookie policy di PitMetric: cookie necessari, preferenze di lingua e consenso. Al momento non sono attivi cookie di analisi o pubblicitari.',
         'title' => 'Preferenze cookie',
         'copy' => 'PitMetric usa attualmente solo cookie necessari al funzionamento del sito e cookie di preferenza, come la scelta della lingua. Al momento non vengono caricati cookie di analisi o pubblicitari.',
         'necessary' => 'Solo necessari',
