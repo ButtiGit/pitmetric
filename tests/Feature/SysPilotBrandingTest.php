@@ -14,7 +14,7 @@ test('SysPilot uses the PitMetric brand and static asset paths', function (): vo
         ->and($css)->toBeString()
         ->toContain('--pm-page: #0b0d10')
         ->toContain('--pm-accent: #E10600')
-        ->toContain("'Instrument Sans'")
+        ->toContain('Instrument Sans')
         ->and($sidebar)->toBeString()
         ->toContain('href="/syspilot/"')
         ->toContain("hasDatabaseAccess()")
