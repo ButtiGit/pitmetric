@@ -35,12 +35,14 @@ it('shows the localized public site in Italian', function () {
         ->assertSee('<html lang="it"', false);
 });
 
-it('redirects legacy public urls to the preferred localized version', function () {
+it('permanently redirects legacy public urls to the preferred localized version', function () {
     $this->get(route('home'))
+        ->assertStatus(301)
         ->assertRedirect(route('localized.home', ['locale' => 'en']));
 
     $this->withCookie('pitmetric_locale', 'it')
         ->get(route('about'))
+        ->assertStatus(301)
         ->assertRedirect(route('localized.about', ['locale' => 'it']));
 });
 
@@ -60,6 +62,18 @@ it('rejects an unsupported locale', function () {
         ->post(route('locale.update'), ['locale' => 'fr'])
         ->assertRedirect($source)
         ->assertSessionHasErrors('locale');
+});
+
+it('does not follow unsafe locale redirect targets', function () {
+    $source = route('localized.home', ['locale' => 'en']);
+
+    $this->from($source)
+        ->post(route('locale.update'), [
+            'locale' => 'it',
+            'redirect' => '/%2F%2Fevil.example',
+        ])
+        ->assertRedirect($source)
+        ->assertCookie('pitmetric_locale', 'it');
 });
 
 it('shows the localized cookie information page', function () {
