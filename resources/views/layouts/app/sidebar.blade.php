@@ -71,6 +71,9 @@
                         </summary>
                         <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
                             <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
+                            @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
+                                <flux:sidebar.item icon="clipboard-document-check" href="/syspilot/">SysPilot</flux:sidebar.item>
+                            @endif
                             @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
                                 @can('team-manage')

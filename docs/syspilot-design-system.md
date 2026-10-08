@@ -1,23 +1,40 @@
-# SysPilot — Interface system v0.3
+# PitMetric · SysPilot — Visual identity v0.6
 
-SysPilot is an operational workspace, not a futuristic marketing dashboard.
-The UI should feel deliberate, professional, calm and efficient. Avoid
-glassmorphism, gradients, gratuitous graphs, ambiguous icons and fabricated
-statistics. Use the same component language as functionality expands.
+SysPilot is a PitMetric module, not a separate brand. Keep the same
+graphite/red visual language as the authenticated PitMetric management
+interface while preserving SysPilot's distinct intervention workflow.
 
-## A — Art direction and tokens
+## Shared PitMetric visual contract
 
-- Colors: graphite canvas #0d1118, sidebar #10151e, panels #151b25,
-  borders #2a3442, primary text #f0f3f7, secondary text #8593a5.
-- Accent #91adfa, reserved for primary actions and active navigation.
-- Completed #79cbb1, skipped #e5be80, blocked #f09b9d.
-- UI font: DM Sans 400/500/600/700. Technical metadata: IBM Plex Mono.
-- Rhythm: 4/8/12/16/24/32/48px. Radius: 8px controls, 12px panels.
-- Information hierarchy: labels, content and primary actions before decoration.
-- One prominent action per section; consistent labels and error feedback.
+- Follow `resources/css/app.css` dark tokens on `.pitmetric-app`:
+  page #0b0d10, navigation #111317, surfaces #111419 / #15191f,
+  border #272d36, foreground #f5f7fa, muted #a9b1bd.
+- Primary accent #E10600, hover #F01812; completed #48b98a, warning
+  #e6b85c, danger #ef7b7b. Do not use blue as the product accent.
+- Use Instrument Sans for UI with a system monospace for technical IDs.
+  Containers, fields and actions should follow PitMetric's compact
+  spacing, corner radii, focus states and button hierarchy.
+- Load the already-shipped `/brand/pitmetric-primary-dark.svg` in
+  SysPilot. Show SysPilot as the module name beneath the master brand;
+  breadcrumbs should link back to the PitMetric dashboard.
+- The authenticated PitMetric sidebar links to SysPilot for users with
+  enabled database access, including studio editors, but all API
+  permissions remain governed by existing Laravel middleware.
+- CSS `--pm-*` values in `public/syspilot/app.css` are a static
+  mirror of PitMetric's dark tokens. If PitMetric changes them, sync
+  these explicitly without importing Tailwind into the standalone app.
+- Preserve noindex, same-origin API calls, original statuses, print
+  reports, responsive layout, accessibility and optional step checks.
+- The product stays at `/syspilot/` and `/api/syspilot/` for link
+  compatibility. Renaming visuals must not rename database tables.
 
-The CSS variables and components in public/syspilot/app.css are the source of
-truth. Reuse the panel, button, tag, table, form and status patterns.
+## Design rationale
+
+Visually integrate the technical workflow with PitMetric while avoiding
+unnecessary changes to Laravel session/login, SQL tables or AI prompts.
+This layer is presentation-only apart from the visible parent-sidebar link.
+
+---
 
 ## B — Master screen structures
 
