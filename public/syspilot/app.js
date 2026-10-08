@@ -1,5 +1,5 @@
 /*
- * SysPilot Workspace v0.3
+ * PitMetric · SysPilot workspace (shared visual language)
  *
  * Routes are hash-based to keep the standalone web UI independent from
  * PitMetric routing. All mutations and access decisions remain server-side.
@@ -351,7 +351,7 @@
             '<div class="resume-bottom"><span class="muted">Workspace aggiornato</span>' +
             '<a class="text-link" href="#new">Crea il prossimo ' + icon('arrow') + '</a></div></div>';
 
-        app.innerHTML = heading('WORKSPACE / PANORAMICA', 'Il tuo lavoro, a colpo d’occhio.',
+        app.innerHTML = heading('PITMETRIC / SYSPILOT', 'Il tuo lavoro, a colpo d’occhio.',
             'Interventi, attività aperte e documentazione: tutto in un posto.',
             button('Nuovo intervento', '#new', true, 'plus')) +
             '<section class="metric-grid" aria-label="Statistiche interventi">' + cards + '</section>' +
@@ -667,7 +667,7 @@
                 'HTTP ' + (status || '—') +
                 ' · Controlla i log Laravel e che siano state eseguite le migrazioni delle tabelle SysPilot.';
 
-        app.innerHTML = '<section class="panel access-panel"><div class="eyebrow">SYS PILOT / SERVIZIO</div>' +
+        app.innerHTML = '<section class="panel access-panel"><div class="eyebrow">PITMETRIC / SYSPILOT</div>' +
             '<h1>' + title + '</h1><p>' + description + '</p>' +
             '<div class="notice ' + (forbidden ? 'error' : '') + '" style="margin-top:20px">' +
             icon('alert') + '<span>' + escape(detail) + '</span></div>' +
