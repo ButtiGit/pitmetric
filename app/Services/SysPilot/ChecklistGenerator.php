@@ -10,7 +10,7 @@ class ChecklistGenerator
     /**
      * Return an unexecuted plan. Neither this service nor the model can mark work as done.
      *
-     * @return array{title: string, phases: array<int, array{name: string, steps: array<int, array{title: string, detail: string}>}>}
+     * @return array{title: string, phases: array<int, mixed>}
      */
     public function generate(string $description): array
     {

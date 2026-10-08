@@ -162,7 +162,7 @@ class SysPilotController extends Controller
                 ->where('intervention_id', $record->id)
                 ->where('id', $step)
                 ->lockForUpdate()->first();
-            abort_unless($previous, 404);
+            abort_if($previous === null, 404);
             if (array_key_exists('revision', $input)) {
                 abort_if(! hash_equals($this->stepRevision($previous), $input['revision']), 409,
                     'Il passaggio è stato modificato altrove. Ricarica la checklist prima di salvare.');
@@ -266,7 +266,7 @@ class SysPilotController extends Controller
             ->where('user_id', $request->user()->id)
             ->first();
 
-        abort_unless($record, 404);
+        abort_if($record === null, 404);
 
         return $record;
     }
@@ -281,6 +281,7 @@ class SysPilotController extends Controller
         ]);
     }
 
+    /** @param array<string, mixed> $data */
     private function privateJson(array $data, int $status = 200): JsonResponse
     {
         return response()->json($data, $status)->header('Cache-Control', 'no-store');
