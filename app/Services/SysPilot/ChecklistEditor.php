@@ -28,7 +28,7 @@ class ChecklistEditor
     private const MAX_STEPS = 80;
 
     /**
-     * @param  list<stdClass>  $steps
+     * @param  array<int, stdClass>  $steps
      * @return array{summary: string, changes: list<array<string, mixed>>, token: string, expires_in: int}
      */
     public function propose(int $userId, stdClass $job, array $steps, string $instruction): array
@@ -242,7 +242,7 @@ class ChecklistEditor
         });
     }
 
-    /** @param list<stdClass> $steps */
+    /** @param array<int, stdClass> $steps */
     private function fingerprint(array $steps): string
     {
         return hash('sha256', json_encode(array_map(static fn (stdClass $step): array => [
@@ -296,7 +296,7 @@ class ChecklistEditor
     }
 
     /**
-     * @param list<stdClass> $steps
+     * @param array<int, stdClass> $steps
      * @param list<Change> $changes
      * @return list<StepData>
      */
@@ -367,23 +367,29 @@ class ChecklistEditor
                     }
                     array_splice($items, $targetIndex, 1);
                 } elseif ($action === 'edit') {
-                    $items[$targetIndex]['phase'] = $change['phase'];
-                    $items[$targetIndex]['title'] = $change['title'];
-                    $items[$targetIndex]['detail'] = $change['detail'];
+                    $updated = $target;
+                    $updated['phase'] = $change['phase'];
+                    $updated['title'] = $change['title'];
+                    $updated['detail'] = $change['detail'];
 
-                    // A child always stays in its parent's phase. If the
-                    // parent phase changes, carry its children along.
+                    // A child retains its parent's phase, while editing a
+                    // parent carries its phase through to all its children.
                     if ($target['parent_step_id'] !== 0) {
                         $parentIndex = $this->indexOf($items, $target['parent_step_id']);
-                        $items[$targetIndex]['phase'] = $items[$parentIndex]['phase'];
+                        if ($parentIndex === null) {
+                            $this->invalid();
+                        }
+                        $updated['phase'] = $items[$parentIndex]['phase'];
                     } else {
-                        foreach ($items as &$item) {
+                        foreach ($items as $index => $item) {
                             if ($item['parent_step_id'] === $target['id']) {
-                                $item['phase'] = $change['phase'];
+                                $updatedChild = $item;
+                                $updatedChild['phase'] = $change['phase'];
+                                $items[$index] = $updatedChild;
                             }
                         }
-                        unset($item);
                     }
+                    $items[$targetIndex] = $updated;
                 } elseif ($action === 'move') {
                     array_splice($items, $targetIndex, 1);
                     $offset = $this->insertionOffset($items, $change);
@@ -445,7 +451,7 @@ class ChecklistEditor
     }
 
     /**
-     * @param list<stdClass> $steps
+     * @param array<int, stdClass> $steps
      * @param list<Change> $changes
      * @return list<array<string, mixed>>
      */
@@ -463,7 +469,6 @@ class ChecklistEditor
                 'edit' => 'Modifica: '.$target.' → '.$change['title'],
                 'remove' => 'Rimuovi: '.$target,
                 'move' => 'Sposta: '.$target,
-                default => 'Modifica del passo: '.$target,
             };
 
             return [
