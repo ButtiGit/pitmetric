@@ -38,15 +38,15 @@ Route::prefix('{locale}')
         Route::get('/updates/{update:slug}', [PublicUpdateController::class, 'show'])->name('updates.show');
     });
 
-Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()->getLocale()]))->name('home');
-Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()]))->name('about');
-Route::get('/app', fn () => redirect()->route('localized.app', ['locale' => app()->getLocale()]))->name('app');
-Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()]))->name('cookies');
-Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()]))->name('updates.index');
+Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()->getLocale()], 301))->name('home');
+Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()], 301))->name('about');
+Route::get('/app', fn () => redirect()->route('localized.app', ['locale' => app()->getLocale()], 301))->name('app');
+Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()], 301))->name('cookies');
+Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()], 301))->name('updates.index');
 Route::get('/updates/{update:slug}', fn (Update $update) => redirect()->route('localized.updates.show', [
     'locale' => app()->getLocale(),
     'update' => $update,
-]))->name('updates.show');
+], 301))->name('updates.show');
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/game_dev', fn () => response()
@@ -71,8 +71,16 @@ Route::post('/locale', function (Request $request) {
     $redirect = $validated['redirect'] ?? null;
     $response = back();
 
-    if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
-        $response = redirect($redirect);
+    if (is_string($redirect)) {
+        $decodedRedirect = rawurldecode($redirect);
+        $isLocalRedirect = str_starts_with($decodedRedirect, '/')
+            && ! str_starts_with($decodedRedirect, '//')
+            && ! str_contains($decodedRedirect, '\\')
+            && preg_match('/[\x00-\x1F\x7F]/', $decodedRedirect) !== 1;
+
+        if ($isLocalRedirect) {
+            $response = redirect($redirect);
+        }
     }
 
     return $response->withCookie(cookie(
