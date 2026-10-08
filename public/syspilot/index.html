@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#080f1b">
+  <title>SysPilot · IT Operations Workspace</title>
+  <link rel="stylesheet" href="./app.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#home"><span class="brand-mark">⌘</span>SysPilot<span class="lab">LAB</span></a>
+      <p class="caption">WORKSPACE</p>
+      <nav aria-label="Navigazione SysPilot">
+        <a class="nav" href="#home" data-nav="home">▦ &nbsp; Panoramica</a>
+        <a class="nav" href="#new" data-nav="new">✦ &nbsp; Nuovo intervento</a>
+      </nav>
+      <p class="caption">ULTIMI INTERVENTI</p>
+      <div id="recent-nav" class="recent">Caricamento…</div>
+      <div class="side-footer"><span class="live-dot"></span> Beta privata<br><span id="sidebar-user">Accesso protetto</span></div>
+    </aside>
+    <main>
+      <header class="mobile-header"><a class="brand" href="#home">⌘ SysPilot</a><a href="https://pitmetric.it/">PitMetric ↗</a></header>
+      <div class="content">
+        <div id="flash" class="flash" role="status" aria-live="polite" hidden></div>
+        <div id="app"><p class="muted">Caricamento workspace…</p></div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

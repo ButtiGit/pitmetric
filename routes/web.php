@@ -245,3 +245,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| SysPilot pilot workspace (independent of the PitMetric manager).
+|--------------------------------------------------------------------------
+| The static UI lives in public/syspilot/. Data and paid AI calls require
+| a verified PitMetric login AND an explicitly allowed email address.
+*/
+Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureSyspilotAccess::class])
+    ->prefix('api/syspilot')
+    ->name('syspilot.')
+    ->group(function (): void {
+        Route::get('/bootstrap', [\App\Http\Controllers\SysPilotController::class, 'bootstrap'])->name('bootstrap');
+        Route::get('/interventions/{intervention}', [\App\Http\Controllers\SysPilotController::class, 'show'])->name('show');
+        Route::post('/interventions', [\App\Http\Controllers\SysPilotController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name('store');
+        Route::patch('/interventions/{intervention}/steps/{step}', [\App\Http\Controllers\SysPilotController::class, 'updateStep'])->name('steps.update');
+        Route::post('/interventions/{intervention}/close', [\App\Http\Controllers\SysPilotController::class, 'close'])->name('close');
+    });
