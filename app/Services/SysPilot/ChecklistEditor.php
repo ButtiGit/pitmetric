@@ -17,6 +17,9 @@ use stdClass;
  * The encrypted approval token is bound to its author, intervention and an
  * exact snapshot of the steps. Notes and completed work cannot be erased by
  * a model-proposed change.
+ *
+ * @phpstan-type Change array{action: 'add'|'edit'|'remove'|'move', step_id: int, anchor_id: int, placement: 'before'|'after'|'end', phase: string, title: string, detail: string, reason: string, parent_step_id: int}
+ * @phpstan-type StepData array{id: int, phase: string, title: string, detail: string, state: string, note: string|null, parent_step_id: int}
  */
 class ChecklistEditor
 {
@@ -26,7 +29,7 @@ class ChecklistEditor
 
     /**
      * @param  array<int, stdClass>  $steps
-     * @return array{summary: string, changes: array, token: string, expires_in: int}
+     * @return array{summary: string, changes: list<array<string, mixed>>, token: string, expires_in: int}
      */
     public function propose(int $userId, stdClass $job, array $steps, string $instruction): array
     {
@@ -124,7 +127,7 @@ class ChecklistEditor
         }
 
         $summary = Str::limit(trim($plan['summary']), 350, '');
-        $changes = $this->validateChanges($plan['changes'], $steps);
+        $changes = $this->validateChanges($plan['changes']);
         $this->simulate($steps, $changes); // Reject invalid or destructive proposals before presenting them.
 
         $payload = [
@@ -148,6 +151,7 @@ class ChecklistEditor
      * The approval token is encrypted, expiring and single-snapshot.
      * Applying a proposal never updates step state or technician notes.
      */
+    /** @return array{ok: bool, applied: int} */
     public function apply(int $userId, int $interventionId, string $token): array
     {
         try {
@@ -173,7 +177,7 @@ class ChecklistEditor
                 ->where('user_id', $userId)
                 ->lockForUpdate()->first();
 
-            abort_unless($job, 404);
+            abort_if($job === null, 404);
             abort_if($job->status !== 'open', 409, 'Non puoi modificare un intervento chiuso.');
 
             $steps = DB::table('syspilot_steps')->where('intervention_id', $interventionId)
@@ -182,7 +186,7 @@ class ChecklistEditor
             abort_if(! hash_equals($this->fingerprint($steps), $payload['snapshot']), 409,
                 'La checklist è cambiata nel frattempo. Rigenera la proposta per non perdere modifiche o note.');
 
-            $changes = $this->validateChanges($payload['changes'], $steps);
+            $changes = $this->validateChanges($payload['changes']);
             $newOrder = $this->simulate($steps, $changes);
             $descriptions = $this->describe($steps, $changes);
 
@@ -213,6 +217,7 @@ class ChecklistEditor
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+
                     continue;
                 }
 
@@ -238,6 +243,7 @@ class ChecklistEditor
         });
     }
 
+    /** @param array<int, stdClass> $steps */
     private function fingerprint(array $steps): string
     {
         return hash('sha256', json_encode(array_map(static fn (stdClass $step): array => [
@@ -247,7 +253,11 @@ class ChecklistEditor
         ], $steps), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
-    private function validateChanges(array $raw, array $steps): array
+    /**
+     * @param  array<array-key, mixed>  $raw
+     * @return list<Change>
+     */
+    private function validateChanges(array $raw): array
     {
         if (count($raw) < 1 || count($raw) > self::MAX_CHANGES) {
             throw ValidationException::withMessages(['instruction' => 'La proposta deve contenere da 1 a 6 modifiche.']);
@@ -279,6 +289,7 @@ class ChecklistEditor
                 throw ValidationException::withMessages(['instruction' => 'Titolo e fase sono obbligatori.']);
             }
 
+            /** @var Change $change */
             $validated[] = $change;
         }
 
@@ -286,14 +297,17 @@ class ChecklistEditor
     }
 
     /**
-     * @return array<int, array{id: int, phase: string, title: string, detail: string, state: string, note: string|null}>
+     * @param  array<int, stdClass>  $steps
+     * @param  list<Change>  $changes
+     * @return list<StepData>
      */
     private function simulate(array $steps, array $changes): array
     {
+        /** @var list<StepData> $items */
         $items = array_map(static fn (stdClass $step): array => [
-            'id' => (int) $step->id, 'phase' => $step->phase,
-            'title' => $step->title, 'detail' => (string) $step->detail,
-            'state' => $step->state, 'note' => $step->note,
+            'id' => (int) $step->id, 'phase' => (string) $step->phase,
+            'title' => (string) $step->title, 'detail' => (string) $step->detail,
+            'state' => (string) $step->state, 'note' => $step->note === null ? null : (string) $step->note,
             'parent_step_id' => (int) ($step->parent_step_id ?? 0),
         ], $steps);
 
@@ -354,23 +368,29 @@ class ChecklistEditor
                     }
                     array_splice($items, $targetIndex, 1);
                 } elseif ($action === 'edit') {
-                    foreach (['phase', 'title', 'detail'] as $field) {
-                        $items[$targetIndex][$field] = $change[$field];
-                    }
+                    $updated = $target;
+                    $updated['phase'] = $change['phase'];
+                    $updated['title'] = $change['title'];
+                    $updated['detail'] = $change['detail'];
 
-                    // A child always stays in its parent's phase. If the
-                    // parent phase changes, carry its children along.
+                    // A child retains its parent's phase, while editing a
+                    // parent carries its phase through to all its children.
                     if ($target['parent_step_id'] !== 0) {
                         $parentIndex = $this->indexOf($items, $target['parent_step_id']);
-                        $items[$targetIndex]['phase'] = $items[$parentIndex]['phase'];
+                        if ($parentIndex === null) {
+                            $this->invalid();
+                        }
+                        $updated['phase'] = $items[$parentIndex]['phase'];
                     } else {
-                        foreach ($items as &$item) {
+                        foreach ($items as $index => $item) {
                             if ($item['parent_step_id'] === $target['id']) {
-                                $item['phase'] = $change['phase'];
+                                $updatedChild = $item;
+                                $updatedChild['phase'] = $change['phase'];
+                                $items[$index] = $updatedChild;
                             }
                         }
-                        unset($item);
                     }
+                    $items[$targetIndex] = $updated;
                 } elseif ($action === 'move') {
                     array_splice($items, $targetIndex, 1);
                     $offset = $this->insertionOffset($items, $change);
@@ -389,6 +409,10 @@ class ChecklistEditor
         return $items;
     }
 
+    /**
+     * @param  list<StepData>  $items
+     * @param  Change  $change
+     */
     private function insertionOffset(array $items, array $change): int
     {
         if ($change['placement'] === 'end') {
@@ -407,6 +431,7 @@ class ChecklistEditor
         return $index + ($change['placement'] === 'after' ? 1 : 0);
     }
 
+    /** @param list<StepData> $items */
     private function indexOf(array $items, int $id): ?int
     {
         if ($id <= 0) {
@@ -426,11 +451,16 @@ class ChecklistEditor
         throw ValidationException::withMessages(['instruction' => 'La proposta non fa riferimento a passaggi validi. Riprova.']);
     }
 
+    /**
+     * @param  array<int, stdClass>  $steps
+     * @param  list<Change>  $changes
+     * @return list<array<string, mixed>>
+     */
     private function describe(array $steps, array $changes): array
     {
         $titles = [];
         foreach ($steps as $step) {
-            $titles[(int) $step->id] = $step->title;
+            $titles[(int) $step->id] = (string) $step->title;
         }
 
         return array_map(static function (array $change) use ($titles): array {
