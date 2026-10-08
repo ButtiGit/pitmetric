@@ -1,12 +1,15 @@
 <?php
 
-test('game dev career prototype is publicly available', function () {
+test('game dev grand prix manager prototype is publicly available but not indexable', function () {
     $response = $this->get(route('game-dev'));
 
     $response->assertOk()
-        ->assertSee('Open Wheel Career 26')
-        ->assertSee('Crea il tuo personaggio')
-        ->assertSee('Regole 2026 implementate')
-        ->assertSee('F1')
-        ->assertSee('F2');
+        ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
+        ->assertSee('PitMetric Grand Prix Manager')
+        ->assertSee('PITMETRIC GP')
+        ->assertSee('Grand Prix Management Lab')
+        ->assertSee('Pit wall pronto. Avvia la sessione.')
+        ->assertSee('Prove libere')
+        ->assertSee('Qualifica')
+        ->assertSee('Gara');
 });

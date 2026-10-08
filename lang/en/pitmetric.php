@@ -10,6 +10,11 @@ return [
         'platform' => 'PitMetric',
     ],
     'home' => [
+        'seo_title' => 'Motorsport management software for drivers and teams',
+        'seo_description' => 'PitMetric is motorsport management software for drivers and small teams to manage vehicles, components, configurations, maintenance, sessions and events.',
+        'seo_section_eyebrow' => 'Software / Motorsport',
+        'seo_section_title' => 'Motorsport management software for drivers and small teams.',
+        'seo_section_copy' => 'PitMetric brings vehicles, components, configurations, sessions, maintenance, events and costs into one place. It is built for people running karts, track cars and other motorsport vehicles who need a clear and reliable technical history.',
         'eyebrow' => 'Motorsport data, without the noise',
         'title_1' => 'Know every lap.',
         'title_2' => 'Track every component.',
@@ -43,8 +48,8 @@ return [
         'roadmap_3_copy' => 'Layout length × laps can generate verified usage automatically.',
     ],
     'about' => [
-        'title' => 'About',
-        'description' => 'Simone Butticè, Junior Full-Stack Web Developer and creator of PitMetric.',
+        'title' => 'Simone Butticè, full-stack developer',
+        'description' => 'Simone Butticè is a full-stack developer focused on web management software, PHP, JavaScript and databases, and the creator of PitMetric motorsport software.',
         'creator' => 'Creator / Developer',
         'image_alt' => 'Racing cockpit and steering wheel detail',
         'role' => 'Junior Full-Stack Web Developer with hands-on experience building custom web management applications using PHP, JavaScript and MySQL. My work focuses on relational database architecture, application logic and turning functional requirements into practical software.',
@@ -74,6 +79,8 @@ return [
         'interests_copy' => 'Chess & strategy · Video editing · Audiovisual content · Motorsport',
     ],
     'updates' => [
+        'seo_title' => 'Motorsport software development updates',
+        'seo_description' => 'Follow PitMetric development with new features, product decisions, technical progress and updates from the motorsport management software.',
         'title' => 'Updates',
         'description' => 'Development updates from PitMetric.',
         'label' => 'Development log',
@@ -194,6 +201,8 @@ return [
         'italian' => 'Italiano',
     ],
     'cookies' => [
+        'seo_title' => 'Cookie policy and preferences',
+        'seo_description' => 'Read the PitMetric cookie policy covering necessary cookies, language preferences and consent. Analytics and advertising cookies are not currently active.',
         'title' => 'Cookie preferences',
         'copy' => 'PitMetric currently uses only cookies required for the site to work and preference cookies such as your language choice. Analytics and advertising cookies are not currently loaded.',
         'necessary' => 'Necessary only',

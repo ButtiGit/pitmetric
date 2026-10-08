@@ -36,7 +36,7 @@ class PublicUpdateController extends Controller
         return view('public.updates.index', compact('updates'));
     }
 
-    public function show(Update $update): View
+    public function show(string $locale, Update $update): View
     {
         $this->abortUnlessPublished($update);
 

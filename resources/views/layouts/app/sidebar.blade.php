@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>@include('partials.head')</head>
+    <head>
+        @include('partials.head')
+        <meta name="robots" content="noindex, nofollow">
+    </head>
     <body class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
         <flux:sidebar sticky collapsible="mobile" class="pm-mobile-sidebar border-e border-[#242932] bg-[#111317]">
             <flux:sidebar.header class="border-b border-white/5 pb-4"><a href="{{ route('dashboard') }}" wire:navigate aria-label="PitMetric"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-8 w-auto max-w-44"></a><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
@@ -97,9 +100,9 @@
 
             <flux:sidebar.nav class="shrink-0 border-t border-white/5 pt-4">
                 <flux:sidebar.item icon="envelope" :href="route('newsletter.edit')" :current="request()->routeIs('newsletter.edit')">{{ __('demo.nav.newsletter') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="globe-alt" :href="route('home')">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="newspaper" :href="route('updates.index')">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="user" :href="route('about')">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
+                <flux:sidebar.item icon="globe-alt" :href="route('localized.home', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
+                <flux:sidebar.item icon="newspaper" :href="route('localized.updates.index', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
+                <flux:sidebar.item icon="user" :href="route('localized.about', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
             </flux:sidebar.nav>
 
             <div class="mx-2 mb-3 mt-4 shrink-0 rounded-xl border border-white/8 bg-white/[0.02] p-1.5"><div class="grid grid-cols-2 gap-1.5">@foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)<form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="w-full rounded-lg px-2 py-2 font-mono text-xs font-semibold tracking-[0.08em] transition {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white shadow-sm' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200' }}">{{ $label }}</button></form>@endforeach</div></div>

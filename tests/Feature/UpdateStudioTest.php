@@ -39,8 +39,7 @@ it('lets an editor publish a text only update', function () {
         ->and($update->media_type)->toBeNull()
         ->and($update->slug)->toBe('a-new-telemetry-workflow');
 
-    $this->withCookie('pitmetric_locale', 'it')
-        ->get(route('updates.show', $update))
+    $this->get(route('localized.updates.show', ['locale' => 'it', 'update' => $update]))
         ->assertOk()
         ->assertSee('Un nuovo flusso telemetria')
         ->assertSee('Abbiamo rifatto il flusso sessione.');
@@ -67,7 +66,7 @@ it('lets an editor publish a media only update from an external url', function (
         ->and($update->content)->toBe('')
         ->and($update->excerpt)->toBe('First garage preview');
 
-    $this->get(route('updates.show', $update))
+    $this->get(route('localized.updates.show', ['locale' => 'en', 'update' => $update]))
         ->assertOk()
         ->assertSee('https://example.com/garage-preview.webp', false);
 });

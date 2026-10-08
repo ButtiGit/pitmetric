@@ -7,6 +7,7 @@ it('opens the cloned public manager without authentication', function () {
         ->assertOk()
         ->assertSee('Race Team Demo')
         ->assertSee('Busca Race Weekend')
+        ->assertSee('<meta name="robots" content="noindex, follow">', false)
         ->assertSee(route('demo.manager', ['section' => 'garage']), false)
         ->assertSee(route('demo.manager', ['section' => 'components']), false);
 });

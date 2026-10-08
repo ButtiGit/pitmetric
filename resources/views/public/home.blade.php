@@ -1,4 +1,56 @@
-<x-layouts::public>
+<x-layouts::public
+    :title="__('pitmetric.home.seo_title')"
+    :description="__('pitmetric.home.seo_description')"
+>
+    @php
+        $websiteId = url('/').'#website';
+        $softwareId = url('/').'#software';
+
+        $structuredData = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'WebSite',
+                    '@id' => $websiteId,
+                    'url' => url('/'),
+                    'name' => 'PitMetric',
+                    'description' => __('pitmetric.home.seo_description'),
+                    'inLanguage' => ['en', 'it'],
+                ],
+                [
+                    '@type' => 'WebApplication',
+                    '@id' => $softwareId,
+                    'name' => 'PitMetric',
+                    'url' => route('localized.home', ['locale' => app()->getLocale()]),
+                    'description' => __('pitmetric.home.seo_description'),
+                    'applicationCategory' => 'SportsApplication',
+                    'applicationSubCategory' => app()->getLocale() === 'it'
+                        ? 'Software gestionale motorsport'
+                        : 'Motorsport management software',
+                    'operatingSystem' => 'Web',
+                    'browserRequirements' => 'Requires a modern web browser',
+                    'inLanguage' => ['en', 'it'],
+                    'isPartOf' => [
+                        '@id' => $websiteId,
+                    ],
+                    'featureList' => [
+                        app()->getLocale() === 'it' ? 'Storico di mezzi e configurazioni' : 'Vehicle and configuration history',
+                        app()->getLocale() === 'it' ? 'Tracking utilizzo componenti' : 'Component usage tracking',
+                        app()->getLocale() === 'it' ? 'Gestione manutenzione' : 'Maintenance management',
+                        app()->getLocale() === 'it' ? 'Gestione costi motorsport' : 'Motorsport cost tracking',
+                    ],
+                    'creator' => [
+                        '@type' => 'Person',
+                        'name' => 'Simone Butticè',
+                        'url' => route('localized.about', ['locale' => app()->getLocale()]),
+                    ],
+                ],
+            ],
+        ];
+    @endphp
+
+    <script type="application/ld+json">{!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+
     <div class="pm-home-editorial">
         <section data-pm-home-hero class="pm-home-editorial-hero relative isolate overflow-hidden border-b border-white/10">
             <img data-pm-hero-image src="https://images.unsplash.com/photo-1656978766399-1e117a291918?auto=format&fit=crop&fm=jpg&q=88&w=2400" alt="{{ __('pitmetric.home.hero_image_alt') }}" class="absolute inset-0 -z-20 h-full w-full object-cover object-center">
@@ -30,6 +82,24 @@
                 <div class="grid gap-5 border-t border-white/15 pt-4 sm:grid-cols-[1fr_auto] sm:items-end">
                     <p class="max-w-xl text-xs leading-5 text-white/60 sm:text-sm sm:leading-6">{{ __('pitmetric.home.track_note') }}</p>
                     <a href="https://unsplash.com/photos/a-race-car-on-a-track-GCDa5RBWcAw" target="_blank" rel="noopener" class="text-[10px] text-white/35 transition hover:text-white/75">Edoardo Giudici Saraval / Unsplash</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="border-b border-white/10">
+            <div class="mx-auto grid max-w-7xl gap-8 px-5 py-14 lg:grid-cols-[.7fr_1.3fr] lg:px-8 lg:py-20">
+                <div>
+                    <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#ff625e]">
+                        {{ __('pitmetric.home.seo_section_eyebrow') }}
+                    </p>
+                </div>
+                <div>
+                    <h2 class="pm-home-editorial-subtitle max-w-3xl text-white">
+                        {{ __('pitmetric.home.seo_section_title') }}
+                    </h2>
+                    <p class="mt-5 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
+                        {{ __('pitmetric.home.seo_section_copy') }}
+                    </p>
                 </div>
             </div>
         </section>
@@ -113,7 +183,7 @@
             <div class="grid gap-12 lg:grid-cols-[.55fr_1.45fr] lg:gap-16">
                 <div>
                     <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-[#ff625e]">03 / {{ __('pitmetric.home.roadmap') }}</p>
-                    <a href="{{ route('updates.index') }}" class="pm-home-text-link mt-7">{{ __('pitmetric.home.follow_updates') }}</a>
+                    <a href="{{ route('localized.updates.index', ['locale' => app()->getLocale()]) }}" class="pm-home-text-link mt-7">{{ __('pitmetric.home.follow_updates') }}</a>
                 </div>
 
                 <div class="relative border-l border-white/15 pl-7 sm:pl-10">

@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>@include('partials.head')</head>
+    <head>
+        @include('partials.head')
+        <meta name="robots" content="noindex, follow">
+    </head>
     <body class="min-h-screen overflow-x-hidden bg-[#0b0d10] text-zinc-100">
         @php
             $demoUrl = fn (string $target) => $target === 'dashboard'
@@ -87,7 +90,7 @@
             <flux:sidebar.nav class="shrink-0 border-t border-white/5 pt-4">
                 <flux:sidebar.item icon="user-plus" :href="route('register')">{{ $it ? 'Crea account' : 'Create account' }}</flux:sidebar.item>
                 <flux:sidebar.item icon="arrow-right-end-on-rectangle" :href="route('login')">{{ __('pitmetric.nav.login') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="globe-alt" :href="route('home')">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
+                <flux:sidebar.item icon="globe-alt" :href="route('localized.home', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
             </flux:sidebar.nav>
 
             <div class="mx-2 mb-3 mt-4 shrink-0 rounded-xl border border-white/8 bg-white/[0.02] p-3">

@@ -1,4 +1,4 @@
-<x-layouts::public :title="__('pitmetric.cookies.policy_title')" :description="__('pitmetric.cookies.policy_copy')">
+<x-layouts::public :title="__('pitmetric.cookies.seo_title')" :description="__('pitmetric.cookies.seo_description')">
     <section class="mx-auto max-w-4xl px-5 py-20 lg:px-8 lg:py-28">
         <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#ff625e]">{{ __('pitmetric.cookies.settings') }}</p>
         <h1 class="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">{{ __('pitmetric.cookies.policy_title') }}</h1>
@@ -19,6 +19,6 @@
             </article>
         </div>
 
-        <a href="{{ route('home') }}" class="mt-10 inline-flex rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-white/30">{{ __('pitmetric.cookies.back') }}</a>
+        <a href="{{ route('localized.home', ['locale' => app()->getLocale()]) }}" class="mt-10 inline-flex rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-white/30">{{ __('pitmetric.cookies.back') }}</a>
     </section>
 </x-layouts::public>
