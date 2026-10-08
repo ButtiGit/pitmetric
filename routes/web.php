@@ -264,5 +264,9 @@ Route::middleware(['auth', 'verified', 'database.access'])
             ->middleware('throttle:5,1')
             ->name('store');
         Route::patch('/interventions/{intervention}/steps/{step}', [\App\Http\Controllers\SysPilotController::class, 'updateStep'])->name('steps.update');
+        Route::post('/interventions/{intervention}/ai/propose', [\App\Http\Controllers\SysPilotController::class, 'proposeRevision'])
+            ->middleware('throttle:3,1')->name('ai.propose');
+        Route::post('/interventions/{intervention}/ai/apply', [\App\Http\Controllers\SysPilotController::class, 'applyRevision'])
+            ->middleware('throttle:10,1')->name('ai.apply');
         Route::post('/interventions/{intervention}/close', [\App\Http\Controllers\SysPilotController::class, 'close'])->name('close');
     });

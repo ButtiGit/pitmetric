@@ -59,3 +59,40 @@ plan in the existing Laravel database, scoped to the authenticated user.
   Coolify database persistence is configured correctly.
 - For production/real customer information, add a dedicated SysPilot tenancy
   and privacy/legal review before expanding access.
+
+## Workspace v0.4 — first operational increment
+
+- Technicians can ask the AI to add, edit, move or remove checklist steps.
+- The AI produces a reviewable preview. Nothing is applied until the
+  technician explicitly confirms.
+- Requests require existing PitMetric DB access, and AI is rate-limited.
+  Step context includes title, phase, detail and state, never technician notes.
+- Revision tokens are encrypted, bound to the owner and intervention, expire
+  after 10 minutes, and include a fingerprint of the current checklist.
+  Stale or tampered tokens are rejected.
+- Completed/skipped steps cannot be changed or removed through AI.
+  Draft steps with notes cannot be deleted; states and existing notes are
+  never modified by an AI revision. Changes are audited after approval.
+- Notes and states save automatically without rerendering after short
+  typing pauses or immediately upon state change; a manual Save now
+  button is retained. Quick notes insert editable snippets.
+- Per-step revision checks prevent overwrites from another browser tab.
+  Unsaved drafts remain in memory on failed requests with retry feedback;
+  navigation flushes pending saves and beforeunload warns if needed.
+- No localStorage persistence for technician notes: they may be sensitive.
+- Future increments can add manual drag-and-drop, nested checklists and
+  speech transcription once this flow is verified with real technicians.
+
+## API changes
+
+- POST /api/syspilot/interventions/{id}/ai/propose:
+  accepts JSON with instruction, returns summary, preview and approval token.
+- POST /api/syspilot/interventions/{id}/ai/apply:
+  accepts the token, checks identity/snapshot and applies transactionally.
+- GET /api/syspilot/interventions/{id}: steps include revision checksums.
+- PATCH /api/syspilot/interventions/{id}/steps/{step}:
+  supports optional revision and returns the updated revision.
+
+No migrations were added for this increment: it uses existing SysPilot tables.
+If bootstrap responds HTTP 500, inspect Laravel logs and check the original
+SysPilot migration status; the UI upgrade does not fix missing tables.

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\SysPilot\ChecklistGenerator;
+use App\Services\SysPilot\ChecklistEditor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,12 @@ class SysPilotController extends Controller
                 ->where('intervention_id', $record->id)
                 ->orderBy('position')
                 ->orderBy('id')
-                ->get(),
+                ->get()
+                ->map(function (stdClass $step): stdClass {
+                    $step->revision = $this->stepRevision($step);
+
+                    return $step;
+                }),
             'events' => DB::table('syspilot_events')
                 ->where('intervention_id', $record->id)
                 ->orderByDesc('id')
@@ -130,6 +136,7 @@ class SysPilotController extends Controller
         $input = $request->validate([
             'state' => ['required', 'in:todo,done,blocked,skipped'],
             'note' => ['nullable', 'string', 'max:3000'],
+            'revision' => ['sometimes', 'string', 'size:64', 'regex:/^[a-f0-9]{64}$/'],
         ]);
 
         $note = trim($input['note'] ?? '');
@@ -137,15 +144,19 @@ class SysPilotController extends Controller
             throw ValidationException::withMessages(['note' => 'Motiva il passaggio saltato.']);
         }
 
-        DB::transaction(function () use ($request, $intervention, $step, $input, $note): void {
+        $newRevision = DB::transaction(function () use ($request, $intervention, $step, $input, $note): string {
             $record = $this->owned($request, $intervention);
             abort_if($record->status !== 'open', 409, 'L’intervento è già chiuso.');
 
             $previous = DB::table('syspilot_steps')
                 ->where('intervention_id', $record->id)
                 ->where('id', $step)
-                ->first();
+                ->lockForUpdate()->first();
             abort_unless($previous, 404);
+            if (array_key_exists('revision', $input)) {
+                abort_if(! hash_equals($this->stepRevision($previous), $input['revision']), 409,
+                    'Il passaggio è stato modificato altrove. Ricarica la checklist prima di salvare.');
+            }
 
             DB::table('syspilot_steps')
                 ->where('id', $step)
@@ -160,15 +171,52 @@ class SysPilotController extends Controller
                 ->update(['updated_at' => now()]);
 
             if ($previous->state !== $input['state'] || ($previous->note ?? '') !== $note) {
-                $this->event(
-                    $record->id,
-                    (int) $request->user()->id,
-                    'Passaggio «'.$previous->title.'» aggiornato a '.$input['state'].'. Note: '.($note !== '' ? $note : '(nessuna)')
-                );
+                // Autosave may produce many note revisions. Audit the action,
+                // not the whole note: the step always holds the current text.
+                $description = $previous->state !== $input['state']
+                    ? 'Stato di «'.$previous->title.'» aggiornato a '.$input['state'].'.'
+                    : 'Note aggiornate su «'.$previous->title.'».';
+
+                $this->event($record->id, (int) $request->user()->id, $description);
             }
+
+            $updated = clone $previous;
+            $updated->state = $input['state'];
+            $updated->note = $note;
+
+            return $this->stepRevision($updated);
         });
 
-        return $this->privateJson(['ok' => true]);
+        return $this->privateJson(['ok' => true, 'revision' => $newRevision]);
+    }
+
+    public function proposeRevision(Request $request, int $intervention, ChecklistEditor $editor): JsonResponse
+    {
+        $input = $request->validate(['instruction' => ['required', 'string', 'min:8', 'max:750']]);
+        $record = $this->owned($request, $intervention);
+        abort_if($record->status !== 'open', 409, 'Non puoi modificare un intervento chiuso.');
+
+        $steps = DB::table('syspilot_steps')->where('intervention_id', $record->id)
+            ->orderBy('position')->orderBy('id')->get()->all();
+
+        try {
+            $result = $editor->propose((int) $request->user()->id, $record, $steps, trim($input['instruction']));
+        } catch (RuntimeException $e) {
+            return $this->privateJson(['message' => $e->getMessage()], 422);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            report($e);
+
+            return $this->privateJson(['message' => 'Connessione all’IA non disponibile. Riprova.'], 503);
+        }
+
+        return $this->privateJson($result);
+    }
+
+    public function applyRevision(Request $request, int $intervention, ChecklistEditor $editor): JsonResponse
+    {
+        $input = $request->validate(['token' => ['required', 'string', 'max:40000']]);
+
+        return $this->privateJson($editor->apply((int) $request->user()->id, $intervention, $input['token']));
     }
 
     public function close(Request $request, int $intervention): JsonResponse
@@ -192,6 +240,13 @@ class SysPilotController extends Controller
         });
 
         return $this->privateJson(['ok' => true]);
+    }
+
+    private function stepRevision(stdClass $step): string
+    {
+        return hash('sha256', json_encode([
+            $step->state, $step->note, $step->phase, $step->title, $step->detail,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
     private function owned(Request $request, int $id): stdClass

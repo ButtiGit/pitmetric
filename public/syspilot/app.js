@@ -17,6 +17,125 @@
     let busy = false;
     let navigationId = 0;
     const archiveState = { search: '', status: 'all' };
+    let currentWorkId = null;
+    const saveTasks = new Map();
+    let aiPreview = null;
+
+    /* Autosave queue: one in-flight request per step, with a revision guard. */
+    function saveIndicator(task, label, error = false) {
+        const node = document.querySelector('[data-save-status="' + task.stepId + '"]');
+        if (!node) return;
+        node.textContent = label;
+        node.classList.toggle('error', error);
+    }
+
+    function queueStep(form, urgent = false) {
+        const task = saveTasks.get(Number(form.dataset.step));
+        if (!task) return;
+        task.form = form;
+        task.pending = {
+            state: form.querySelector('[name="state"]').value,
+            note: form.querySelector('[name="note"]').value
+        };
+        task.version++;
+        task.dirty = true;
+        const printable = form.closest('.check-item')?.querySelector('.print-note');
+        if (printable) printable.textContent = 'Esito tecnico: ' + (task.pending.note || 'Non ancora documentato');
+        clearTimeout(task.timer);
+        if (task.pending.state === 'skipped' && !task.pending.note.trim()) {
+            saveIndicator(task, 'Motiva il passaggio saltato', true);
+            return;
+        }
+        saveIndicator(task, 'Modifiche non salvate');
+        task.timer = setTimeout(() => persistStep(task).catch(() => {}), urgent ? 0 : 1100);
+    }
+
+    async function persistStep(task) {
+        clearTimeout(task.timer);
+        if (task.sending) {
+            await task.sending;
+            return task.dirty ? persistStep(task) : undefined;
+        }
+        if (!task.dirty) return;
+        if (task.pending.state === 'skipped' && !task.pending.note.trim()) {
+            throw new Error('Aggiungi una motivazione prima di saltare il passaggio.');
+        }
+
+        const version = task.version;
+        const payload = { ...task.pending };
+        if (task.revision) payload.revision = task.revision;
+        task.dirty = false;
+        saveIndicator(task, 'Salvataggio…');
+        // The promise includes revision handling and is shared by concurrent flushes.
+        task.sending = (async () => {
+            try {
+                const response = await api('/interventions/' + task.workId + '/steps/' + task.stepId, 'PATCH', payload);
+                task.revision = response.revision || task.revision;
+                task.saved = { state: payload.state, note: payload.note };
+                if (task.form.isConnected) task.form.dataset.revision = task.revision;
+                updateSavedProgress(task);
+                if (task.version === version) saveIndicator(task, 'Salvato automaticamente');
+            } catch (error) {
+                task.dirty = true;
+                saveIndicator(task, 'Errore di salvataggio. Riprova.', true);
+                throw error;
+            }
+        })();
+
+        try {
+            await task.sending;
+        } finally {
+            task.sending = null;
+            if (task.dirty && task.version > version) {
+                task.timer = setTimeout(() => persistStep(task).catch(() => {}), 120);
+            }
+            updateSavedProgress(task);
+        }
+    }
+
+    function updateSavedProgress(task) {
+        if (task.workId !== currentWorkId || !task.form.isConnected) return;
+        const element = task.form.closest('.check-item');
+        const tag = element?.querySelector('.check-content .tag');
+        if (tag) tag.outerHTML = statusTag(task.saved.state);
+        const counter = element?.querySelector('.check-counter');
+        if (counter) {
+            counter.classList.toggle('done', task.saved.state === 'done');
+            counter.innerHTML = task.saved.state === 'done' ? icon('check') : counter.dataset.index;
+        }
+        const items = [...saveTasks.values()];
+        const done = items.filter(item => item.saved.state === 'done').length;
+        const skipped = items.filter(item => item.saved.state === 'skipped').length;
+        const pending = items.filter(item => ['todo', 'blocked'].includes(item.saved.state)).length;
+        const percent = items.length ? Math.round(done / items.length * 100) : 0;
+        const caption = document.getElementById('summary-caption');
+        if (caption) caption.textContent = pending + ' ancora da risolvere · ' + skipped + ' saltati · ' + percent + '% completati';
+        const count = document.getElementById('summary-count');
+        if (count) count.textContent = done + ' completati su ' + items.length;
+        const bar = document.getElementById('summary-progress');
+        if (bar) {
+            bar.setAttribute('aria-valuenow', String(percent));
+            bar.querySelector('div').style.width = percent + '%';
+        }
+        const close = document.getElementById('close-job');
+        if (close) close.disabled = pending !== 0 || items.some(item => item.dirty || item.sending);
+    }
+
+    async function flushPending() {
+        for (const task of saveTasks.values()) {
+            if (task.dirty || task.sending) {
+                clearTimeout(task.timer);
+                await persistStep(task);
+            }
+        }
+    }
+
+    window.addEventListener('beforeunload', event => {
+        if (![...saveTasks.values()].some(task => task.dirty || task.sending)) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
 
     /* Decorative inline symbols share the same stroke and optical size. */
     const paths = {
@@ -329,6 +448,41 @@
             emptyState('Nessun risultato', 'Prova a cambiare ricerca o filtro per visualizzare altri interventi.', '', 'search');
     }
 
+    /* An AI revision is a reviewable suggestion, not an automatic rewrite. */
+    function aiEditorMarkup() {
+        return '<section class="panel ai-editor no-print">' +
+            '<header class="panel-header"><div><div class="eyebrow">EDITOR IA</div>' +
+            '<h2 style="margin-top:8px">La checklist può evolvere.</h2>' +
+            '<p>Aggiungi, correggi, sposta o rimuovi attività senza ricominciare da zero.</p></div>' +
+            icon('spark') + '</header><div class="panel-body">' +
+            '<form id="ai-form"><label for="ai-instruction" class="field-label">Che cosa vuoi cambiare?</label>' +
+            '<textarea id="ai-instruction" name="instruction" class="field-input" minlength="8" maxlength="750" required rows="2" placeholder="Es.: Aggiungi il controllo del backup prima del riavvio, senza toccare i passaggi completati."></textarea>' +
+            '<div class="ai-editor-actions"><span class="field-note">Mostriamo sempre un’anteprima prima di applicare qualsiasi modifica.</span>' +
+            '<button class="button primary" type="submit">' + icon('spark') +
+            ' Proponi modifiche</button></div></form>' +
+            '<div id="ai-review" class="ai-review" aria-live="polite"></div>' +
+            '</div></section>';
+    }
+
+    function renderAiPreview(proposal) {
+        const target = document.getElementById('ai-review');
+        if (!target) return;
+        const labels = { add: 'AGGIUNTA', edit: 'MODIFICA', remove: 'RIMOZIONE', move: 'SPOSTAMENTO' };
+        target.innerHTML = '<div class="proposal-heading"><strong>' + escape(proposal.summary) +
+            '</strong><span class="mono muted">' + proposal.changes.length + ' CAMBIAMENTI</span></div>' +
+            '<ol class="proposal-list">' + proposal.changes.map(change =>
+                '<li><span class="tag neutral">' + labels[change.action] +
+                '</span><div><strong>' + escape(change.label) + '</strong>' +
+                (change.detail ? '<p>' + escape(change.detail) + '</p>' : '') +
+                (change.location ? '<p class="proposal-location">' + escape(change.location) + '</p>' : '') +
+                (change.reason ? '<p>' + escape(change.reason) + '</p>' : '') +
+                '</div></li>').join('') + '</ol>' +
+            '<p class="field-note">I passaggi completati e le note esistenti rimangono protetti. La proposta scade dopo 10 minuti.</p>' +
+            '<div class="proposal-actions"><button type="button" class="button quiet" id="cancel-ai">Annulla</button>' +
+            '<button type="button" class="button primary" id="apply-ai">' +
+            'Conferma modifiche</button></div>';
+    }
+
     /* SCREEN 4 — Intervention workspace */
     async function renderWork(id, sequence) {
         app.innerHTML = '<div class="skeleton-page"><span></span><span></span><span></span></div>';
@@ -359,7 +513,7 @@
             }
 
             group += '<article class="check-item"><div class="check-top"><div class="check-counter ' +
-                (step.state === 'done' ? 'done' : '') + '">' +
+                (step.state === 'done' ? 'done' : '') + '" data-index="' + String(index + 1).padStart(2, '0') + '">' +
                 (step.state === 'done' ? icon('check') : String(index + 1).padStart(2, '0')) +
                 '</div><div class="check-content"><h3>' + escape(step.title) +
                 '</h3><p>' + escape(step.detail || '') + '</p>' + statusTag(step.state) +
@@ -368,18 +522,25 @@
 
             if (!closed) {
                 group += '<div class="print-note">Esito tecnico: ' + escape(step.note || 'Non ancora documentato') + '</div>' +
-                    '<form class="step-form" data-step="' + Number(step.id) + '">' +
+                    '<form class="step-form" data-step="' + Number(step.id) +
+                    '" data-revision="' + escape(step.revision || '') + '">' +
                     '<div><label class="field-label" for="state-' + Number(step.id) + '">Stato</label>' +
                     '<select class="field-input" id="state-' + Number(step.id) + '" name="state">' +
                     ['todo', 'done', 'blocked', 'skipped'].map(value => '<option value="' + value + '"' +
                         (step.state === value ? ' selected' : '') + '>' +
                         ({ todo: 'Da fare', done: 'Completato', blocked: 'Bloccato', skipped: 'Saltato' })[value] +
                         '</option>').join('') + '</select></div>' +
-                    '<div><label class="field-label" for="note-' + Number(step.id) + '">Note e risultato</label>' +
+                    '<div class="note-field"><label class="field-label" for="note-' + Number(step.id) + '">Note e risultato</label>' +
                     '<textarea class="field-input" id="note-' + Number(step.id) +
                     '" name="note" maxlength="3000" rows="2" placeholder="Registra cosa hai verificato…">' +
-                    escape(step.note || '') + '</textarea></div>' +
-                    '<button class="button small" type="submit">Salva passo</button></form>';
+                    escape(step.note || '') + '</textarea>' +
+                    '<div class="quick-note-row no-print"><span class="muted">NOTE RAPIDE</span>' +
+                    '<button type="button" data-quick-note="Verifica effettuata.">Verificato</button>' +
+                    '<button type="button" data-quick-note="Da verificare: ">Da verificare</button>' +
+                    '<button type="button" data-quick-note="Anomalia rilevata: ">Anomalia</button></div></div>' +
+                    '<div class="save-tools no-print"><span class="save-status" data-save-status="' +
+                    Number(step.id) + '" aria-live="polite">Salvataggio automatico</span>' +
+                    '<button type="submit" class="button quiet small">Salva ora</button></div></form>';
             }
             group += '</article>';
         });
@@ -407,15 +568,16 @@
             '</span><span>' + icon('server') + escape(job.asset || 'Asset non specificato') +
             '</span><span>' + icon('clock') + fullDate(job.created_at) + '</span></div>' +
             '<section class="panel summary-bar" style="margin-top:24px"><div class="summary-content">' +
-            '<div class="summary-line"><strong>Stato di avanzamento</strong><span>' + completed +
+            '<div class="summary-line"><strong>Stato di avanzamento</strong><span id="summary-count">' + completed +
             ' completati su ' + steps.length + '</span></div>' +
-            '<div class="progress" role="progressbar" aria-label="Passaggi completati" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+            '<div class="progress" id="summary-progress" role="progressbar" aria-label="Passaggi completati" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
             percent + '"><div style="width:' + percent + '%"></div></div>' +
-            '<div class="summary-caption">' + remaining + ' ancora da risolvere · ' +
+            '<div class="summary-caption" id="summary-caption">' + remaining + ' ancora da risolvere · ' +
             skipped + ' saltati · ' + percent + '% completati</div></div>' +
             '<button type="button" class="button quiet no-print" data-print="true">' +
             icon('print') + ' Esporta report</button></section>' +
             '<div class="detail-grid"><div>' +
+            (closed ? '' : aiEditorMarkup()) +
             '<div class="section-heading"><div><h2>Checklist operativa</h2><p>Segui le fasi e registra ogni verifica.</p></div>' +
             '<span class="mono muted">' + steps.length + ' PASSAGGI</span></div>' +
             (phases || emptyState('Checklist vuota', 'Non sono stati creati passaggi per questo intervento.', '', 'list')) +
@@ -437,6 +599,23 @@
             (timeline ? '<ol class="event-list">' + timeline + '</ol>' :
                 '<p class="rail-text">Le operazioni documentate compariranno qui.</p>') +
             '</div></section></aside></div>';
+
+        currentWorkId = Number(id);
+        saveTasks.clear();
+        if (!closed) {
+            for (const step of steps) {
+                const form = document.querySelector('.step-form[data-step="' + Number(step.id) + '"]');
+                if (!form) continue;
+                saveTasks.set(Number(step.id), {
+                    stepId: Number(step.id), workId: Number(id),
+                    revision: step.revision || '', form,
+                    pending: { state: step.state, note: step.note || '' },
+                    saved: { state: step.state, note: step.note || '' },
+                    dirty: false, sending: null, timer: null, version: 0
+                });
+            }
+            if (aiPreview?.workId === Number(id)) renderAiPreview(aiPreview);
+        }
     }
 
     /* Navigation and feedback */
@@ -483,9 +662,21 @@
 
     async function navigate() {
         if (!bootstrapData) return;
+        const hash = location.hash.replace(/^#/, '') || 'home';
+        if (currentWorkId !== null && hash !== 'work/' + currentWorkId) {
+            try {
+                await flushPending();
+            } catch (error) {
+                flash('Salvataggio incompleto: ' + error.message, true);
+                location.hash = 'work/' + currentWorkId;
+                return;
+            }
+            currentWorkId = null;
+            saveTasks.clear();
+            aiPreview = null;
+        }
         clearFlash();
         const seq = ++navigationId;
-        const hash = location.hash.replace(/^#/, '') || 'home';
         updateNavigation(hash);
 
         try {
@@ -505,11 +696,20 @@
     /* One delegated handler per interaction family: safe after rerenders. */
     document.addEventListener('submit', async event => {
         const form = event.target;
-        if (form.id !== 'create-form' && !form.matches('.step-form')) return;
+        if (form.id !== 'create-form' && form.id !== 'ai-form' && !form.matches('.step-form')) return;
         event.preventDefault();
+
+        if (form.matches('.step-form')) {
+            const task = saveTasks.get(Number(form.dataset.step));
+            if (!task) return;
+            queueStep(form, true);
+            persistStep(task).catch(error => flash(error.message, true));
+            return;
+        }
+
         if (busy) return;
         busy = true;
-        setBusy(form, true, form.id === 'create-form' ? 'Generazione in corso…' : 'Salvataggio…');
+        setBusy(form, true, form.id === 'create-form' ? 'Generazione in corso…' : 'Preparazione proposta…');
 
         try {
             if (form.id === 'create-form') {
@@ -523,16 +723,18 @@
                 location.hash = 'work/' + Number(response.id);
                 await navigate();
                 flash('Checklist pronta. Verifica i passaggi prima di iniziare.', false);
-            } else {
-                const fields = new FormData(form);
-                const id = Number(location.hash.replace('#work/', ''));
-                await api('/interventions/' + id + '/steps/' + Number(form.dataset.step), 'PATCH', {
-                    state: fields.get('state'),
-                    note: fields.get('note')
+            } else if (form.id === 'ai-form') {
+                await flushPending();
+                const data = new FormData(form);
+                const id = currentWorkId;
+                aiPreview = null;
+                const review = document.getElementById('ai-review');
+                if (review) review.innerHTML = '<p class="field-note">Preparazione della proposta in corso…</p>';
+                const result = await api('/interventions/' + id + '/ai/propose', 'POST', {
+                    instruction: data.get('instruction')
                 });
-                await refresh();
-                await renderWork(id);
-                flash('Passaggio e note salvati nel registro.', false);
+                aiPreview = { ...result, workId: id };
+                renderAiPreview(aiPreview);
             }
         } catch (error) {
             flash(error.message, true);
@@ -543,15 +745,25 @@
     });
 
     document.addEventListener('input', event => {
-        if (event.target.id !== 'archive-search') return;
-        archiveState.search = event.target.value;
-        updateArchive();
+        if (event.target.id === 'archive-search') {
+            archiveState.search = event.target.value;
+            updateArchive();
+            return;
+        }
+        if (event.target.matches('.step-form textarea[name="note"]')) {
+            queueStep(event.target.closest('.step-form'));
+        }
     });
 
     document.addEventListener('change', event => {
-        if (event.target.id !== 'archive-status') return;
-        archiveState.status = event.target.value;
-        updateArchive();
+        if (event.target.id === 'archive-status') {
+            archiveState.status = event.target.value;
+            updateArchive();
+            return;
+        }
+        if (event.target.matches('.step-form select[name="state"]')) {
+            queueStep(event.target.closest('.step-form'), true);
+        }
     });
 
     document.addEventListener('click', async event => {
@@ -571,8 +783,49 @@
             return;
         }
 
+        const quick = event.target.closest('[data-quick-note]');
+        if (quick) {
+            const textarea = quick.closest('.step-form')?.querySelector('[name="note"]');
+            if (textarea) {
+                const separator = textarea.value.trim() ? (textarea.value.endsWith('\n') ? '' : '\n') : '';
+                textarea.value += separator + quick.dataset.quickNote;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.focus();
+            }
+            return;
+        }
+
+        if (event.target.closest('#cancel-ai')) {
+            aiPreview = null;
+            const panel = document.getElementById('ai-review');
+            if (panel) panel.innerHTML = '';
+            return;
+        }
+
+        const apply = event.target.closest('#apply-ai');
+        if (apply) {
+            if (busy || !aiPreview || aiPreview.workId !== currentWorkId) return;
+            busy = true;
+            apply.disabled = true;
+            try {
+                await flushPending();
+                const id = currentWorkId;
+                await api('/interventions/' + id + '/ai/apply', 'POST', { token: aiPreview.token });
+                aiPreview = null;
+                await refresh();
+                await renderWork(id);
+                flash('Checklist modificata. Stati e note esistenti sono rimasti invariati.', false);
+            } catch (error) {
+                flash(error.message, true);
+                if (apply.isConnected) apply.disabled = false;
+            } finally {
+                busy = false;
+            }
+            return;
+        }
+
         if (event.target.closest('[data-print]')) {
-            window.print();
+            flushPending().then(() => window.print()).catch(error => flash(error.message, true));
             return;
         }
 
@@ -588,6 +841,7 @@
         busy = true;
         close.disabled = true;
         try {
+            await flushPending();
             const id = Number(location.hash.replace('#work/', ''));
             await api('/interventions/' + id + '/close', 'POST', {});
             await refresh();

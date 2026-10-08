@@ -59,3 +59,11 @@ Responsive behavior: desktop at full sidebar width, compact at 1100px,
 top navigation below 800px and single column below 550px. Preserve
 keyboard focus, semantic forms, labels, readable contrast, reduced-motion
 preferences and printer-friendly report output.
+
+## Interaction patterns in v0.4
+
+- AI revision: two-step proposal and explicit approval, no executable chat.
+- Quick notes: human-controlled editable suggestions, not automatic outcomes.
+- Autosave: communicate pending, saving, saved and failure states per step.
+- Optimistic concurrency: reject stale revisions with HTTP 409.
+- Print: display notes as readable report text without editing controls.
