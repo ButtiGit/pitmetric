@@ -72,6 +72,15 @@ http {
         index index.php;
         charset utf-8;
 
+        # Static SysPilot workbench; do not fall back to Laravel's PHP index.
+        location = /syspilot {
+            return 301 /syspilot/;
+        }
+
+        location = /syspilot/ {
+            rewrite ^ /syspilot/index.html last;
+        }
+
         location / {
             try_files $uri $uri/ ${NIXPACKS_PHP_FALLBACK_PATH}?$query_string;
         }

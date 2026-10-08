@@ -1,34 +1,56 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#080f1b">
-  <title>SysPilot · IT Operations Workspace</title>
-  <link rel="stylesheet" href="./app.css">
-  <script src="./app.js" defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0d1118">
+    <title>SysPilot — Workspace operativo</title>
+    <link rel="stylesheet" href="./app.css?v=03">
+    <script src="./app.js?v=03" defer></script>
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar">
-      <a class="brand" href="#home"><span class="brand-mark">⌘</span>SysPilot<span class="lab">LAB</span></a>
-      <p class="caption">WORKSPACE</p>
-      <nav aria-label="Navigazione SysPilot">
-        <a class="nav" href="#home" data-nav="home">▦ &nbsp; Panoramica</a>
-        <a class="nav" href="#new" data-nav="new">✦ &nbsp; Nuovo intervento</a>
-      </nav>
-      <p class="caption">ULTIMI INTERVENTI</p>
-      <div id="recent-nav" class="recent">Caricamento…</div>
-      <div class="side-footer"><span class="live-dot"></span> Beta privata<br><span id="sidebar-user">Accesso protetto</span></div>
+<a href="#main-content" class="skip-link">Vai al contenuto</a>
+<div class="shell">
+    <aside class="sidebar" aria-label="Navigazione principale">
+        <a class="brand" href="#home" aria-label="SysPilot - panoramica">
+            <span class="brand-symbol" aria-hidden="true">S<span>.</span></span>
+            <span>sys<span class="brand-accent">pilot</span><small>OPERATIONS WORKSPACE</small></span>
+        </a>
+        <div class="sidebar-scroll">
+            <div class="nav-kicker">WORKSPACE</div>
+            <nav class="nav-list">
+                <a href="#home" class="nav-item" data-nav="home"><span data-icon="home"></span> Panoramica</a>
+                <a href="#archive" class="nav-item" data-nav="archive"><span data-icon="layers"></span> Interventi</a>
+                <a href="#new" class="nav-item" data-nav="new"><span data-icon="plus"></span> Nuovo intervento</a>
+            </nav>
+            <div class="sidebar-rule"></div>
+            <div class="nav-kicker">RIPRENDI IL LAVORO</div>
+            <div id="recent-nav" class="recent-nav"><span class="muted">Caricamento…</span></div>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="sidebar-beta"><span class="online-dot"></span> Beta privata <span class="version">v0.3</span></div>
+            <div class="profile"><span class="profile-avatar" id="user-avatar">S</span><div><strong id="sidebar-user">Workspace personale</strong><small>Account PitMetric</small></div></div>
+        </div>
     </aside>
-    <main>
-      <header class="mobile-header"><a class="brand" href="#home">⌘ SysPilot</a><a href="https://pitmetric.it/">PitMetric ↗</a></header>
-      <div class="content">
-        <div id="flash" class="flash" role="status" aria-live="polite" hidden></div>
-        <div id="app"><p class="muted">Caricamento workspace…</p></div>
-      </div>
-    </main>
-  </div>
+    <div class="main-column">
+        <header class="topbar">
+            <div class="breadcrumbs"><strong>SysPilot</strong><span>/</span><span id="topbar-page">Panoramica</span></div>
+            <div class="topbar-right"><span class="topbar-environment"><span class="online-dot"></span> AMBIENTE TEST</span><a href="/dashboard">Torna a PitMetric ↗</a></div>
+        </header>
+        <nav class="mobile-nav" aria-label="Navigazione mobile">
+            <a href="#home" data-mobile="home">Panoramica</a>
+            <a href="#archive" data-mobile="archive">Interventi</a>
+            <a href="#new" data-mobile="new">Nuovo</a>
+        </nav>
+        <main id="main-content" class="workspace" tabindex="-1">
+            <div id="flash" class="flash" role="status" aria-live="polite" hidden></div>
+            <div id="app" aria-live="polite">
+                <div class="skeleton-page"><span></span><span></span><span></span></div>
+            </div>
+        </main>
+        <footer class="footer"><span>SYS PILOT / PRIVATE PREVIEW</span><span>Il lavoro svolto, finalmente documentato.</span></footer>
+    </div>
+</div>
 </body>
 </html>

@@ -28,6 +28,13 @@ The existing Composer deploy script executes php artisan migrate --force.
 Ensure it runs after deployment to add the three isolated SysPilot tables.
 After changing environment variables, redeploy or refresh Laravel config cache.
 
+## Interface foundation
+
+The shared design language and four screen contracts are documented in
+[syspilot-design-system.md](syspilot-design-system.md). The frontend uses a
+consistent navigation shell, status vocabulary, typography and components.
+The Nixpacks Nginx configuration also serves /syspilot/ via index.html.
+
 ## MVP workflow
 
 1. Log into PitMetric with an account authorized to access the PitMetric database.
