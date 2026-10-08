@@ -42,6 +42,13 @@ jobs:
           node --check public/game_assets/game_dev_data.js
           node --check public/game_assets/game_dev.js
 
+      - name: Preview Laravel Pint corrections (temporary branch only)
+        run: |
+          vendor/bin/pint app/Services/SysPilot/ChecklistEditor.php routes/web.php routes/syspilot.php
+          git diff -- app/Services/SysPilot/ChecklistEditor.php routes/web.php routes/syspilot.php
+          php -l app/Services/SysPilot/ChecklistEditor.php
+          php -l routes/syspilot.php
+
       - name: Run CI Checks
         run: composer ci:check
 

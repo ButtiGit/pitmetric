@@ -15,7 +15,6 @@ use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SitemapController;
-use App\Http\Controllers\SysPilotController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TechnicalSetupController;
 use App\Http\Controllers\TelemetryController;
@@ -247,27 +246,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 
-
-/*
-|--------------------------------------------------------------------------
-| SysPilot pilot workspace (independent of the PitMetric manager).
-|--------------------------------------------------------------------------
-| The static UI lives in public/syspilot/. Data and paid AI calls require
-| an authenticated, verified PitMetric login with database access enabled.
-*/
-Route::middleware(['auth', 'verified', 'database.access'])
-    ->prefix('api/syspilot')
-    ->name('syspilot.')
-    ->group(function (): void {
-        Route::get('/bootstrap', [SysPilotController::class, 'bootstrap'])->name('bootstrap');
-        Route::get('/interventions/{intervention}', [SysPilotController::class, 'show'])->name('show');
-        Route::post('/interventions', [SysPilotController::class, 'store'])
-            ->middleware('throttle:5,1')
-            ->name('store');
-        Route::patch('/interventions/{intervention}/steps/{step}', [SysPilotController::class, 'updateStep'])->name('steps.update');
-        Route::post('/interventions/{intervention}/ai/propose', [SysPilotController::class, 'proposeRevision'])
-            ->middleware('throttle:3,1')->name('ai.propose');
-        Route::post('/interventions/{intervention}/ai/apply', [SysPilotController::class, 'applyRevision'])
-            ->middleware('throttle:10,1')->name('ai.apply');
-        Route::post('/interventions/{intervention}/close', [SysPilotController::class, 'close'])->name('close');
-    });
+require __DIR__.'/syspilot.php';
