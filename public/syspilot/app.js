@@ -378,7 +378,8 @@
         const examples = [
             ['server', 'Diagnostica server', 'Verificare risorse, log e servizi di un server che risulta lento.'],
             ['shield', 'Aggiornamento sicurezza', 'Aggiornare un sistema operativo e verificare backup, compatibilità e rollback.'],
-            ['briefcase', 'Nuova postazione', 'Preparare un PC Windows, configurare l’account aziendale, Office e stampanti.']
+            ['briefcase', 'Nuova postazione', 'Preparare un PC Windows, configurare l’account aziendale, Office e stampanti.'],
+            ['server', 'Proiettore già installato', 'Oggi ho montato e sistemato il proiettore della sala riunioni. Devo ancora collegarlo alla rete aziendale e verificarne la connessione.']
         ];
 
         app.innerHTML = heading('INTERVENTI / NUOVO', 'Comincia dall’obiettivo.',
@@ -393,7 +394,7 @@
             '<form id="create-form">' +
             '<label class="field-label" for="request">Cosa devi fare? <span aria-hidden="true">*</span></label>' +
             '<textarea class="field-input" id="request" name="request" required minlength="15" maxlength="2500" placeholder="Per esempio: devo preparare un server Ubuntu per ospitare un gestionale. Configurare web server, database, backup, firewall e certificato SSL."></textarea>' +
-            '<p class="field-note">Scrivi liberamente, senza elencare i passaggi. Evita password, segreti e dati riservati.</p>' +
+            '<p class="field-note">Indica anche cosa hai già fatto: SysPilot distinguerà le attività concluse da quelle da completare. Evita password e dati riservati.</p>' +
             '<div class="field-grid" style="margin-top:24px">' +
             '<div><label class="field-label" for="client">Cliente <small>· facoltativo</small></label>' +
             '<input class="field-input" id="client" name="client" maxlength="120" placeholder="Es. Azienda Demo"></div>' +
@@ -473,6 +474,8 @@
             '<ol class="proposal-list">' + proposal.changes.map(change =>
                 '<li><span class="tag neutral">' + labels[change.action] +
                 '</span><div><strong>' + escape(change.label) + '</strong>' +
+                (change.parent_title ? '<p class="proposal-location">Sotto-attività di: ' +
+                    escape(change.parent_title) + '</p>' : '') +
                 (change.detail ? '<p>' + escape(change.detail) + '</p>' : '') +
                 (change.location ? '<p class="proposal-location">' + escape(change.location) + '</p>' : '') +
                 (change.reason ? '<p>' + escape(change.reason) + '</p>' : '') +
@@ -490,7 +493,21 @@
         if (sequence !== undefined && sequence !== navigationId) return;
 
         const job = data.intervention;
-        const steps = data.steps || [];
+        const incoming = data.steps || [];
+        const stepById = new Map(incoming.map(step => [Number(step.id), step]));
+        const children = new Map();
+        for (const step of incoming) {
+            const parent = Number(step.parent_step_id || 0);
+            if (!parent || !stepById.has(parent)) continue;
+            if (!children.has(parent)) children.set(parent, []);
+            children.get(parent).push(step);
+        }
+        const steps = [];
+        for (const step of incoming) {
+            if (Number(step.parent_step_id || 0) && stepById.has(Number(step.parent_step_id))) continue;
+            steps.push(step);
+            steps.push(...(children.get(Number(step.id)) || []));
+        }
         const closed = job.status === 'closed';
         const completed = steps.filter(step => step.state === 'done').length;
         const skipped = steps.filter(step => step.state === 'skipped').length;
@@ -512,11 +529,24 @@
                     String(phaseCount).padStart(2, '0') + '</span></header><div>';
             }
 
-            group += '<article class="check-item"><div class="check-top"><div class="check-counter ' +
+            const isChild = Number(step.parent_step_id || 0) > 0 && stepById.has(Number(step.parent_step_id));
+            group += '<article class="check-item' + (isChild ? ' check-substep' : '') +
+                '"><div class="check-top"><div class="check-counter ' +
                 (step.state === 'done' ? 'done' : '') + '" data-index="' + String(index + 1).padStart(2, '0') + '">' +
                 (step.state === 'done' ? icon('check') : String(index + 1).padStart(2, '0')) +
-                '</div><div class="check-content"><h3>' + escape(step.title) +
+                '</div><div class="check-content">' +
+                (isChild ? '<span class="substep-caption">SOTTO-ATTIVITÀ</span>' : '') +
+                '<h3>' + escape(step.title) +
                 '</h3><p>' + escape(step.detail || '') + '</p>' + statusTag(step.state) +
+                (String(step.note || '').startsWith('Dichiarato già svolto nella richiesta:')
+                    ? '<p class="initial-completion">' + icon('check') +
+                        ' Dichiarato come già svolto nella richiesta. Verifica che sia corretto.</p>'
+                    : '') +
+                (!closed && !isChild && ['todo', 'blocked'].includes(step.state)
+                    ? '<button type="button" class="subcheck-action no-print" data-expand-step="' +
+                        Number(step.id) + '" data-expand-title="' + escape(step.title) +
+                        '">' + icon('spark') + ' Approfondisci con IA</button>'
+                    : '') +
                 (closed ? '<div class="readonly-note">Esito: ' + escape(step.note || 'Nessuna nota registrata') + '</div>' : '') +
                 '</div></div>';
 
@@ -791,6 +821,21 @@
                 textarea.value += separator + quick.dataset.quickNote;
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
                 textarea.focus();
+            }
+            return;
+        }
+
+        const expand = event.target.closest('[data-expand-step]');
+        if (expand) {
+            const editor = document.getElementById('ai-instruction');
+            if (editor) {
+                const id = Number(expand.dataset.expandStep);
+                const title = expand.dataset.expandTitle || 'questo controllo';
+                editor.value = 'Approfondisci il passaggio ID ' + id + ' «' + title +
+                    '» con 3 sotto-attività pratiche (action=add, parent_step_id=' + id +
+                    '). Indica verifiche concrete, senza segnare operazioni come già eseguite.';
+                editor.focus();
+                editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             return;
         }

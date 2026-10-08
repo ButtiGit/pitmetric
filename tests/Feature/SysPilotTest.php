@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function (): void {
     config()->set('syspilot.openai_api_key', 'fake-test-key');
@@ -142,7 +142,6 @@ test('skipped steps require an explanation', function (): void {
     ])->assertUnprocessable();
     $this->assertDatabaseHas('syspilot_steps', ['id' => $stepId, 'state' => 'todo']);
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -341,6 +340,178 @@ test('an approved AI token cannot be reused for another technician or interventi
 
     $this->actingAs($owner)->postJson("/api/syspilot/interventions/$id/ai/apply", [
         'token' => $preview['token'].'tampered',
+    ])->assertUnprocessable();
+
+    $this->assertDatabaseCount('syspilot_steps', 1);
+});
+
+test('initial checklist respects explicitly completed work and pending projector network setup', function (): void {
+    $user = User::factory()->create();
+    $user->forceFill(['database_access_enabled' => true])->save();
+
+    $request = 'Oggi ho sistemato un proiettore nella sala riunioni. Devo ancora connetterlo alla rete.';
+    Http::fake(['api.openai.com/*' => Http::response(sysPilotOpenAiResponse([
+        'title' => 'Installazione proiettore',
+        'phases' => [
+            ['name' => 'Installazione', 'steps' => [
+                [
+                    'title' => 'Montaggio e posizionamento del proiettore',
+                    'detail' => 'Controllare l’installazione dichiarata.',
+                    'state' => 'done',
+                    'source_quote' => 'ho sistemato un proiettore',
+                ],
+                [
+                    'title' => 'Connessione alla rete aziendale',
+                    'detail' => 'Configurare rete e verificare il collegamento.',
+                    'state' => 'todo',
+                    'source_quote' => '',
+                ],
+            ]],
+        ],
+    ]))]);
+
+    $id = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
+        'request' => $request,
+    ])->assertCreated()->json('id');
+
+    $steps = DB::table('syspilot_steps')->where('intervention_id', $id)
+        ->orderBy('position')->get();
+
+    expect($steps)->toHaveCount(2)
+        ->and($steps[0]->state)->toBe('done')
+        ->and($steps[0]->note)->toContain('Dichiarato già svolto')
+        ->and($steps[1]->state)->toBe('todo')
+        ->and($steps[1]->note)->toBe('');
+
+    $this->actingAs($user)->postJson("/api/syspilot/interventions/$id/close", [])
+        ->assertStatus(422);
+});
+
+test('unsupported or pending text is never accepted as evidence of completed work', function (): void {
+    $user = User::factory()->create();
+    $user->forceFill(['database_access_enabled' => true])->save();
+    $request = 'Devo ancora collegare alla rete il proiettore già montato.';
+    Http::fake(['api.openai.com/*' => Http::response(sysPilotOpenAiResponse([
+        'title' => 'Connessione proiettore',
+        'phases' => [
+            ['name' => 'Rete', 'steps' => [
+                [
+                    'title' => 'Connettere proiettore alla rete',
+                    'detail' => 'Configurare indirizzo e verificare la connessione.',
+                    'state' => 'done',
+                    'source_quote' => 'Devo ancora collegare alla rete',
+                ],
+                [
+                    'title' => 'Controllare il DNS',
+                    'detail' => 'Verificare risoluzione.',
+                    'state' => 'done',
+                    'source_quote' => 'il DNS è stato configurato correttamente',
+                ],
+            ]],
+        ],
+    ]))]);
+
+    $id = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
+        'request' => $request,
+    ])->assertCreated()->json('id');
+
+    $steps = DB::table('syspilot_steps')->where('intervention_id', $id)->get();
+
+    expect($steps)->toHaveCount(2)
+        ->and($steps[0]->state)->toBe('todo')
+        ->and($steps[1]->state)->toBe('todo');
+});
+
+test('AI can add real nested diagnostic checks without changing parent state or notes', function (): void {
+    $user = User::factory()->create();
+    $user->forceFill(['database_access_enabled' => true])->save();
+
+    Http::fake(['api.openai.com/*' => Http::sequence()
+        ->push(sysPilotOpenAiResponse([
+            'title' => 'Diagnosi rete',
+            'phases' => [['name' => 'Rete', 'steps' => [
+                ['title' => 'Diagnosi rete del proiettore', 'detail' => 'Verificare la connettività.'],
+            ]]],
+        ]))
+        ->push(sysPilotOpenAiResponse(sysPilotAiChanges([
+            [
+                ...sysPilotChange('add', 0, 1, 'after'),
+                'title' => 'Verifica IP e gateway',
+                'parent_step_id' => 1,
+            ],
+            [
+                ...sysPilotChange('add', 0, 1, 'after'),
+                'title' => 'Test DNS',
+                'parent_step_id' => 1,
+            ],
+        ])))]);
+
+    $id = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
+        'request' => 'La rete del proiettore non funziona; servono verifiche di connettività.',
+    ])->assertCreated()->json('id');
+
+    $parentId = DB::table('syspilot_steps')->where('intervention_id', $id)->value('id');
+    // Keep model-produced fixture IDs deterministic even if migrations seed data.
+    expect($parentId)->toBe(1);
+
+    $this->actingAs($user)->patchJson("/api/syspilot/interventions/$id/steps/$parentId", [
+        'state' => 'blocked',
+        'note' => 'Il gateway non risponde.',
+    ])->assertOk();
+
+    $preview = $this->actingAs($user)->postJson("/api/syspilot/interventions/$id/ai/propose", [
+        'instruction' => 'Spezza il controllo della rete in due sotto-attività: verifica gateway e DNS.',
+    ])->assertOk()->assertJsonCount(2, 'changes')->json();
+
+    expect(DB::table('syspilot_steps')->where('intervention_id', $id)->count())->toBe(1);
+
+    $this->actingAs($user)->postJson("/api/syspilot/interventions/$id/ai/apply", [
+        'token' => $preview['token'],
+    ])->assertOk()->assertJsonPath('applied', 2);
+
+    $rows = DB::table('syspilot_steps')->where('intervention_id', $id)
+        ->orderBy('position')->get();
+
+    expect($rows)->toHaveCount(3)
+        ->and($rows[0]->state)->toBe('blocked')
+        ->and($rows[0]->note)->toBe('Il gateway non risponde.')
+        ->and($rows[1]->parent_step_id)->toBe($parentId)
+        ->and($rows[2]->parent_step_id)->toBe($parentId)
+        ->and($rows[1]->state)->toBe('todo')
+        ->and($rows[2]->state)->toBe('todo');
+});
+
+test('AI refuses nested checks under a completed parent', function (): void {
+    $user = User::factory()->create();
+    $user->forceFill(['database_access_enabled' => true])->save();
+
+    Http::fake(['api.openai.com/*' => Http::sequence()
+        ->push(sysPilotOpenAiResponse([
+            'title' => 'Rete proiettore',
+            'phases' => [['name' => 'Rete', 'steps' => [
+                ['title' => 'Verificare la rete', 'detail' => 'Controllare il collegamento.'],
+            ]]],
+        ]))
+        ->push(sysPilotOpenAiResponse(sysPilotAiChanges([
+            [
+                ...sysPilotChange('add', 0, 1, 'after'),
+                'parent_step_id' => 1,
+            ],
+        ])))]);
+
+    $id = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
+        'request' => 'Verificare rete e collegamento del proiettore nella sala riunioni.',
+    ])->assertCreated()->json('id');
+
+    $stepId = DB::table('syspilot_steps')->where('intervention_id', $id)->value('id');
+
+    $this->actingAs($user)->patchJson("/api/syspilot/interventions/$id/steps/$stepId", [
+        'state' => 'done',
+        'note' => 'Verificato da tecnico.',
+    ])->assertOk();
+
+    $this->actingAs($user)->postJson("/api/syspilot/interventions/$id/ai/propose", [
+        'instruction' => 'Aggiungi verifiche come sotto-attività del passaggio completato.',
     ])->assertUnprocessable();
 
     $this->assertDatabaseCount('syspilot_steps', 1);

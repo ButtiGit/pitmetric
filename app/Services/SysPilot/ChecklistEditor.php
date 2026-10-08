@@ -21,6 +21,7 @@ use stdClass;
 class ChecklistEditor
 {
     private const MAX_CHANGES = 6;
+
     private const MAX_STEPS = 80;
 
     /**
@@ -40,6 +41,7 @@ class ChecklistEditor
             'title' => $step->title,
             'detail' => $step->detail,
             'state' => $step->state,
+            'parent_step_id' => (int) ($step->parent_step_id ?? 0),
         ], $steps);
 
         $change = [
@@ -53,8 +55,9 @@ class ChecklistEditor
                 'title' => ['type' => 'string'],
                 'detail' => ['type' => 'string'],
                 'reason' => ['type' => 'string'],
+                'parent_step_id' => ['type' => 'integer'],
             ],
-            'required' => ['action', 'step_id', 'anchor_id', 'placement', 'phase', 'title', 'detail', 'reason'],
+            'required' => ['action', 'step_id', 'anchor_id', 'placement', 'phase', 'title', 'detail', 'reason', 'parent_step_id'],
             'additionalProperties' => false,
         ];
 
@@ -65,6 +68,10 @@ class ChecklistEditor
                     .'non rigenerare la checklist intera. Rispondi in italiano e proponi al massimo sei operazioni. '
                     .'Non alterare mai passaggi done o skipped. Non inventare esiti e non includere note del tecnico. '
                     .'Operazioni: add (step_id=0), edit, remove, move. '
+                    .'Se devi approfondire un passo con verifiche aggiuntive, usa add con parent_step_id uguale '
+                    .'all’ID del passo padre e suggerisci 2-4 sotto-attività concrete. '
+                    .'Per tutte le altre modifiche usa parent_step_id=0. '
+                    .'Non marcare automaticamente come fatti i nuovi passaggi: partono da todo. '
                     .'Per add o move usa placement before/after con anchor_id di un passo esistente, oppure end con anchor_id=0. '
                     .'Per edit/remove usa placement=end e anchor_id=0. Per move/remove inserisci title, phase e detail '
                     .'del passo esistente (sono ignorati dal server). Non eseguire comandi. '
@@ -202,6 +209,7 @@ class ChecklistEditor
                         'state' => 'todo',
                         'note' => '',
                         'position' => $index + 1,
+                        'parent_step_id' => $item['parent_step_id'] ?: null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -235,6 +243,7 @@ class ChecklistEditor
         return hash('sha256', json_encode(array_map(static fn (stdClass $step): array => [
             (int) $step->id, (int) $step->position, $step->state,
             $step->phase, $step->title, $step->detail, $step->note,
+            (int) ($step->parent_step_id ?? 0),
         ], $steps), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
@@ -250,6 +259,12 @@ class ChecklistEditor
                 || ! is_int($change['step_id'] ?? null) || ! is_int($change['anchor_id'] ?? null)
                 || ! in_array($change['placement'] ?? null, ['before', 'after', 'end'], true)) {
                 throw ValidationException::withMessages(['instruction' => 'L’IA ha proposto un’operazione non valida. Riprova.']);
+            }
+
+            // Legacy server-side test fixtures have no parent_step_id.
+            $change['parent_step_id'] ??= 0;
+            if (! is_int($change['parent_step_id']) || $change['parent_step_id'] < 0) {
+                throw ValidationException::withMessages(['instruction' => 'La gerarchia delle attività non è valida.']);
             }
 
             foreach (['phase' => 120, 'title' => 250, 'detail' => 750, 'reason' => 250] as $field => $max) {
@@ -279,33 +294,83 @@ class ChecklistEditor
             'id' => (int) $step->id, 'phase' => $step->phase,
             'title' => $step->title, 'detail' => (string) $step->detail,
             'state' => $step->state, 'note' => $step->note,
+            'parent_step_id' => (int) ($step->parent_step_id ?? 0),
         ], $steps);
 
         foreach ($changes as $change) {
             $action = $change['action'];
             $targetIndex = $this->indexOf($items, $change['step_id']);
             if ($action === 'add') {
-                if ($change['step_id'] !== 0) $this->invalid();
+                if ($change['step_id'] !== 0) {
+                    $this->invalid();
+                }
+                $parentId = $change['parent_step_id'];
+                if ($parentId !== 0) {
+                    $parentIndex = $this->indexOf($items, $parentId);
+                    if ($parentIndex === null
+                        || $items[$parentIndex]['parent_step_id'] !== 0
+                        || in_array($items[$parentIndex]['state'], ['done', 'skipped'], true)) {
+                        $this->invalid();
+                    }
+                }
+
                 $new = [
-                    'id' => 0, 'phase' => $change['phase'], 'title' => $change['title'],
+                    'id' => 0, 'phase' => $parentId ? $items[$parentIndex]['phase'] : $change['phase'],
+                    'title' => $change['title'],
                     'detail' => $change['detail'], 'state' => 'todo', 'note' => '',
+                    'parent_step_id' => $parentId,
                 ];
-                $offset = $this->insertionOffset($items, $change);
+
+                // Keep all sub-checks immediately after their parent.
+                if ($parentId !== 0) {
+                    $offset = $this->indexOf($items, $parentId) + 1;
+                    while (isset($items[$offset]) && $items[$offset]['parent_step_id'] === $parentId) {
+                        $offset++;
+                    }
+                } else {
+                    $offset = $this->insertionOffset($items, $change);
+                }
                 array_splice($items, $offset, 0, [$new]);
             } else {
-                if ($targetIndex === null) $this->invalid();
+                if ($targetIndex === null) {
+                    $this->invalid();
+                }
                 $target = $items[$targetIndex];
                 if (in_array($target['state'], ['done', 'skipped'], true)) {
                     throw ValidationException::withMessages(['instruction' => 'Non è possibile modificare un passo completato o saltato.']);
                 }
 
                 if ($action === 'remove') {
+                    foreach ($items as $possibleChild) {
+                        if ($possibleChild['parent_step_id'] === $target['id']) {
+                            throw ValidationException::withMessages([
+                                'instruction' => 'Non è possibile eliminare un passaggio che contiene sotto-attività.',
+                            ]);
+                        }
+                    }
+
                     if (trim((string) $target['note']) !== '') {
                         throw ValidationException::withMessages(['instruction' => 'Un passo con note non può essere eliminato.']);
                     }
                     array_splice($items, $targetIndex, 1);
                 } elseif ($action === 'edit') {
-                    foreach (['phase', 'title', 'detail'] as $field) $items[$targetIndex][$field] = $change[$field];
+                    foreach (['phase', 'title', 'detail'] as $field) {
+                        $items[$targetIndex][$field] = $change[$field];
+                    }
+
+                    // A child always stays in its parent's phase. If the
+                    // parent phase changes, carry its children along.
+                    if ($target['parent_step_id'] !== 0) {
+                        $parentIndex = $this->indexOf($items, $target['parent_step_id']);
+                        $items[$targetIndex]['phase'] = $items[$parentIndex]['phase'];
+                    } else {
+                        foreach ($items as &$item) {
+                            if ($item['parent_step_id'] === $target['id']) {
+                                $item['phase'] = $change['phase'];
+                            }
+                        }
+                        unset($item);
+                    }
                 } elseif ($action === 'move') {
                     array_splice($items, $targetIndex, 1);
                     $offset = $this->insertionOffset($items, $change);
@@ -327,22 +392,30 @@ class ChecklistEditor
     private function insertionOffset(array $items, array $change): int
     {
         if ($change['placement'] === 'end') {
-            if ($change['anchor_id'] !== 0) $this->invalid();
+            if ($change['anchor_id'] !== 0) {
+                $this->invalid();
+            }
 
             return count($items);
         }
 
         $index = $this->indexOf($items, $change['anchor_id']);
-        if ($index === null || $change['anchor_id'] < 1) $this->invalid();
+        if ($index === null || $change['anchor_id'] < 1) {
+            $this->invalid();
+        }
 
         return $index + ($change['placement'] === 'after' ? 1 : 0);
     }
 
     private function indexOf(array $items, int $id): ?int
     {
-        if ($id <= 0) return null;
+        if ($id <= 0) {
+            return null;
+        }
         foreach ($items as $index => $item) {
-            if ($item['id'] === $id) return $index;
+            if ($item['id'] === $id) {
+                return $index;
+            }
         }
 
         return null;
@@ -356,7 +429,9 @@ class ChecklistEditor
     private function describe(array $steps, array $changes): array
     {
         $titles = [];
-        foreach ($steps as $step) $titles[(int) $step->id] = $step->title;
+        foreach ($steps as $step) {
+            $titles[(int) $step->id] = $step->title;
+        }
 
         return array_map(static function (array $change) use ($titles): array {
             $target = $titles[$change['step_id']] ?? '';
@@ -373,12 +448,16 @@ class ChecklistEditor
                 'reason' => $change['reason'],
                 'phase' => $change['phase'],
                 'detail' => in_array($change['action'], ['add', 'edit'], true) ? $change['detail'] : '',
-                'location' => in_array($change['action'], ['add', 'move'], true)
-                    ? ($change['placement'] === 'end'
+                'parent_step_id' => $change['parent_step_id'],
+                'parent_title' => $titles[$change['parent_step_id']] ?? '',
+                'location' => $change['parent_step_id'] > 0
+                    ? 'Sotto-attività di: '.($titles[$change['parent_step_id']] ?? 'Passaggio indicato')
+                    : (in_array($change['action'], ['add', 'move'], true)
+                        ? ($change['placement'] === 'end'
                         ? 'In fondo alla checklist'
                         : ($change['placement'] === 'before' ? 'Prima di: ' : 'Dopo: ')
                             .($titles[$change['anchor_id']] ?? 'Passaggio indicato'))
-                    : '',
+                        : ''),
             ];
         }, $changes);
     }

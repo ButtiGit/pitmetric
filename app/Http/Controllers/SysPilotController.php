@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\SysPilot\ChecklistGenerator;
 use App\Services\SysPilot\ChecklistEditor;
+use App\Services\SysPilot\ChecklistGenerator;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +70,7 @@ class SysPilotController extends Controller
             $plan = $generator->generate(trim($input['request']));
         } catch (RuntimeException $e) {
             return $this->privateJson(['message' => $e->getMessage()], 422);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             report($e);
 
             return $this->privateJson(['message' => 'Connessione all’IA non disponibile. Riprova tra poco.'], 503);
@@ -87,12 +88,16 @@ class SysPilotController extends Controller
                     continue;
                 }
 
+                $declaredDone = ($step['state'] ?? 'todo') === 'done';
+                $sourceQuote = (string) ($step['source_quote'] ?? '');
                 $steps[] = [
                     'phase' => $name !== '' ? $name : 'Attività',
                     'title' => Str::limit(trim((string) $step['title']), 250, ''),
                     'detail' => Str::limit(trim((string) ($step['detail'] ?? '')), 750, ''),
-                    'state' => 'todo',
-                    'note' => '',
+                    'state' => $declaredDone ? 'done' : 'todo',
+                    'note' => $declaredDone
+                        ? 'Dichiarato già svolto nella richiesta: «'.$sourceQuote.'». Da verificare dal tecnico.'
+                        : '',
                     'position' => count($steps) + 1,
                 ];
             }
@@ -123,7 +128,12 @@ class SysPilotController extends Controller
                 ]);
             }
 
-            $this->event($id, (int) $request->user()->id, 'Checklist proposta dall’IA. Nessuna attività è stata eseguita automaticamente.');
+            $alreadyDone = count(array_filter($steps, static fn (array $step): bool => $step['state'] === 'done'));
+            $this->event(
+                $id,
+                (int) $request->user()->id,
+                'Checklist proposta dall’IA. '.$alreadyDone.' attività dichiarate già svolte dall’utente; non verificate automaticamente.'
+            );
 
             return $id;
         });
@@ -203,7 +213,7 @@ class SysPilotController extends Controller
             $result = $editor->propose((int) $request->user()->id, $record, $steps, trim($input['instruction']));
         } catch (RuntimeException $e) {
             return $this->privateJson(['message' => $e->getMessage()], 422);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             report($e);
 
             return $this->privateJson(['message' => 'Connessione all’IA non disponibile. Riprova.'], 503);

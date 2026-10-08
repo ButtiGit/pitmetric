@@ -67,3 +67,14 @@ preferences and printer-friendly report output.
 - Autosave: communicate pending, saving, saved and failure states per step.
 - Optimistic concurrency: reject stale revisions with HTTP 409.
 - Print: display notes as readable report text without editing controls.
+
+## v0.5 sub-checklist and completion evidence
+
+- Root steps are grouped by phase; children are rendered immediately below
+  their parent using the existing .check-item and .tag styles.
+- Nested rows use the shared accent as a subtle indentation line, never
+  an independent visual language.
+- The "Approfondisci con IA" action fills the current AI editor, where
+  the proposal and its parent relationship remain visible for approval.
+- Previously declared done steps show a provenance cue in the detail.
+  This cue reflects the user's words, not a technician-verified outcome.

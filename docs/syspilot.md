@@ -96,3 +96,39 @@ plan in the existing Laravel database, scoped to the authenticated user.
 No migrations were added for this increment: it uses existing SysPilot tables.
 If bootstrap responds HTTP 500, inspect Laravel logs and check the original
 SysPilot migration status; the UI upgrade does not fix missing tables.
+
+## v0.5 — aware of completed work and dynamic sub-checklists
+
+### Initial checklist
+- The model separates tasks already described as done from the work still needed.
+  Example: "Ho montato e sistemato il proiettore, devo ancora connetterlo alla
+  rete" results in mounting/systematization marked done and networking marked
+  todo; it must not claim the network was configured or tested.
+- Done requires an exact supporting quotation from the user's request, plus
+  an affirmative past/completed cue. Missing, fabricated or future/negative
+  quotations are downgraded to todo server-side.
+- AI-inferred completed states are tagged with "Dichiarato già svolto ...";
+  they are not independently verified evidence. The technician may correct
+  the state and note before closure.
+- Older response fixtures that omit state/source_quote remain all-todo.
+
+### Dynamic nested checks
+- An open, unfinished root step can be expanded via "Approfondisci con IA".
+  The control drafts a scoped instruction for the existing AI editor.
+- The proposal still requires manual approval, does not execute commands
+  and cannot alter completed steps or technician notes.
+- New child steps are stored in syspilot_steps.parent_step_id, start as todo,
+  and are shown directly beneath their parent with a consistent UI style.
+- Child steps participate in progress, autosave, audit and closure rules.
+- A parent with children cannot be deleted through AI without removing
+  its children first, preventing accidental orphaned records.
+- This version supports one level of nesting; deeper trees, collaborative
+  intervention editing and voice recording remain future increments.
+
+### Deployment
+The migration below MUST run during deployment:
+database/migrations/2026_10_08_130000_add_parent_step_to_syspilot_steps.php
+
+Confirm it is applied via php artisan migrate:status. The existing
+composer deploy script runs php artisan migrate --force. No migrations
+outside SysPilot were modified.

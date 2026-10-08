@@ -358,3 +358,15 @@ textarea.field-input { min-height: 169px; resize: vertical; line-height: 1.75; }
 @media print {
     .ai-editor, .quick-note-row, .save-tools, .ai-review { display: none !important; }
 }
+
+/* v0.5 — nested sub-checklists and explicit previously completed work. */
+.check-substep { margin-left: 30px; padding-left: 18px; background: #131c28; border-left: 2px solid var(--accent); }
+.check-substep .check-counter { width: 22px; height: 22px; background: #253249; }
+.substep-caption { display: inline-block; font: 500 10px var(--mono); color: var(--accent); letter-spacing: .8px; margin-bottom: 3px; }
+.subcheck-action { margin-top: 12px; display: inline-flex; gap: 7px; align-items: center; color: var(--accent); background: transparent; border: 1px solid #435a7e; border-radius: 7px; padding: 6px 10px; font-size: 11px; font-weight: 600; }
+.subcheck-action:hover { background: #263956; }
+.subcheck-action .icon { width: 14px; height: 14px; }
+.initial-completion { display: flex; align-items: flex-start; gap: 7px; margin-top: 10px !important; color: var(--success) !important; font-size: 11px !important; }
+.initial-completion .icon { width: 15px; height: 15px; flex-shrink: 0; }
+@media(max-width:550px) { .check-substep { margin-left: 13px; padding-left: 12px; } }
+@media print { .check-substep { margin-left: 15px; padding-left: 12px; border-left: 2px solid #777; background: white; } .subcheck-action { display: none !important; } }
