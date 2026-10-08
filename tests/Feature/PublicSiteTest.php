@@ -46,6 +46,15 @@ it('permanently redirects legacy public urls to the preferred localized version'
         ->assertRedirect(route('localized.about', ['locale' => 'it']));
 });
 
+it('preserves pagination when redirecting the legacy updates index', function () {
+    $this->get(route('updates.index', ['page' => 2]))
+        ->assertStatus(301)
+        ->assertRedirect(route('localized.updates.index', [
+            'locale' => 'en',
+            'page' => 2,
+        ]));
+});
+
 it('stores a valid language preference', function () {
     $source = route('localized.home', ['locale' => 'en']);
 
