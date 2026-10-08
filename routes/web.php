@@ -42,7 +42,15 @@ Route::get('/', fn () => redirect()->route('localized.home', ['locale' => app()-
 Route::get('/about', fn () => redirect()->route('localized.about', ['locale' => app()->getLocale()], 301))->name('about');
 Route::get('/app', fn () => redirect()->route('localized.app', ['locale' => app()->getLocale()], 301))->name('app');
 Route::get('/cookies', fn () => redirect()->route('localized.cookies', ['locale' => app()->getLocale()], 301))->name('cookies');
-Route::get('/updates', fn () => redirect()->route('localized.updates.index', ['locale' => app()->getLocale()], 301))->name('updates.index');
+Route::get('/updates', function (Request $request) {
+    $parameters = ['locale' => app()->getLocale()];
+
+    if ($request->integer('page') > 1) {
+        $parameters['page'] = $request->integer('page');
+    }
+
+    return redirect()->route('localized.updates.index', $parameters, 301);
+})->name('updates.index');
 Route::get('/updates/{update:slug}', fn (Update $update) => redirect()->route('localized.updates.show', [
     'locale' => app()->getLocale(),
     'update' => $update,
