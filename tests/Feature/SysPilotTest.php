@@ -29,22 +29,52 @@ function fakeSysPilotChecklist(): void
     ]);
 }
 
-test('only verified allowlisted users may access syspilot API', function (): void {
+test('syspilot uses the same database access permission as PitMetric', function (): void {
     $user = User::factory()->create(['email' => 'tecnico@example.test']);
-    $this->getJson('/api/syspilot/bootstrap')->assertUnauthorized();
+    $user->forceFill(['database_access_enabled' => false])->save();
 
+    $this->getJson('/api/syspilot/bootstrap')->assertUnauthorized();
     $this->actingAs($user)->getJson('/api/syspilot/bootstrap')->assertForbidden();
 
-    config()->set('syspilot.allowed_emails', 'tecnico@example.test');
+    $user->forceFill(['database_access_enabled' => true])->save();
     $this->actingAs($user)->getJson('/api/syspilot/bootstrap')
         ->assertOk()
         ->assertJsonPath('counts.total', 0)
         ->assertJsonPath('configured', true);
+
+    $user->forceFill(['database_access_enabled' => false])->save();
+    $this->actingAs($user)->getJson('/api/syspilot/bootstrap')->assertForbidden();
+});
+
+test('existing PitMetric update editors retain their DB access override', function (): void {
+    $user = User::factory()->create(['email' => 'editor@example.test']);
+    $user->forceFill(['database_access_enabled' => false])->save();
+    config()->set('pitmetric.update_editor_emails', ['editor@example.test']);
+
+    $this->actingAs($user)->getJson('/api/syspilot/bootstrap')->assertOk();
+});
+
+test('revoked database access prevents further AI requests and access to existing work', function (): void {
+    $user = User::factory()->create(['email' => 'tecnico@example.test']);
+    $user->forceFill(['database_access_enabled' => true])->save();
+    fakeSysPilotChecklist();
+
+    $id = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
+        'request' => 'Controllare i servizi su un server Linux dopo un aggiornamento programmato.',
+    ])->assertCreated()->json('id');
+
+    $user->forceFill(['database_access_enabled' => false])->save();
+    $this->actingAs($user)->getJson('/api/syspilot/interventions/'.$id)->assertForbidden();
+    $this->actingAs($user)->postJson('/api/syspilot/interventions', [
+        'request' => 'Pianificare le verifiche necessarie sulla macchina dopo il riavvio.',
+    ])->assertForbidden();
+
+    Http::assertSentCount(1);
 });
 
 test('creates a checklist then closes an intervention after the steps are documented', function (): void {
     $user = User::factory()->create(['email' => 'tecnico@example.test']);
-    config()->set('syspilot.allowed_emails', $user->email);
+    $user->forceFill(['database_access_enabled' => true])->save();
     fakeSysPilotChecklist();
 
     $response = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
@@ -80,7 +110,8 @@ test('creates a checklist then closes an intervention after the steps are docume
 test('cannot read or modify another technicians intervention', function (): void {
     $owner = User::factory()->create(['email' => 'owner@example.test']);
     $other = User::factory()->create(['email' => 'other@example.test']);
-    config()->set('syspilot.allowed_emails', 'owner@example.test,other@example.test');
+    $owner->forceFill(['database_access_enabled' => true])->save();
+    $other->forceFill(['database_access_enabled' => true])->save();
     fakeSysPilotChecklist();
 
     $id = $this->actingAs($owner)->postJson('/api/syspilot/interventions', [
@@ -99,7 +130,7 @@ test('cannot read or modify another technicians intervention', function (): void
 
 test('skipped steps require an explanation', function (): void {
     $user = User::factory()->create(['email' => 'tecnico@example.test']);
-    config()->set('syspilot.allowed_emails', $user->email);
+    $user->forceFill(['database_access_enabled' => true])->save();
     fakeSysPilotChecklist();
     $id = $this->actingAs($user)->postJson('/api/syspilot/interventions', [
         'request' => 'Verificare tutti i servizi del server Linux di staging prima di andare online.',

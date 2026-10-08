@@ -252,9 +252,9 @@ require __DIR__.'/settings.php';
 | SysPilot pilot workspace (independent of the PitMetric manager).
 |--------------------------------------------------------------------------
 | The static UI lives in public/syspilot/. Data and paid AI calls require
-| a verified PitMetric login AND an explicitly allowed email address.
+| an authenticated, verified PitMetric login with database access enabled.
 */
-Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureSyspilotAccess::class])
+Route::middleware(['auth', 'verified', 'database.access'])
     ->prefix('api/syspilot')
     ->name('syspilot.')
     ->group(function (): void {

@@ -178,8 +178,8 @@
       '<h1>' + (unauthorized ? 'Accedi a PitMetric' : 'Accesso non autorizzato') + '</h1>' +
       '<p class="subtitle">' + (unauthorized
         ? 'Per utilizzare SysPilot devi accedere con un account PitMetric verificato.'
-        : 'La beta è riservata agli account inclusi nella variabile SYSPILOT_ALLOWED_EMAILS di Coolify.') +
-      '</p><div class="actions"><a class="btn primary" href="/login">Accedi a PitMetric ↗</a>' +
+        : 'SysPilot è riservato agli account PitMetric abilitati all’accesso al database. Chiedi l’abilitazione al responsabile.') +
+      '</p><div class="actions"><a class="btn primary" href="' + (unauthorized ? '/login' : '/dashboard') + '">' + (unauthorized ? 'Accedi a PitMetric ↗' : 'Torna a PitMetric ↗') + '</a>' +
       '<button class="btn ghost" id="retry" type="button">Riprova</button></div></div>';
   }
 

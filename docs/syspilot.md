@@ -8,20 +8,21 @@ SysPilot is an isolated, authenticated private pilot at https://pitmetric.it/sys
 - Protected Laravel JSON API: /api/syspilot/*
 - Controller: app/Http/Controllers/SysPilotController.php
 - OpenAI Responses adapter: app/Services/SysPilot/ChecklistGenerator.php
-- Access policy: app/Http/Middleware/EnsureSyspilotAccess.php
+- Access policy: app/Http/Middleware/EnsureDatabaseAccess.php
 - Database: syspilot_interventions, syspilot_steps, syspilot_events
 
 ## Deploy with Coolify
 
 Set the following variables through Coolify on the PitMetric service:
 
-    SYSPILOT_ALLOWED_EMAILS=your-existing-pitmetric-account@example.com
     SYSPILOT_OPENAI_API_KEY=your-api-key
     SYSPILOT_OPENAI_MODEL=gpt-4o-mini
 
-Only explicitly allowlisted, authenticated, verified users can use the API.
-The allowlist is closed by default. Keys must stay on the server, never in
-GitHub or browser JavaScript. Use fake/demo customer data while testing.
+The API reuses PitMetric's existing `database.access` middleware: authenticated,
+verified users with database access enabled can use SysPilot. The existing
+editor override and suspended team membership restrictions continue to apply.
+No separate allowlist is required. Keep keys on the server, never in GitHub
+or browser JavaScript. Use fake/demo customer data while testing.
 
 The existing Composer deploy script executes php artisan migrate --force.
 Ensure it runs after deployment to add the three isolated SysPilot tables.
@@ -29,7 +30,7 @@ After changing environment variables, redeploy or refresh Laravel config cache.
 
 ## MVP workflow
 
-1. Log into PitMetric with an allowlisted account.
+1. Log into PitMetric with an account authorized to access the PitMetric database.
 2. Visit /syspilot/ and describe an IT task in Italian.
 3. The Responses API returns a proposed checklist (max 5 phases, 14 steps).
 4. Confirm each step's state and optional technician notes.
