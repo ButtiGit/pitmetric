@@ -81,16 +81,6 @@ http {
             rewrite ^ /syspilot/index.html last;
         }
 
-        # Forward desk entrypoints to Laravel even when a public directory exists.
-        # This prevents Nginx autoindex/403 from shadowing the application route.
-        location = /buttidesk {
-            rewrite ^ /index.php last;
-        }
-
-        location = /buttidesk/ {
-            rewrite ^ /index.php last;
-        }
-
         location / {
             try_files $uri $uri/ ${NIXPACKS_PHP_FALLBACK_PATH}?$query_string;
         }
