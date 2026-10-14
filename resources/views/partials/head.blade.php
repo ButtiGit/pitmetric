@@ -11,4 +11,7 @@
 @fonts
 
 @vite('resources/js/app.js')
+@if (request()->routeIs('buttidesk.*'))
+    <link rel="stylesheet" href="{{ asset('buttidesk/app.css') }}">
+@endif
 @fluxAppearance

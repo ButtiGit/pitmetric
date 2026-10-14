@@ -73,6 +73,7 @@
                             <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
                             @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="clipboard-document-check" href="/syspilot/">SysPilot</flux:sidebar.item>
+                                <flux:sidebar.item icon="rectangle-stack" :href="route('buttidesk.index')" :current="request()->routeIs('buttidesk.*')">ButtiDesk-Pro</flux:sidebar.item>
                             @endif
                             @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
