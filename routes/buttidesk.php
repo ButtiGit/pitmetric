@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\StudioMailboxController;
 use App\Modules\ButtiDeskPro\Http\Controllers\CalendarController;
 use App\Modules\ButtiDeskPro\Http\Controllers\ContactController;
 use App\Modules\ButtiDeskPro\Http\Controllers\DeskController;
@@ -45,10 +46,10 @@ Route::middleware(['auth', 'verified', 'database.access', 'can:team-view'])
             Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
             Route::post('/tickets/{ticket}/worklogs', [TicketController::class, 'log'])->name('tickets.worklogs.store');
             Route::post('/calendar', [CalendarController::class, 'store'])->name('calendar.store');
-            Route::put('/calendar/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
-            Route::delete('/calendar/{appointment}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
             Route::post('/calendar/feed', [CalendarController::class, 'newFeed'])->name('calendar.feed.create');
             Route::delete('/calendar/feed', [CalendarController::class, 'removeFeed'])->name('calendar.feed.remove');
+            Route::put('/calendar/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
+            Route::delete('/calendar/{appointment}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
         });
 
         // The mailbox is shared with PitMetric Studio, so it must retain the same editor gate.

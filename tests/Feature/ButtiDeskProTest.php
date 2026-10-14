@@ -10,6 +10,13 @@ use App\Modules\ButtiDeskPro\Models\Worklog;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
+it('keeps the desk route separate from public asset directories', function () {
+    expect(is_dir(public_path('buttidesk')))->toBeFalse();
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user)->get('/buttidesk')->assertOk();
+});
+
 it('requires an authenticated and authorized PitMetric account', function () {
     $this->get(route('buttidesk.index'))->assertRedirect(route('login'));
 
@@ -142,7 +149,6 @@ it('uses the existing PitMetric mail transport with editor-only access', functio
         'message' => 'Ti rispondo da ButtiDesk-Pro.',
     ])->assertSessionHasNoErrors();
 
-    Mail::assertSent(StudioReplyMail::class, fn (StudioReplyMail $mail): bool =>
-        $mail->hasTo('client@example.test') && $mail->subjectLine === 'Richiesta presa in carico');
+    Mail::assertSent(StudioReplyMail::class, fn (StudioReplyMail $mail): bool => $mail->hasTo('client@example.test') && $mail->subjectLine === 'Richiesta presa in carico');
     expect(MailLog::query()->count())->toBe(1);
 });

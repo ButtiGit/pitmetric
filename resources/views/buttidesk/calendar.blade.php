@@ -1,8 +1,8 @@
 <x-buttidesk.shell title="ButtiDesk-Pro | Calendario">
-    <div class="bd-hero"><div><p class="bd-eyebrow">SCHEDULE / PLANNER</p><h1 class="bd-title">Calendario impegni</h1><p class="bd-desc">Visite, scadenze e attività pianificate, collegabili a ticket e contatti. Esportabile o sottoscrivibile in altre app calendario con iCal.</p></div><div class="bd-actions"><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.download') }}">Esporta .ics ↓</a></div></div>
+    <div class="bd-hero"><div><p class="bd-eyebrow">SCHEDULE / PLANNER</p><h1 class="bd-title">Calendario impegni</h1><p class="bd-desc">Visite, scadenze e attività pianificate, collegabili a ticket e contatti. Esportabile o sottoscrivibile in altre app calendario con iCal.</p></div><div class="bd-actions"><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.download') }}">Esporta .ics </a></div></div>
     <div class="bd-columns">
         <section class="bd-panel">
-            <div class="bd-panel-heading"><div><h2>{{ $monthStart->translatedFormat('F Y') }}</h2><p>{{ $appointments->count() }} impegni nel periodo</p></div><div class="bd-actions"><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index', ['month'=>$monthStart->copy()->subMonth()->format('Y-m')]) }}">←</a><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index') }}">Oggi</a><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index', ['month'=>$monthStart->copy()->addMonth()->format('Y-m')]) }}">→</a></div></div>
+            <div class="bd-panel-heading"><div><h2>{{ $monthStart->translatedFormat('F Y') }}</h2><p>{{ $appointments->count() }} impegni nel periodo</p></div><div class="bd-actions"><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index', ['month'=>$monthStart->copy()->subMonth()->format('Y-m')]) }}">«</a><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index') }}">Oggi</a><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index', ['month'=>$monthStart->copy()->addMonth()->format('Y-m')]) }}">»</a></div></div>
             <div class="bd-calendar" style="border-bottom:0">@foreach(['Lun','Mar','Mer','Gio','Ven','Sab','Dom'] as $name)<div class="bd-weekday">{{ $name }}</div>@endforeach</div>
             @php($gridStart = $monthStart->copy()->startOfWeek())
             @php($gridEnd = $monthStart->copy()->endOfMonth()->endOfWeek())
@@ -20,7 +20,7 @@
             </div>
             <div class="bd-panel-heading"><h2>Elenco appuntamenti</h2></div>
             @forelse($appointments as $event)
-                <div class="bd-item"><div class="bd-item-mark">{{ $event->starts_at->copy()->timezone(config('buttidesk.timezone'))->format('d') }}</div><div class="bd-item-body"><strong>{{ $event->title }}</strong><small>{{ $event->starts_at->copy()->timezone(config('buttidesk.timezone'))->format('d/m/Y H:i') }} → {{ $event->ends_at->copy()->timezone(config('buttidesk.timezone'))->format('d/m/Y H:i') }} {{ $event->location ? '· '.$event->location : '' }}</small><small>{{ $event->contact?->name ?? '' }} @if($event->ticket) · <a class="bd-link" href="{{ route('buttidesk.tickets.show', $event->ticket) }}">Ticket #{{ $event->ticket->id }}</a>@endif</small>@if($event->description)<p class="bd-help">{{ $event->description }}</p>@endif</div>
+                <div class="bd-item"><div class="bd-item-mark">{{ $event->starts_at->copy()->timezone(config('buttidesk.timezone'))->format('d') }}</div><div class="bd-item-body"><strong>{{ $event->title }}</strong><small>{{ $event->starts_at->copy()->timezone(config('buttidesk.timezone'))->format('d/m/Y H:i') }} » {{ $event->ends_at->copy()->timezone(config('buttidesk.timezone'))->format('d/m/Y H:i') }} {{ $event->location ? '· '.$event->location : '' }}</small><small>{{ $event->contact?->name ?? '' }} @if($event->ticket) · <a class="bd-link" href="{{ route('buttidesk.tickets.show', $event->ticket) }}">Ticket #{{ $event->ticket->id }}</a>@endif</small>@if($event->description)<p class="bd-help">{{ $event->description }}</p>@endif</div>
                     @can('team-write')<form method="POST" action="{{ route('buttidesk.calendar.destroy', $event) }}" onsubmit="return confirm('Eliminare questo impegno?')">@csrf @method('DELETE')<button class="bd-btn bd-btn--danger" type="submit" aria-label="Elimina impegno {{ $event->title }}">×</button></form>@endcan
                 </div>
                 @can('team-write')
@@ -54,7 +54,7 @@
                     <div class="bd-field"><label>Ticket associato</label><select name="ticket_id"><option value="">Nessuno</option>@foreach($tickets as $ticket)<option value="{{ $ticket->id }}">#{{ $ticket->id }} · {{ $ticket->title }}</option>@endforeach</select></div>
                     <div class="bd-field"><label>Contatto</label><select name="contact_id"><option value="">Nessuno</option>@foreach($contacts as $contact)<option value="{{ $contact->id }}">{{ $contact->name }}</option>@endforeach</select></div>
                     <div class="bd-field"><label>Dettagli</label><textarea name="description" maxlength="10000">{{ old('description') }}</textarea></div>
-                    <button class="bd-btn" type="submit">Aggiungi impegno →</button>
+                    <button class="bd-btn" type="submit">Aggiungi impegno »</button>
                 </form>
                 @else<p class="bd-help">Calendario in sola lettura per il tuo ruolo.</p>@endcan
             </div></section>

@@ -165,8 +165,8 @@ final class CalendarController extends Controller
             $lines[] = 'BEGIN:VEVENT';
             $lines[] = 'UID:buttidesk-'.$event->id.'@'.parse_url((string) config('app.url'), PHP_URL_HOST);
             $lines[] = 'DTSTAMP:'.$event->updated_at->copy()->utc()->format('Ymd\THis\Z');
-            $lines[] = 'DTSTART:'.$event->starts_at->copy()->utc()->format('Ymd\THis\Z');
-            $lines[] = 'DTEND:'.$event->ends_at->copy()->utc()->format('Ymd\THis\Z');
+            $lines[] = 'DTSTART:'.Carbon::parse((string) $event->starts_at, 'UTC')->format('Ymd\THis\Z');
+            $lines[] = 'DTEND:'.Carbon::parse((string) $event->ends_at, 'UTC')->format('Ymd\THis\Z');
             $lines[] = 'SUMMARY:'.$this->escapeIcs($event->title);
             $lines[] = 'DESCRIPTION:'.$this->escapeIcs((string) $event->description);
             $lines[] = 'LOCATION:'.$this->escapeIcs((string) $event->location);
@@ -185,6 +185,6 @@ final class CalendarController extends Controller
 
     private function escapeIcs(string $value): string
     {
-        return str_replace(["\\", ";", ",", "\r\n", "\n", "\r"], ["\\\\", "\\;", "\\,", "\\n", "\\n", "\\n"], $value);
+        return str_replace(['\\', ';', ',', "\r\n", "\n", "\r"], ['\\\\', '\;', '\,', '\n', '\n', '\n'], $value);
     }
 }

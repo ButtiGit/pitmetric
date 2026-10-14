@@ -5,7 +5,7 @@
             <h1 class="bd-title">Il lavoro, sotto controllo.</h1>
             <p class="bd-desc">Ticket, interventi, clienti e appuntamenti in un'unica scrivania. Le attività restano separate da PitMetric, ma condividono il tuo accesso e il team attivo.</p>
         </div>
-        <div class="bd-actions"><a class="bd-btn" href="{{ route('buttidesk.tickets.index') }}">Apri ticket →</a><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index') }}">Calendario</a></div>
+        <div class="bd-actions"><a class="bd-btn" href="{{ route('buttidesk.tickets.index') }}">Apri ticket »</a><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.calendar.index') }}">Calendario</a></div>
     </div>
     <div class="bd-grid">
         <div class="bd-stat"><div class="bd-stat-label">Ticket attivi</div><div class="bd-stat-number">{{ $openTickets }}</div><div class="bd-stat-note">Aperti, in corso o in attesa</div></div>
@@ -15,7 +15,7 @@
     </div>
     <div class="bd-columns">
         <section class="bd-panel">
-            <div class="bd-panel-heading"><div><h2>Ultimi ticket</h2><p>Attività recenti del workspace</p></div><a href="{{ route('buttidesk.tickets.index') }}">Vedi tutti →</a></div>
+            <div class="bd-panel-heading"><div><h2>Ultimi ticket</h2><p>Attività recenti del workspace</p></div><a href="{{ route('buttidesk.tickets.index') }}">Vedi tutti »</a></div>
             <div class="bd-table-scroller"><table class="bd-table"><thead><tr><th>Ticket</th><th>Cliente</th><th>Stato</th><th>Priorità</th></tr></thead><tbody>
                 @forelse ($latestTickets as $ticket)
                     <tr><td><a href="{{ route('buttidesk.tickets.show', $ticket) }}"><strong>#{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }} · {{ $ticket->title }}</strong></a></td><td>{{ $ticket->client?->name ?? '—' }}</td><td><span class="bd-badge bd-badge--{{ $ticket->status }}">{{ ['open'=>'Aperto','progress'=>'In corso','waiting'=>'In attesa','done'=>'Completato','cancelled'=>'Annullato'][$ticket->status] ?? $ticket->status }}</span></td><td>{{ ucfirst($ticket->priority) }}</td></tr>
@@ -23,7 +23,7 @@
             </tbody></table></div>
         </section>
         <section class="bd-panel">
-            <div class="bd-panel-heading"><div><h2>Prossimi impegni</h2><p>Agenda collegata ai ticket</p></div><a href="{{ route('buttidesk.calendar.index') }}">Apri →</a></div>
+            <div class="bd-panel-heading"><div><h2>Prossimi impegni</h2><p>Agenda collegata ai ticket</p></div><a href="{{ route('buttidesk.calendar.index') }}">Apri »</a></div>
             @forelse ($upcoming as $appointment)
                 <a class="bd-item" href="{{ route('buttidesk.calendar.index', ['month' => $appointment->starts_at->copy()->timezone(config('buttidesk.timezone'))->format('Y-m')]) }}">
                     <div class="bd-item-mark">{{ $appointment->starts_at->copy()->timezone(config('buttidesk.timezone'))->format('d') }}</div>

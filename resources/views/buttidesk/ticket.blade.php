@@ -1,7 +1,7 @@
 <x-buttidesk.shell title="ButtiDesk-Pro | Ticket #{{ $ticket->id }}">
     <div class="bd-hero">
         <div><p class="bd-eyebrow">TICKET #{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }} / OPERATIVE FILE</p><h1 class="bd-title">{{ $ticket->title }}</h1><p class="bd-desc">{{ $ticket->client?->name ?? 'Nessun cliente' }} · Aperto il {{ $ticket->created_at->copy()->timezone(config('buttidesk.timezone'))->format('d/m/Y') }} · {{ $ticket->category }}</p></div>
-        <div class="bd-actions"><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.tickets.index') }}">← Ticket</a><a class="bd-btn" href="{{ route('buttidesk.tickets.report', $ticket) }}" target="_blank" rel="noopener">Stampa report ↗</a></div>
+        <div class="bd-actions"><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.tickets.index') }}">« Ticket</a><a class="bd-btn" href="{{ route('buttidesk.tickets.report', $ticket) }}" target="_blank" rel="noopener">Stampa report </a></div>
     </div>
     <div class="bd-grid">
         <div class="bd-stat"><div class="bd-stat-label">Stato</div><div style="margin-top:15px"><span class="bd-badge bd-badge--{{ $ticket->status }}">{{ ['open'=>'Aperto','progress'=>'In corso','waiting'=>'In attesa','done'=>'Completato','cancelled'=>'Annullato'][$ticket->status] ?? $ticket->status }}</span></div></div>
@@ -52,7 +52,7 @@
                         <div class="bd-field"><label>Minuti</label><input type="number" name="duration_minutes" min="0" max="10080" required value="{{ old('duration_minutes', 30) }}"></div>
                         <div class="bd-field"><label>Quando</label><input type="datetime-local" name="performed_at" required value="{{ old('performed_at', now(config('buttidesk.timezone'))->format('Y-m-d\TH:i')) }}"></div>
                     </div>
-                    <button class="bd-btn" type="submit">Aggiungi al registro →</button>
+                    <button class="bd-btn" type="submit">Aggiungi al registro »</button>
                 </form>
             </div></section>
             @endcan

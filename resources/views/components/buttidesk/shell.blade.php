@@ -9,7 +9,7 @@
                 </a>
                 <div class="bd-header-right">
                     <span class="bd-live"><i></i> Operativo</span>
-                    <a class="bd-back" href="{{ route('dashboard') }}">← Torna a PitMetric</a>
+                    <a class="bd-back" href="{{ route('dashboard') }}">« Torna a PitMetric</a>
                 </div>
             </header>
 

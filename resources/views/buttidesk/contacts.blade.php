@@ -11,7 +11,7 @@
             </div>
             <div class="bd-table-scroller"><table class="bd-table"><thead><tr><th>Contatto</th><th>Tipo</th><th>Recapiti</th><th></th></tr></thead><tbody>
                 @forelse ($contacts as $contact)
-                    <tr><td><strong>{{ $contact->name }}</strong><div class="bd-datestamp">{{ $contact->company }}</div></td><td><span class="bd-badge">{{ ['client'=>'Cliente','supplier'=>'Fornitore','both'=>'Cliente / Fornitore'][$contact->type] ?? $contact->type }}</span></td><td>@if($contact->email)<a href="mailto:{{ $contact->email }}">{{ $contact->email }}</a>@endif<div class="bd-datestamp">{{ $contact->phone }}</div></td><td><a class="bd-link" href="#edit-{{ $contact->id }}">Modifica ↓</a></td></tr>
+                    <tr><td><strong>{{ $contact->name }}</strong><div class="bd-datestamp">{{ $contact->company }}</div></td><td><span class="bd-badge">{{ ['client'=>'Cliente','supplier'=>'Fornitore','both'=>'Cliente / Fornitore'][$contact->type] ?? $contact->type }}</span></td><td>@if($contact->email)<a href="mailto:{{ $contact->email }}">{{ $contact->email }}</a>@endif<div class="bd-datestamp">{{ $contact->phone }}</div></td><td><a class="bd-link" href="#edit-{{ $contact->id }}">Modifica </a></td></tr>
                     <tr><td colspan="4" style="padding:0;background:#141b28"><details class="bd-details" id="edit-{{ $contact->id }}"><summary>Dettagli e modifica · {{ $contact->name }}</summary>
                         @can('team-write')
                             <form method="POST" action="{{ route('buttidesk.contacts.update', $contact) }}" class="bd-form">@csrf @method('PUT')
@@ -41,7 +41,7 @@
                     <div class="bd-field"><label>Telefono</label><input name="phone" maxlength="60" value="{{ old('phone') }}"></div>
                     <div class="bd-field"><label>Partita IVA</label><input name="vat_number" maxlength="40" value="{{ old('vat_number') }}"></div>
                     <div class="bd-field"><label>Note</label><textarea name="notes" maxlength="10000">{{ old('notes') }}</textarea></div>
-                    <button class="bd-btn" type="submit">Salva contatto →</button>
+                    <button class="bd-btn" type="submit">Salva contatto »</button>
                 </form>
             @else <p class="bd-help">Non disponi di permessi di modifica.</p> @endcan
         </div></section>

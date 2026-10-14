@@ -1,5 +1,5 @@
 <x-buttidesk.shell title="ButtiDesk-Pro | Ticket">
-    <div class="bd-hero"><div><p class="bd-eyebrow">SERVICE DESK / REQUESTS</p><h1 class="bd-title">Gestione ticket</h1><p class="bd-desc">Ogni richiesta ha una priorità, uno stato, un cliente e uno storico delle operazioni realmente eseguite.</p></div><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.tickets.reports') }}">Visualizza report →</a></div>
+    <div class="bd-hero"><div><p class="bd-eyebrow">SERVICE DESK / REQUESTS</p><h1 class="bd-title">Gestione ticket</h1><p class="bd-desc">Ogni richiesta ha una priorità, uno stato, un cliente e uno storico delle operazioni realmente eseguite.</p></div><a class="bd-btn bd-btn--ghost" href="{{ route('buttidesk.tickets.reports') }}">Visualizza report »</a></div>
     <div class="bd-columns">
         <section class="bd-panel">
             <div class="bd-pad"><form method="GET" class="bd-filter"><div class="bd-field bd-grow"><label>Ricerca</label><input name="q" value="{{ $search }}" placeholder="Cerca un ticket..."></div><div class="bd-field"><label>Stato</label><select name="status"><option value="">Tutti</option>@foreach(['open'=>'Aperti','progress'=>'In corso','waiting'=>'In attesa','done'=>'Completati','cancelled'=>'Annullati'] as $value=>$label)<option value="{{ $value }}" @selected($statusFilter===$value)>{{ $label }}</option>@endforeach</select></div><button class="bd-btn" type="submit">Filtra</button></form></div>
@@ -26,7 +26,7 @@
                     <div class="bd-field"><label>Cliente</label><select name="client_id"><option value="">Non assegnato</option>@foreach($clients as $client)<option value="{{ $client->id }}">{{ $client->name }}</option>@endforeach</select></div>
                     <div class="bd-field"><label>Fornitore</label><select name="supplier_id"><option value="">Nessuno</option>@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}">{{ $supplier->name }}</option>@endforeach</select></div>
                     <div class="bd-field"><label>Scadenza</label><input name="due_at" type="datetime-local" value="{{ old('due_at') }}"></div>
-                    <button class="bd-btn" type="submit">Crea ticket →</button>
+                    <button class="bd-btn" type="submit">Crea ticket »</button>
                 </form>
             @else <p class="bd-help">Non hai i permessi per creare ticket.</p> @endcan
         </div></section>

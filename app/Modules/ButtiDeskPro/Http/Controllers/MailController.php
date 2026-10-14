@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\StudioReplyMail;
 use App\Models\User;
 use App\Modules\ButtiDeskPro\Models\MailLog;
+use App\Modules\ButtiDeskPro\Models\Ticket;
 use App\Services\ResendStudioMailbox;
 use App\Services\WorkspaceContext;
 use Illuminate\Contracts\View\View;
@@ -33,7 +34,7 @@ final class MailController extends Controller
             'received' => $received,
             'error' => $error,
             'sent' => MailLog::query()->latest()->limit(30)->get(),
-            'tickets' => \App\Modules\ButtiDeskPro\Models\Ticket::query()->orderByDesc('id')->limit(100)->get(['id', 'title']),
+            'tickets' => Ticket::query()->orderByDesc('id')->limit(100)->get(['id', 'title']),
             'prefillEmail' => (string) $request->query('to', ''),
             'prefillTicket' => $request->integer('ticket_id'),
         ]);
@@ -85,7 +86,7 @@ final class MailController extends Controller
             'email' => $email,
             'body' => $body,
             'replyAddress' => $this->address((string) ($email['from'] ?? '')),
-            'tickets' => \App\Modules\ButtiDeskPro\Models\Ticket::query()->orderByDesc('id')->limit(100)->get(['id', 'title']),
+            'tickets' => Ticket::query()->orderByDesc('id')->limit(100)->get(['id', 'title']),
         ]);
     }
 
