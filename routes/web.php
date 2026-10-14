@@ -247,3 +247,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 require __DIR__.'/settings.php';
 
 require __DIR__.'/syspilot.php';
+
+// ButtiDesk-Pro is isolated from the main application until explicitly enabled.
+// Do not load its routes during deployment or database migration while disabled.
+if (config('buttidesk.enabled', false)) {
+    require __DIR__.'/buttidesk.php';
+}

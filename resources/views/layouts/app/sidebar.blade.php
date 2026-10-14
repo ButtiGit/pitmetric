@@ -12,7 +12,7 @@
                 $activityOpen = request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
                 $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
-                $managementOpen = request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*');
+                $managementOpen = request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*');
                 $studioOpen = request()->routeIs('studio.*');
             @endphp
 
@@ -73,6 +73,9 @@
                             <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
                             @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="clipboard-document-check" href="/syspilot/">SysPilot</flux:sidebar.item>
+                                @if (config('buttidesk.enabled', false))
+                                    <flux:sidebar.item icon="rectangle-stack" :href="route('buttidesk.index')" :current="request()->routeIs('buttidesk.*')">ButtiDesk-Pro</flux:sidebar.item>
+                                @endif
                             @endif
                             @if (auth()->user()->hasManagerAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="users" :href="route('team.index')" :current="request()->routeIs('team.*')">Team</flux:sidebar.item>
