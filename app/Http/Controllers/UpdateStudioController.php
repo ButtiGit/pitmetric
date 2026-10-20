@@ -88,8 +88,10 @@ class UpdateStudioController extends Controller
             return redirect()->route('studio.updates.index')->with('studio_setup_error', __('pitmetric.studio.setup_not_ready'));
         }
 
-        $this->removeStoredMedia($update);
         $update->delete();
+
+        // Delete the image only after the post has been removed from the database.
+        $this->removeStoredMedia($update);
 
         return redirect()->route('studio.updates.index')->with('status', __('pitmetric.studio.deleted'));
     }
@@ -190,33 +192,49 @@ class UpdateStudioController extends Controller
             'published_at' => $data['status'] === 'published' ? ($update->published_at ?? now()) : null,
         ]);
 
+        // Never delete an existing post image before the new upload and DB save succeed.
+        // This is separate from the Coolify persistent-volume requirement.
+        $previousMediaPath = $update->exists ? $update->getAttribute('media_path') : null;
+        $newMediaPath = null;
+
         if ($removeMedia) {
-            $this->removeStoredMedia($update);
             $update->setAttribute('media_path', null);
             $update->setAttribute('media_url', null);
             $update->setAttribute('media_type', null);
         }
 
         if ($uploaded instanceof UploadedFile) {
-            $this->removeStoredMedia($update);
-            $path = $uploaded->store('updates', 'public');
+            $newMediaPath = $uploaded->store('updates', 'public');
 
-            if ($path === false) {
+            if (! is_string($newMediaPath) || $newMediaPath === '') {
                 throw ValidationException::withMessages(['media' => __('pitmetric.studio.upload_failed')]);
             }
 
             $mime = (string) $uploaded->getMimeType();
-            $update->setAttribute('media_path', $path);
+            $update->setAttribute('media_path', $newMediaPath);
             $update->setAttribute('media_url', null);
             $update->setAttribute('media_type', str_starts_with($mime, 'video/') ? 'video' : 'image');
         } elseif ($externalMedia !== '') {
-            $this->removeStoredMedia($update);
             $update->setAttribute('media_path', null);
             $update->setAttribute('media_url', $externalMedia);
             $update->setAttribute('media_type', $externalMediaType);
         }
 
-        $update->save();
+        try {
+            $update->save();
+        } catch (\Throwable $exception) {
+            if ($newMediaPath !== null) {
+                Storage::disk('public')->delete($newMediaPath);
+            }
+
+            throw $exception;
+        }
+
+        if (is_string($previousMediaPath)
+            && $previousMediaPath !== ''
+            && $previousMediaPath !== $update->getAttribute('media_path')) {
+            Storage::disk('public')->delete($previousMediaPath);
+        }
     }
 
     private function normalizeLegacyComposerInput(Request $request): void
