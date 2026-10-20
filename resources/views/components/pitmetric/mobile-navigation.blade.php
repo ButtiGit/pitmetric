@@ -62,6 +62,9 @@
             <div class="pm-mobile-more-grid">
                 <a href="{{ route('timing.index') }}" wire:navigate><flux:icon.clock class="size-5" /><span>{{ $it ? 'Tempi' : 'Timing' }}</span></a>
                 <a href="{{ route('telemetry.index') }}" wire:navigate><flux:icon.signal class="size-5" /><span>{{ $it ? 'Telemetria' : 'Telemetry' }}</span></a>
+                @can('manage-updates')
+                    <a href="{{ route('studio.f1-live.index') }}"><flux:icon.bolt class="size-5" /><span>F1 Live</span></a>
+                @endcan
                 @if ($canManage)
                     <a href="{{ route('insights.index') }}" wire:navigate><flux:icon.chart-bar class="size-5" /><span>Intelligence</span></a>
                 @endif
