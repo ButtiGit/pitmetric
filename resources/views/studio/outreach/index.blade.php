@@ -115,8 +115,8 @@
                         <p class="text-xs text-pm-muted">Oggetto</p>
                         <p id="preview-subject" class="mt-1 text-sm font-semibold text-pm-text">{{ old('subject', $defaultSubject) }}</p>
                     </div>
-                    <div id="outreach-preview" class="max-h-[44rem] overflow-y-auto bg-[#f4f4f5] p-3 sm:p-5" tabindex="0" aria-label="Anteprima della comunicazione">
-                        <x-emails.outreach :locale="old('locale', 'it') ?: 'it'" :message-body="old('message', $defaultMessage) ?: $defaultMessage" :note="old('note', '') ?? ''" />
+                    <div id="outreach-preview" class="max-h-[44rem] overflow-y-auto bg-[#080a0d] p-3 sm:p-5" tabindex="0" aria-label="Anteprima della comunicazione">
+                        <x-emails.outreach :locale="old('locale', 'it') ?: 'it'" :message-body="old('message', $defaultMessage) ?: $defaultMessage" :note="old('note', '') ?? ''" :preview="true" />
                     </div>
                 </section>
             </div>
@@ -175,6 +175,7 @@
                 });
                 previewNote.textContent = note.value;
                 previewNote.hidden = note.value.trim() === '';
+                previewNote.style.display = previewNote.hidden ? 'none' : '';
                 preview.querySelector('table').lang = language;
                 preview.querySelectorAll('[data-outreach-label]').forEach((element) => {
                     element.textContent = labels[language][element.dataset.outreachLabel];

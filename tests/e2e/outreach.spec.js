@@ -19,6 +19,10 @@ test('outreach is ready to send with just addresses and Enter', async ({ page },
     const form = page.locator('#outreach-form');
     const options = page.locator('#outreach-options');
     const preview = page.locator('#outreach-preview');
+    const logo = preview.getByAltText('PitMetric', { exact: true });
+    await expect(logo).toBeVisible();
+    await expect(logo).toHaveAttribute('src', /\/brand\/pitmetric-primary-dark-email\.png$/);
+    await expect.poll(() => logo.evaluate((image) => image.complete && image.naturalWidth > 0)).toBeTruthy();
     await expect(options).not.toHaveAttribute('open', '');
     await expect(form.locator('[required]')).toHaveCount(1);
     await expect(preview).toContainText('aggiornamenti di sicurezza');
@@ -34,7 +38,12 @@ test('outreach is ready to send with just addresses and Enter', async ({ page },
     await form.locator('input[name="tone"][value="custom"]').check();
     await page.locator('#message').fill('<img src=x onerror=alert(1)>');
     await expect(preview).toContainText('<img src=x onerror=alert(1)>');
-    await expect(preview.locator('img')).toHaveCount(0);
+    await expect(preview.locator('img')).toHaveCount(1);
+    await expect(preview.locator('[data-outreach-message] img')).toHaveCount(0);
+    await page.locator('#note').fill('Un saluto dal paddock.');
+    await expect(preview.locator('[data-outreach-note]')).toBeVisible();
+    await page.locator('#note').fill('');
+    await expect(preview.locator('[data-outreach-note]')).toBeHidden();
     await form.locator('input[name="tone"][value="professional"]').check();
     await options.locator('summary').click();
 
