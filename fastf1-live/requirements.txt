@@ -1,0 +1,6 @@
+fastf1==3.9.0
+fastapi==0.162.0
+uvicorn==0.54.0
+# Newer SignalR releases pin a vulnerable msgpack; use the compatible API with a patched serializer.
+signalrcore==0.8.8
+msgpack>=1.2.1,<2

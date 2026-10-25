@@ -35,7 +35,7 @@ export default defineConfig({
         command: 'php artisan serve --host=127.0.0.1 --port=8000',
         url: 'http://127.0.0.1:8000/login',
         env: {
-            PITMETRIC_EDITOR_EMAILS: 'e2e@pitmetric.test',
+            PITMETRIC_EDITOR_EMAILS: 'e2e@pitmetric.test,e2e-f1@pitmetric.test',
             MAIL_MAILER: 'array',
         },
         reuseExistingServer: !process.env.CI,

@@ -7,6 +7,7 @@ use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DemoManagerController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\F1LiveController;
 use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NewsletterPreferencesController;
@@ -239,6 +240,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
+            Route::get('f1-live', [F1LiveController::class, 'index'])->name('f1-live.index');
+            Route::get('f1-live/feed', [F1LiveController::class, 'live'])->middleware('throttle:30,1,f1-feed')->name('f1-live.feed');
+            Route::get('f1-live/events', [F1LiveController::class, 'events'])->middleware('throttle:12,1,f1-events')->name('f1-live.events');
+            Route::get('f1-live/history', [F1LiveController::class, 'history'])->middleware('throttle:30,1,f1-history')->name('f1-live.history');
             Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
             Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
         });

@@ -44,6 +44,19 @@ class E2EBrowserSeeder extends Seeder
             ]);
         }
 
+        $f1Editor = User::query()->firstOrNew(['email' => 'e2e-f1@pitmetric.test']);
+        $f1Editor->forceFill([
+            'name' => 'PitMetric F1 E2E',
+            'email_verified_at' => now(),
+            'database_access_enabled' => true,
+            'password' => Hash::make(self::PASSWORD),
+        ])->save();
+        $f1Editor->workspaces()->syncWithoutDetaching([
+            $user->workspaces()->firstOrFail()->id => [
+                'role' => 'member', 'status' => 'active', 'joined_at' => now(),
+            ],
+        ]);
+
         Auth::login($user);
 
         try {
