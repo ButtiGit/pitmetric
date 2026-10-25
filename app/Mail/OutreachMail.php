@@ -41,6 +41,7 @@ class OutreachMail extends Mailable
     {
         return new Content(
             view: 'emails.outreach',
+            text: 'emails.outreach-text',
             with: [
                 'locale' => $this->contentLocale,
                 'messageBody' => $this->messageBody,

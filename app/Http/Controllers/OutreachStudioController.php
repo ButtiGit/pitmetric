@@ -25,6 +25,13 @@ class OutreachStudioController extends Controller
             'it' => $this->templates('it'),
             'en' => $this->templates('en'),
         ];
+        $locale = session()->getOldInput('locale', 'it');
+        $locale = is_string($locale) && isset($templatesByLocale[$locale]) ? $locale : 'it';
+        $tone = session()->getOldInput('tone', 'professional');
+        $tone = is_string($tone) && isset($templatesByLocale[$locale][$tone]) ? $tone : 'professional';
+        $company = session()->getOldInput('company', '');
+        $company = is_string($company) ? $company : '';
+        $template = $templatesByLocale[$locale][$tone];
 
         return view('studio.outreach.index', [
             'tones' => [
@@ -36,7 +43,14 @@ class OutreachStudioController extends Controller
             ],
             'templates' => $templatesByLocale['it'],
             'templatesByLocale' => $templatesByLocale,
-            'defaultMessage' => $this->replaceCompany($templatesByLocale['it']['professional']['message'], ''),
+            'defaultSubject' => $this->replaceCompany($template['subject'], $company),
+            'defaultMessage' => $this->replaceCompany($template['message'], $company),
+            'localizedLinks' => collect(['it', 'en'])->mapWithKeys(fn (string $locale): array => [
+                $locale => [
+                    'home' => route('localized.home', ['locale' => $locale]),
+                    'app' => route('localized.app', ['locale' => $locale]),
+                ],
+            ])->all(),
         ]);
     }
 
@@ -44,13 +58,12 @@ class OutreachStudioController extends Controller
     {
         $data = $request->validate([
             'recipients' => ['required', 'string', 'max:6000'],
-            'locale' => ['required', 'in:it,en'],
-            'tone' => ['required', 'in:'.implode(',', self::TONES)],
+            'locale' => ['nullable', 'in:it,en'],
+            'tone' => ['nullable', 'in:'.implode(',', self::TONES)],
             'company' => ['nullable', 'string', 'max:160'],
-            'subject' => ['nullable', 'string', 'max:180'],
+            'subject' => ['nullable', 'string', 'max:180', 'not_regex:/[\r\n]/'],
             'message' => ['nullable', 'string', 'max:6000'],
             'note' => ['nullable', 'string', 'max:800'],
-            'compliance_confirmed' => ['accepted'],
         ]);
 
         $recipients = $this->parseRecipients((string) $data['recipients']);
@@ -63,8 +76,8 @@ class OutreachStudioController extends Controller
             throw ValidationException::withMessages(['recipients' => 'Puoi inviare al massimo '.self::MAX_RECIPIENTS.' contatti per volta.']);
         }
 
-        $locale = (string) $data['locale'];
-        $tone = (string) $data['tone'];
+        $locale = (string) ($data['locale'] ?? 'it');
+        $tone = (string) ($data['tone'] ?? 'professional');
         $company = trim((string) ($data['company'] ?? ''));
         $templates = $this->templates($locale);
         $template = $templates[$tone] ?? $templates['professional'];
@@ -83,6 +96,7 @@ class OutreachStudioController extends Controller
         $sent = 0;
         $suppressed = 0;
         $failed = 0;
+        $failedRecipients = [];
 
         foreach ($recipients as $email) {
             $hash = hash('sha256', strtolower($email));
@@ -107,53 +121,73 @@ class OutreachStudioController extends Controller
             } catch (Throwable $exception) {
                 report($exception);
                 $failed++;
+                $failedRecipients[] = $email;
             }
         }
 
-        return back()->with('status', "Invio completato: {$sent} inviate, {$suppressed} escluse, {$failed} non riuscite.");
+        $response = back()
+            ->with('status', "Invio completato: {$sent} inviate, {$suppressed} escluse, {$failed} non riuscite.")
+            ->with('outreach_failed', $failed);
+
+        if ($failedRecipients !== []) {
+            return $response->withInput([
+                ...$data,
+                'recipients' => implode("\n", $failedRecipients),
+            ]);
+        }
+
+        return $response;
     }
 
     /** @return array<string, array{subject: string, message: string}> */
     private function templates(string $locale): array
     {
         if ($locale === 'en') {
+            $overview = "\n\nPitMetric connects the practical work of a small motorsport team, starting with karting:\n\n- Team workspaces, invitations and roles, so everyone can work with the right information and permissions.\n- Vehicles, drivers, component installation and usage history, versioned configurations and technical setups.\n- Race weekends, entries, schedules, tasks, notes and track sessions, with quick capture in Pit Mode.\n- Maintenance schedules, work orders, expenses and private documents, linked to the operational history.\n- Timing, imported telemetry, operational reports and the Data Hub for importing and exporting workspace data.\n- An Android beta app for trackside sessions, setups, maintenance, notes, photos and videos, with offline support and sync for enabled accounts.";
+            $security = "\n\nRecent work also focuses on reliability and security: security updates to the platform, separate team workspaces, role-based permissions, verified email access and protected document downloads.";
+            $invitation = "\n\nI am looking for teams and owner-drivers willing to try the pilot with real trackside workflows and give me direct feedback. Testing is completely free, with no subscription or purchase commitment. You can explore the demo now; if it looks useful, reply to this email and I will help you get started.\n\nWhich part of your trackside work would you most like to keep organised?";
+
             return [
                 'friendly' => [
-                    'subject' => 'Can I show you what I am building for motorsport?',
-                    'message' => "Hi {{company}},\n\nI am Simone, the developer behind PitMetric. I am building it to keep the practical side of track work in one place: vehicles, components, setups, sessions, maintenance, costs, timing and telemetry. Right now I am looking for teams and motorsport organisations willing to test the software completely free of charge and tell me what works and what should be improved.\n\nI would genuinely value your feedback and would be happy if you explored the demo to see whether any part could be useful in your day-to-day work. If you are interested, I can also give you access to test PitMetric in practice: the testing phase is completely free, with no subscription, no purchase and no commitment required.",
+                    'subject' => 'An invitation to try PitMetric at the track',
+                    'message' => "Hi {{company}},\n\nI am Simone, the developer of PitMetric. I am building a practical workspace to keep vehicle history, team preparation and track activity in one place.".$overview.$security.$invitation,
                 ],
                 'professional' => [
-                    'subject' => 'PitMetric - motorsport technical management platform',
-                    'message' => "Hello {{company}},\n\nMy name is Simone Buttice and I am the developer of PitMetric, a platform designed to organise technical motorsport operations in one workspace. At this stage I am selecting motorsport organisations interested in testing the software completely free of charge and providing concrete feedback based on real use.\n\nPitMetric covers vehicles, components and usage history, configurations, setups, sessions, maintenance, costs, timing and telemetry. I am contacting selected organisations to understand where the product can create real value. Participation in the testing phase is entirely free: there are no licence fees, subscriptions or purchase commitments, only the opportunity to use the software and share your feedback directly with me.",
+                    'subject' => 'PitMetric: one workspace for your team and track operations',
+                    'message' => "Hello {{company}},\n\nMy name is Simone Buttice and I develop PitMetric, a technical operations platform for small motorsport teams and owner-drivers. The goal is to connect preparation, track activity and vehicle history, reducing information scattered across spreadsheets, notes and chats.".$overview.$security.$invitation,
                 ],
                 'local' => [
-                    'subject' => 'A local motorsport software project I would like to show you',
-                    'message' => "Hello {{company}},\n\nI am Simone, the developer of PitMetric. I am reaching out personally because I prefer speaking directly with motorsport organisations rather than sending anonymous campaigns. I am currently looking for people and organisations willing to test PitMetric completely free of charge while it is being refined.\n\nPitMetric is built around real trackside workflows: vehicle history, components, setups, sessions, maintenance, costs, timing and telemetry. I would be glad if you took a look at the demo and told me what you would change or need in practice. If the project is relevant to you, you can test the full workflow at no cost and with no subscription or commercial commitment.",
+                    'subject' => 'A motorsport project from Cuneo: discover PitMetric',
+                    'message' => "Hello {{company}},\n\nI am Simone Buttice, a developer from the province of Cuneo and the creator of PitMetric. I would like to introduce the project personally and learn what would make it useful for your team at the track.".$overview.$security.$invitation,
                 ],
                 'technical' => [
-                    'subject' => 'PitMetric - setups, components, sessions and technical history',
-                    'message' => "Hello {{company}},\n\nPitMetric is a technical workspace for teams, drivers and preparers who need traceability across a vehicle's life. It connects component usage, configurations, setup changes, sessions, maintenance, expenses, timing and telemetry so information remains linked instead of scattered across notes and chats. I am currently looking for experienced motorsport users to test this workflow completely free of charge in real conditions.\n\nThe goal is to validate PitMetric against actual track operations and improve it from direct feedback. Testing is entirely free, with no licence cost, subscription or obligation to purchase: I am looking for genuine testers, not customers to charge during this phase.",
+                    'subject' => 'PitMetric: from component history to session data',
+                    'message' => "Hello {{company}},\n\nPitMetric links the technical history of a vehicle to the work carried out before, during and after each track session. It is designed for teams, drivers and preparers who need to trace what was installed, which setup was used, how much a component ran and what needs attention next.".$overview.$security.$invitation,
                 ],
                 'custom' => ['subject' => '', 'message' => ''],
             ];
         }
 
+        $overview = "\n\nPitMetric collega il lavoro quotidiano di un piccolo team motorsport, partendo dal karting:\n\n- Spazi di lavoro del team, inviti e ruoli, per collaborare con informazioni e permessi adeguati.\n- Mezzi, piloti, installazioni e utilizzo dei componenti, configurazioni versionate e setup tecnici.\n- Weekend di gara, iscrizioni, programmi, attività, note e sessioni in pista, con registrazione rapida in Pit Mode.\n- Scadenze e ordini di manutenzione, spese e documenti privati, collegati allo storico operativo.\n- Timing, telemetria importata, report operativi e Data Hub per importare ed esportare i dati del workspace.\n- App Android in beta per sessioni, setup, manutenzione, note, foto e video in pista, con modalità offline e sincronizzazione per gli account abilitati.";
+        $security = "\n\nLe novità riguardano anche affidabilità e sicurezza: aggiornamenti di sicurezza della piattaforma, spazi dei team separati, permessi per ruolo, accesso con email verificata e download protetti dei documenti.";
+        $invitation = "\n\nSto cercando team e piloti disponibili a provare il progetto pilota sul campo e a confrontarsi direttamente con me. Il test è completamente gratuito, senza abbonamenti o obblighi di acquisto. Potete esplorare subito la demo; se vi sembra utile, rispondete a questa email e vi aiuterò a iniziare.\n\nQuale parte del lavoro in pista vorreste organizzare meglio?";
+
         return [
             'friendly' => [
-                'subject' => 'Posso farvi vedere cosa sto costruendo per il motorsport?',
-                'message' => "Ciao {{company}},\n\nsono Simone, lo sviluppatore di PitMetric. Lo sto costruendo per riunire in un unico posto la parte pratica del lavoro in pista: mezzi, componenti, setup, sessioni, manutenzione, costi, timing e telemetria. In questo momento sto cercando team e realtà del motorsport disponibili a testare il software in modo completamente gratuito e a dirmi cosa funziona e cosa migliorare.\n\nMi farebbe davvero piacere avere un vostro parere: potete esplorare la demo liberamente e capire in pochi minuti se c'è qualcosa che potrebbe esservi utile nel lavoro quotidiano. Se vi interessa, posso anche darvi accesso per provare PitMetric sul campo: il test è completamente gratuito, senza abbonamenti, senza acquisti e senza alcun impegno.",
+                'subject' => 'Un invito a provare PitMetric in pista',
+                'message' => "Ciao {{company}},\n\nsono Simone, lo sviluppatore di PitMetric. Sto costruendo uno spazio pratico per tenere insieme storico del mezzo, preparazione del team e attività in pista.".$overview.$security.$invitation,
             ],
             'professional' => [
-                'subject' => 'PitMetric - piattaforma per la gestione tecnica motorsport',
-                'message' => "Buongiorno {{company}},\n\nmi chiamo Simone Buttice e sono lo sviluppatore di PitMetric, una piattaforma pensata per organizzare in un unico ambiente la gestione tecnica delle attività motorsport. In questa fase sto selezionando realtà del settore interessate a testare il software in modo completamente gratuito e a fornirmi feedback concreti basati sull'utilizzo reale.\n\nPitMetric comprende mezzi, componenti e relativo storico di utilizzo, configurazioni, setup, sessioni, manutenzione, costi, timing e telemetria. Sto contattando realtà selezionate per capire dove il prodotto possa generare valore reale. La partecipazione alla fase di test è totalmente gratuita: non ci sono costi di licenza, abbonamenti o obblighi di acquisto, ma soltanto la possibilità di utilizzare il software e confrontarsi direttamente con me per migliorarlo.",
+                'subject' => 'PitMetric: team e attività in pista in un unico posto',
+                'message' => "Buongiorno {{company}},\n\nmi chiamo Simone Buttice e sviluppo PitMetric, una piattaforma di gestione tecnica per piccoli team motorsport e piloti. L'obiettivo è collegare preparazione, attività in pista e storico del mezzo, riducendo le informazioni sparse tra fogli di calcolo, appunti e chat.".$overview.$security.$invitation,
             ],
             'local' => [
                 'subject' => 'Un progetto motorsport nato in provincia di Cuneo',
-                'message' => "Buongiorno {{company}},\n\nsono Simone Buttice, sviluppatore della provincia di Cuneo e ideatore di PitMetric. Vi contatto personalmente perché preferisco confrontarmi direttamente con realtà del territorio e del motorsport invece di mandare comunicazioni anonime. In questo momento sto cercando persone e realtà disponibili a testare PitMetric in modo completamente gratuito mentre continuo a perfezionarlo.\n\nPitMetric nasce per gestire storico del mezzo, componenti, setup, sessioni, manutenzione, costi, timing e telemetria. Mi farebbe piacere farvelo vedere e ricevere un parere concreto su cosa potrebbe essere davvero utile nella vostra attività. Se il progetto vi interessa, potete provarlo senza alcun costo: il test è gratuito, senza abbonamenti e senza nessun impegno commerciale.",
+                'message' => "Buongiorno {{company}},\n\nsono Simone Buttice, sviluppatore della provincia di Cuneo e ideatore di PitMetric. Vi scrivo personalmente per presentarvi il progetto e capire cosa potrebbe essere utile al vostro team in pista.".$overview.$security.$invitation,
             ],
             'technical' => [
-                'subject' => 'PitMetric - setup, componenti, sessioni e storico tecnico',
-                'message' => "Buongiorno {{company}},\n\nPitMetric è un workspace tecnico per team, piloti e preparatori che vogliono mantenere tracciabilità sull'intera vita del mezzo. Collega utilizzo dei componenti, configurazioni, variazioni di setup, sessioni, manutenzione, costi, timing e telemetria evitando che le informazioni restino sparse tra note, chat e fogli separati. In questa fase sto cercando utilizzatori con esperienza nel motorsport disponibili a testare gratuitamente questo flusso in condizioni reali.\n\nL'obiettivo è validare PitMetric sulle esigenze operative in pista e migliorarlo attraverso feedback diretti. Il test è completamente gratuito, senza costi di licenza, abbonamenti o obblighi di acquisto: sto cercando tester reali, non clienti a cui far pagare il software durante questa fase.",
+                'subject' => 'PitMetric: dallo storico componenti ai dati di sessione',
+                'message' => "Buongiorno {{company}},\n\nPitMetric collega lo storico tecnico del mezzo al lavoro svolto prima, durante e dopo ogni sessione. È pensato per team, piloti e preparatori che vogliono ricostruire cosa è stato installato, quale setup è stato usato, quanto ha lavorato un componente e cosa richiede attenzione.".$overview.$security.$invitation,
             ],
             'custom' => ['subject' => '', 'message' => ''],
         ];
@@ -179,8 +213,14 @@ class OutreachStudioController extends Controller
         foreach ($parts as $part) {
             $email = strtolower(trim($part));
 
-            if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            if ($email === '') {
                 continue;
+            }
+
+            if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                throw ValidationException::withMessages([
+                    'recipients' => "Indirizzo email non valido: {$email}. Correggi la lista prima di inviare.",
+                ]);
             }
 
             $emails[$email] = $email;
