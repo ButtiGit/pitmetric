@@ -44,6 +44,12 @@ class MailCheckCommand extends Command
             return self::SUCCESS;
         }
 
+        if (! is_string($recipient)) {
+            $this->error('The diagnostic recipient must be a valid email address.');
+
+            return self::FAILURE;
+        }
+
         $recipient = Str::of($recipient)->trim()->toString();
 
         if (Validator::make(['recipient' => $recipient], [

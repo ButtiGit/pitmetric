@@ -6,8 +6,14 @@ PORT = "80"
 NIXPACKS_PHP_ROOT_DIR = "/app/public"
 NIXPACKS_PHP_FALLBACK_PATH = "/index.php"
 
+[phases.setup]
+# Includes PHP 8.4.27: fixes CVE-2026-109618 and CVE-2026-109619.
+nixpkgsArchive = "ee62357e90778a37aa7aa4a646e7ccd4fdb643b3"
+
 [phases.build]
 cmds = [
+    "php -r 'if (PHP_VERSION_ID < 80427 || PHP_VERSION_ID >= 80500) { fwrite(STDERR, \"PHP 8.4.27 or a newer 8.4 security release is required.\\n\"); exit(1); }'",
+    "composer check-platform-reqs --no-dev",
     "npm run build",
     "mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache",
     "rm -rf public/storage && ln -s ../storage/app/public public/storage",
@@ -28,6 +34,11 @@ pm.max_spare_servers = 4
 pm.max_requests = 500
 clear_env = no
 catch_workers_output = yes
+security.limit_extensions = .php
+php_admin_flag[session.upload_progress.enabled] = off
+php_admin_flag[expose_php] = off
+php_admin_flag[display_errors] = off
+php_admin_value[cgi.fix_pathinfo] = 0
 php_admin_value[upload_max_filesize] = 50M
 php_admin_value[post_max_size] = 64M
 '''
@@ -43,6 +54,7 @@ events {
 }
 
 http {
+    server_tokens off;
     include $!{nginx}/conf/mime.types;
     index index.html index.htm index.php;
     default_type application/octet-stream;
@@ -66,8 +78,8 @@ http {
         root ${NIXPACKS_PHP_ROOT_DIR};
         client_max_body_size 64m;
 
-        add_header X-Frame-Options "SAMEORIGIN";
-        add_header X-Content-Type-Options "nosniff";
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
 
         index index.php;
         charset utf-8;
@@ -90,12 +102,16 @@ http {
 
         error_page 404 /index.php;
 
-        location ~ \.php$ {
+        location ~ ^/(index|game_sim)\.php$ {
             try_files $uri =404;
             fastcgi_pass 127.0.0.1:9000;
             fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
             include $!{nginx}/conf/fastcgi_params;
             include $!{nginx}/conf/fastcgi.conf;
+        }
+
+        location ~* \.(?:php|phtml|phar)(?:/|$) {
+            return 404;
         }
 
         location ~ /\.(?!well-known).* {

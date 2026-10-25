@@ -72,3 +72,11 @@ test('mail check rejects an invalid diagnostic recipient without sending mail', 
         ->expectsOutputToContain('must be a valid email address')
         ->assertFailed();
 });
+
+test('mail check rejects a non-string diagnostic recipient without sending mail', function () {
+    Mail::shouldReceive('mailer')->never();
+
+    $this->artisan('pitmetric:mail-check', ['--send' => true])
+        ->expectsOutputToContain('must be a valid email address')
+        ->assertFailed();
+});

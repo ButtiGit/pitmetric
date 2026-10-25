@@ -227,11 +227,15 @@ it('publishes only indexable localized pages in the sitemap', function () {
     $englishOnlyEnglishUrl = route('localized.updates.show', ['locale' => 'en', 'update' => $englishOnly]);
     $englishOnlyItalianUrl = route('localized.updates.show', ['locale' => 'it', 'update' => $englishOnly]);
 
-    $this->get(route('sitemap'))
+    $response = $this->get(route('sitemap'))
         ->assertOk()
+        ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
         ->assertSee($translatedItalianUrl, false)
         ->assertSee($englishOnlyEnglishUrl, false)
         ->assertDontSee($englishOnlyItalianUrl, false)
         ->assertDontSee(route('demo.public'), false)
         ->assertDontSee(route('game-dev'), false);
+
+    expect($response->getContent())->toStartWith('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(simplexml_load_string($response->getContent()))->toBeInstanceOf(SimpleXMLElement::class);
 });
