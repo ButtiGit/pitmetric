@@ -54,7 +54,7 @@ final class ButtiDeskBridge
         $code = bin2hex(random_bytes(32));
         Cache::put('buttidesk:code:'.hash('sha256', $code), [
             'user_id' => (int) $user->getKey(), 'workspace_id' => (int) $workspace->getKey(),
-            'challenge' => $challenge, 'binding' => $binding,
+            'challenge' => $challenge, 'binding' => $binding, 'credential_version' => $this->credentialVersion($user),
         ], 60);
 
         return $code;
@@ -71,13 +71,14 @@ final class ButtiDeskBridge
             abort_unless(hash_equals((string) $grant['challenge'], $challenge), 401);
             Cache::forget($key);
             $user = User::query()->whereKey($grant['user_id'])->firstOrFail();
+            abort_unless(is_string($grant['credential_version'] ?? null) && hash_equals($grant['credential_version'], $this->credentialVersion($user)), 401);
             $context = $this->snapshot($user, (int) $grant['workspace_id']);
             abort_unless(Cache::get($this->bindingKey((string) $grant['binding'])) === (int) $user->getKey(), 401);
             $token = bin2hex(random_bytes(32));
             $expires = now()->getTimestamp() + $this->lifetime();
             Cache::put('buttidesk:session:'.hash('sha256', $token), [
                 'user_id' => (int) $user->getKey(), 'workspace_id' => (int) $grant['workspace_id'],
-                'binding' => (string) $grant['binding'], 'expires_at' => $expires,
+                'binding' => (string) $grant['binding'], 'expires_at' => $expires, 'credential_version' => $this->credentialVersion($user),
             ], $this->lifetime());
 
             return ['protocol_version' => 1, 'session_token' => $token, 'expires_at' => $expires, 'context' => $context];
@@ -93,6 +94,7 @@ final class ButtiDeskBridge
         $grant = Cache::get('buttidesk:session:'.hash('sha256', $token));
         abort_unless(is_array($grant) && is_int($grant['user_id'] ?? null) && is_int($grant['workspace_id'] ?? null) && is_string($grant['binding'] ?? null) && is_int($grant['expires_at'] ?? null) && $grant['expires_at'] > now()->getTimestamp(), 401);
         $user = User::query()->whereKey($grant['user_id'])->firstOrFail();
+        abort_unless(is_string($grant['credential_version'] ?? null) && hash_equals($grant['credential_version'], $this->credentialVersion($user)), 401);
         abort_unless(Cache::get($this->bindingKey((string) $grant['binding'])) === (int) $user->getKey(), 401);
 
         return ['protocol_version' => 1, 'expires_at' => (int) $grant['expires_at'], 'context' => $this->snapshot($user, (int) $grant['workspace_id'])];
@@ -121,6 +123,11 @@ final class ButtiDeskBridge
 
         return ['user' => ['id' => (int) $user->getKey(), 'name' => $user->name],
             'workspace' => ['id' => $workspaceId, 'name' => (string) $membership->name], 'role' => (string) $membership->role];
+    }
+
+    private function credentialVersion(User $user): string
+    {
+        return hash_hmac('sha256', $user->getAuthPassword(), (string) config('buttidesk.bridge.secret'));
     }
 
     private function lifetime(): int

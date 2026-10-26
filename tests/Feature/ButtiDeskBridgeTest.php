@@ -148,3 +148,10 @@ it('fails closed when unconfigured without affecting the PitMetric dashboard', f
     config()->set('buttidesk.bridge.url', 'https://evil@desk.example.test');
     $this->get(route('buttidesk.launch'))->assertServiceUnavailable();
 });
+
+it('invalidates existing bridge sessions after credentials change', function () {
+    $member = User::factory()->withButtiDeskAccess()->create();
+    $token = deskBridgeRequest($this, 'token', deskBridgeGrant($this, $member))->assertOk()->json('session_token');
+    $member->forceFill(['password' => 'a-new-test-password'])->save();
+    deskBridgeRequest($this, 'context', ['session_token' => $token])->assertUnauthorized();
+});
