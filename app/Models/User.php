@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $newsletter_subscribed_at
  * @property string $newsletter_locale
+ * @property bool $buttidesk_access_enabled
  * @property bool $database_access_enabled
  * @property string $password
  * @property string|null $two_factor_secret
@@ -56,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'newsletter_subscribed_at' => 'datetime',
             'database_access_enabled' => 'boolean',
+            'buttidesk_access_enabled' => 'boolean',
             'password' => 'hashed',
         ];
     }
@@ -67,6 +69,11 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return (bool) $this->getAttribute('database_access_enabled');
+    }
+
+    public function hasButtiDeskAccess(): bool
+    {
+        return (bool) ($this->getAttributes()['buttidesk_access_enabled'] ?? false);
     }
 
     /**

@@ -22,12 +22,15 @@ use App\Models\UsageBatch;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Policies\WorkspaceOwnedPolicy;
+use App\Services\ButtiDeskBridge;
 use App\Services\TrackCaptureContextService;
 use App\Services\WorkspaceContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -72,6 +75,18 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::define('manage-updates', fn (User $user): bool => $this->isUpdateEditor($user));
+
+        Gate::define('access-buttidesk', fn (User $user): bool => ButtiDeskBridge::eligible($user));
+        Gate::define('launch-buttidesk', fn (User $user): bool => ButtiDeskBridge::configured() && ButtiDeskBridge::eligible($user));
+        Event::listen(Logout::class, function (): void {
+            if (ButtiDeskBridge::configured()) {
+                try {
+                    app(ButtiDeskBridge::class)->revokeSourceSession(request());
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            }
+        });
 
         Gate::define('team-view', function (User $user): bool {
             return $this->isUpdateEditor($user)

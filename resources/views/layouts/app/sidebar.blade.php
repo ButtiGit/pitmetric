@@ -8,6 +8,8 @@
         <flux:sidebar sticky collapsible="mobile" class="pm-mobile-sidebar border-e border-[#242932] bg-[#111317]">
             <flux:sidebar.header class="border-b border-white/5 pb-4"><a href="{{ route('dashboard') }}" wire:navigate aria-label="PitMetric"><img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-8 w-auto max-w-44"></a><flux:sidebar.collapse class="lg:hidden" /></flux:sidebar.header>
 
+            <x-buttidesk.product-switch />
+
             @php
                 $activityOpen = request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
@@ -73,7 +75,7 @@
                             <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
                             @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="clipboard-document-check" href="/syspilot/">SysPilot</flux:sidebar.item>
-                                @if (config('buttidesk.enabled', false))
+                                @if (config('buttidesk.enabled', false) && ! auth()->user()->can('launch-buttidesk') && auth()->user()->can('access-buttidesk'))
                                     <flux:sidebar.item icon="rectangle-stack" :href="route('buttidesk.index')" :current="request()->routeIs('buttidesk.*')">ButtiDesk-Pro</flux:sidebar.item>
                                 @endif
                             @endif

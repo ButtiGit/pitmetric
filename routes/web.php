@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ButtiDeskBridgeController;
 use App\Http\Controllers\CircuitController;
 use App\Http\Controllers\ComponentController;
 use App\Http\Controllers\ComponentInstallationController;
@@ -106,6 +107,10 @@ Route::post('/locale', function (Request $request) {
 })->name('locale.update');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/apps/buttidesk', [ButtiDeskBridgeController::class, 'launch'])->name('buttidesk.launch');
+    Route::get('/apps/buttidesk/authorize', [ButtiDeskBridgeController::class, 'authorizeConnection'])->middleware('throttle:30,1')->name('buttidesk.authorize');
+    Route::get('/apps/buttidesk/return', fn () => redirect()->route('dashboard'))->name('buttidesk.return');
+
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('/events', [RaceEventController::class, 'index'])->name('events.index');
@@ -246,6 +251,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('f1-live/history', [F1LiveController::class, 'history'])->middleware('throttle:30,1,f1-history')->name('f1-live.history');
             Route::get('users', [UserStudioController::class, 'index'])->name('users.index');
             Route::patch('users/{user}/access', [UserStudioController::class, 'updateAccess'])->name('users.access');
+            Route::patch('users/{user}/buttidesk-access', [UserStudioController::class, 'updateButtiDeskAccess'])->name('users.buttidesk-access');
         });
 });
 

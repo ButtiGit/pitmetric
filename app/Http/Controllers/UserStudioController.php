@@ -9,6 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class UserStudioController extends Controller
 {
@@ -31,6 +33,7 @@ class UserStudioController extends Controller
             'users' => $users,
             'search' => $search,
             'accessControlReady' => true,
+            'deskAccessReady' => Schema::hasColumn('users', 'buttidesk_access_enabled'),
         ]);
     }
 
@@ -59,5 +62,18 @@ class UserStudioController extends Controller
         return back()->with('status', $enabled
             ? __('users.access_enabled_message', ['name' => $user->name])
             : __('users.access_disabled_message', ['name' => $user->name]));
+    }
+
+    public function updateButtiDeskAccess(Request $request, User $user): RedirectResponse
+    {
+        Gate::authorize('manage-updates');
+        abort_if(Gate::forUser($user)->allows('manage-updates'), 403);
+        abort_unless(Schema::hasColumn('users', 'buttidesk_access_enabled'), 503, __('users.desk_not_ready'));
+        $data = $request->validate(['buttidesk_access_enabled' => ['required', 'boolean']]);
+        $enabled = (bool) $data['buttidesk_access_enabled'];
+        $user->forceFill(['buttidesk_access_enabled' => $enabled])->save();
+        Log::info('buttidesk.access_changed', ['actor_id' => $request->user()?->getAuthIdentifier(), 'user_id' => $user->getKey(), 'enabled' => $enabled]);
+
+        return back()->with('status', __($enabled ? 'users.desk_enabled_message' : 'users.desk_disabled_message', ['name' => $user->name]));
     }
 }

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
 it('keeps PitMetric available when ButtiDesk-Pro is disabled', function () {
-    $user = User::factory()->withDatabaseAccess()->create();
+    $user = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
     config()->set('buttidesk.enabled', false);
 
     $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertDontSee('ButtiDesk-Pro');
@@ -22,7 +22,7 @@ it('keeps PitMetric available when ButtiDesk-Pro is disabled', function () {
 it('keeps the desk route separate from public asset directories', function () {
     expect(is_dir(public_path('buttidesk')))->toBeFalse();
 
-    $user = User::factory()->withDatabaseAccess()->create();
+    $user = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
     $this->actingAs($user)->get('/buttidesk')->assertOk();
 });
 
@@ -32,12 +32,12 @@ it('requires an authenticated and authorized PitMetric account', function () {
     $regular = User::factory()->create();
     $this->actingAs($regular)->get(route('buttidesk.index'))->assertForbidden();
 
-    $owner = User::factory()->withDatabaseAccess()->create();
+    $owner = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
     $this->actingAs($owner)->get(route('buttidesk.index'))->assertOk()->assertSee('ButtiDesk');
 });
 
 it('creates contacts and tickets and registers work for printable reports', function () {
-    $user = User::factory()->withDatabaseAccess()->create();
+    $user = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
     $this->actingAs($user);
 
     $this->post(route('buttidesk.contacts.store'), [
@@ -74,8 +74,8 @@ it('creates contacts and tickets and registers work for printable reports', func
 });
 
 it('isolates contacts tickets appointments and reports between PitMetric workspaces', function () {
-    $owner = User::factory()->withDatabaseAccess()->create();
-    $other = User::factory()->withDatabaseAccess()->create();
+    $owner = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
+    $other = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
 
     $this->actingAs($owner);
 
@@ -108,7 +108,7 @@ it('isolates contacts tickets appointments and reports between PitMetric workspa
 });
 
 it('makes appointments available in an optional revocable private iCal feed', function () {
-    $user = User::factory()->withDatabaseAccess()->create();
+    $user = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
     $this->actingAs($user);
 
     $this->post(route('buttidesk.calendar.store'), [
@@ -145,10 +145,10 @@ it('uses the existing PitMetric mail transport with editor-only access', functio
         ]]], 200),
     ]);
 
-    $other = User::factory()->withDatabaseAccess()->create();
+    $other = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create();
     $this->actingAs($other)->get(route('buttidesk.mail.index'))->assertForbidden();
 
-    $editor = User::factory()->withDatabaseAccess()->create(['email' => 'editor@example.test']);
+    $editor = User::factory()->withDatabaseAccess()->withButtiDeskAccess()->create(['email' => 'editor@example.test']);
     $this->actingAs($editor)->get(route('buttidesk.mail.index'))->assertOk()->assertSee('Assistenza');
     Mail::fake();
 

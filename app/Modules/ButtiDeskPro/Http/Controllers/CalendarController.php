@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -129,6 +130,9 @@ final class CalendarController extends Controller
     public function feed(string $token): Response
     {
         $feed = CalendarFeed::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
+
+        $feedUser = User::query()->find($feed->user_id);
+        abort_unless($feedUser && $feedUser->hasVerifiedEmail() && Gate::forUser($feedUser)->allows('access-buttidesk'), 404);
 
         abort_unless(DB::table('workspace_user')
             ->where('workspace_id', $feed->workspace_id)
