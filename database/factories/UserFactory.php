@@ -77,4 +77,9 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => []);
     }
+
+    public function withButtiDeskAccess(): static
+    {
+        return $this->state(fn (array $attributes): array => ['buttidesk_access_enabled' => true]);
+    }
 }

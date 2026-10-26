@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ButtiDeskBridgeController;
 use App\Http\Controllers\MobileAppController;
+use App\Http\Middleware\AuthenticateButtiDeskBridge;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile')->group(function (): void {
@@ -15,4 +17,10 @@ Route::prefix('mobile')->group(function (): void {
         Route::get('/gallery', [MobileAppController::class, 'galleryIndex']);
         Route::post('/gallery', [MobileAppController::class, 'galleryStore']);
     });
+});
+
+Route::prefix('buttidesk/v1')->middleware([AuthenticateButtiDeskBridge::class, 'throttle:240,1'])->group(function (): void {
+    Route::post('token', [ButtiDeskBridgeController::class, 'token']);
+    Route::post('context', [ButtiDeskBridgeController::class, 'context']);
+    Route::post('revoke', [ButtiDeskBridgeController::class, 'revoke']);
 });

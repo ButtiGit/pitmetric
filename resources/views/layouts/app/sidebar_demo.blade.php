@@ -22,6 +22,8 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
+            <x-buttidesk.product-switch />
+
             <div class="mx-2 mt-4 rounded-xl border border-[#E10600]/25 bg-[#E10600]/8 px-3 py-3">
                 <div class="flex items-center gap-2"><span class="size-2 rounded-full bg-[#E10600]"></span><p class="text-[10px] font-black uppercase tracking-[0.14em] text-[#ff625e]">Demo · Read only</p></div>
                 <p class="mt-2 text-sm font-bold text-zinc-100">Race Team Demo</p>

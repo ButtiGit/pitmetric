@@ -75,6 +75,10 @@
                                 </form>
                             @endif
                         </div>
+                        <div class="mt-4 border-t border-pm-border pt-4">
+                            <p class="mb-2 text-xs font-bold text-pm-text">ButtiDesk-Pro</p>
+                            <x-buttidesk.access-control :user="$user" :ready="$deskAccessReady" />
+                        </div>
                     </article>
                 @empty
                     <div class="pm-panel p-8 text-center text-sm text-pm-muted">{{ __('users.empty') }}</div>
@@ -90,6 +94,7 @@
                                 <th class="px-5 py-3">{{ __('users.verification') }}</th>
                                 <th class="px-5 py-3">{{ __('users.registered') }}</th>
                                 <th class="px-5 py-3">{{ __('users.access') }}</th>
+                                <th class="px-5 py-3">ButtiDesk-Pro</th>
                                 <th class="px-5 py-3 text-right"></th>
                             </tr>
                         </thead>
@@ -109,6 +114,7 @@
                                             <span class="rounded-full bg-pm-subtle px-2.5 py-1 text-xs font-bold text-pm-muted">{{ __('users.paused') }}</span>
                                         @endif
                                     </td>
+                                    <td class="px-5 py-4"><x-buttidesk.access-control :user="$user" :ready="$deskAccessReady" /></td>
                                     <td class="px-5 py-4 text-right">
                                         @if ($isEditor)
                                             <span class="text-xs font-semibold text-pm-muted">{{ __('users.editor_access') }}</span>
@@ -123,7 +129,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="px-5 py-12 text-center text-pm-muted">{{ __('users.empty') }}</td></tr>
+                                <tr><td colspan="6" class="px-5 py-12 text-center text-pm-muted">{{ __('users.empty') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>

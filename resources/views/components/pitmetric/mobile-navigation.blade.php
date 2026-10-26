@@ -37,6 +37,7 @@
     </div>
 
     <div class="pm-mobile-more-body">
+        <x-buttidesk.product-switch class="!mx-0 !mt-0" />
         <section>
             <p class="pm-mobile-more-heading">{{ $it ? 'Attività' : 'Activity' }}</p>
             <div class="pm-mobile-more-grid">

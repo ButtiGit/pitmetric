@@ -27,7 +27,7 @@ Route::middleware(['auth', 'verified', 'can:manage-updates'])
         Route::post('/{emailId}/reply', [StudioMailboxController::class, 'reply'])->name('reply');
     });
 
-Route::middleware([EnsureDeskReady::class, 'auth', 'verified', 'database.access', 'can:team-view'])
+Route::middleware([EnsureDeskReady::class, 'auth', 'verified', 'database.access', 'can:access-buttidesk', 'can:team-view'])
     ->prefix('buttidesk')
     ->name('buttidesk.')
     ->group(function (): void {
