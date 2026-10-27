@@ -1,5 +1,6 @@
 <?php
 
+use App\Mail\OutreachMail;
 use App\Mail\StudioReplyMail;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -120,6 +121,70 @@ it('lets an editor reply to a received email', function () {
     Mail::assertSent(StudioReplyMail::class, function (StudioReplyMail $mail): bool {
         return $mail->hasTo('team@example.com')
             && $mail->subjectLine === 'Re: PitMetric'
-            && $mail->messageBody === 'Volentieri, vi mostro la demo.';
+            && $mail->messageBody === 'Volentieri, vi mostro la demo.'
+            && $mail->headers()->text === [
+                'In-Reply-To' => '<message@example.com>',
+                'References' => '<message@example.com>',
+            ];
     });
+});
+
+test('studio replies share outreach branding and preserve paragraphs safely', function () {
+    $body = "Buongiorno,\nGrazie per la risposta.\n\n<script>alert('mail')</script> & disponibilità";
+    $reply = new StudioReplyMail('Re: PitMetric', $body);
+    $outreach = new OutreachMail('it', 'PitMetric', $body, '', 'https://pitmetric.example/opt-out');
+
+    $reply->assertSeeInHtml('Sviluppatore e ideatore di PitMetric')
+        ->assertSeeInHtml('alt="PitMetric"', false)
+        ->assertSeeInHtml('data:image/png;base64,', false)
+        ->assertSeeInHtml('Buongiorno,<br', false)
+        ->assertSeeInHtml('&lt;script&gt;', false)
+        ->assertSeeInHtml('&amp; disponibilità', false)
+        ->assertDontSeeInHtml('<script>', false)
+        ->assertDontSeeInHtml('Un invito a provare PitMetric')
+        ->assertDontSeeInHtml('Esplora la demo')
+        ->assertDontSeeInHtml('non ricevere altre email')
+        ->assertSeeInText($body)
+        ->assertSeeInText('Sviluppatore e ideatore di PitMetric')
+        ->assertSeeInText(route('localized.home', ['locale' => 'it']));
+
+    $documents = [];
+    foreach ([$reply, $outreach] as $mail) {
+        $document = new DOMDocument;
+        @$document->loadHTML($mail->render());
+        $documents[] = new DOMXPath($document);
+    }
+
+    foreach (['//body', '//table', '//img', '//td[1]', '//*[@data-outreach-message]/p', '//*[@data-outreach-label="signature"]/..'] as $selector) {
+        $replyNode = $documents[0]->query($selector)->item(0);
+        $outreachNode = $documents[1]->query($selector)->item(0);
+        expect($replyNode->getAttribute('style'))->toBe($outreachNode->getAttribute('style'));
+    }
+
+    expect($documents[0]->query('//*[@data-outreach-message]/p'))->toHaveCount(2);
+});
+
+test('studio replies embed the official logo and keep plain text and reply headers', function () {
+    $mail = new StudioReplyMail('Re: PitMetric', 'Volentieri, sentiamoci.', [
+        'In-Reply-To' => '<message@example.com>',
+        'References' => '<message@example.com>',
+    ]);
+    $sent = Mail::mailer('array')->to('preview@example.test')->send($mail);
+    $email = $sent->getSymfonySentMessage()->getOriginalMessage();
+    $images = $email->getAttachments();
+
+    expect($images)->toHaveCount(1);
+    $logo = $images[0];
+    expect($logo->getDisposition())->toBe('inline')
+        ->and($logo->getMediaType())->toBe('image')
+        ->and($logo->getMediaSubtype())->toBe('png')
+        ->and(base64_decode(preg_replace('/\s+/', '', $logo->bodyToString()), true))
+        ->toBe(file_get_contents(public_path('brand/pitmetric-primary-dark-email.png')))
+        ->and($email->getHtmlBody())->toContain('cid:', 'color-scheme', '#080a0d', '#111318')
+        ->and($email->getTextBody())->toContain('Volentieri, sentiamoci.', 'Sviluppatore e ideatore di PitMetric')
+        ->not->toContain('cid:', '<table')
+        ->and($email->getHeaders()->get('In-Reply-To')->getBodyAsString())->toBe('<message@example.com>')
+        ->and($email->getHeaders()->get('References')->getBodyAsString())->toBe('<message@example.com>')
+        ->and($email->getFrom()[0]->getAddress())->toBe(config('services.resend.studio_from_address'))
+        ->and($email->getReplyTo()[0]->getAddress())->toBe(config('services.resend.studio_reply_to'));
 });

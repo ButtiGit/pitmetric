@@ -41,6 +41,7 @@ final class StudioReplyMail extends Mailable
     {
         return new Content(
             view: 'emails.studio-reply',
+            text: 'emails.studio-reply-text',
             with: ['messageBody' => $this->messageBody],
         );
     }
