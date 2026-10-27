@@ -175,9 +175,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/championships/{championship}/participants/{participant}', [ChampionshipController::class, 'updateParticipant'])->whereNumber('participant')->name('championships.participants.update');
             Route::post('/championships/{championship}/rounds/{round}/results', [ChampionshipController::class, 'result'])->whereNumber('round')->name('championships.results.store');
             Route::delete('/championships/{championship}/rounds/{round}/results/{result}', [ChampionshipController::class, 'removeResult'])->whereNumber(['round', 'result'])->name('championships.results.remove');
-            Route::post('/championships/{championship}/imports/upload', [ChampionshipImportController::class, 'upload'])->middleware('throttle:10,1')->name('championships.imports.upload');
-            Route::post('/championships/{championship}/imports/preview', [ChampionshipImportController::class, 'preview'])->middleware('throttle:30,1')->name('championships.imports.preview');
-            Route::post('/championships/{championship}/imports/confirm', [ChampionshipImportController::class, 'confirm'])->middleware('throttle:10,1')->name('championships.imports.confirm');
+            Route::post('/championships/{championship}/imports/upload', [ChampionshipImportController::class, 'upload'])->middleware('throttle:10,1,championship-import-upload')->name('championships.imports.upload');
+            Route::post('/championships/{championship}/imports/preview', [ChampionshipImportController::class, 'preview'])->middleware('throttle:30,1,championship-import-preview')->name('championships.imports.preview');
+            Route::post('/championships/{championship}/imports/confirm', [ChampionshipImportController::class, 'confirm'])->middleware('throttle:10,1,championship-import-confirm')->name('championships.imports.confirm');
 
             Route::delete('/circuits/{circuit}', [CircuitController::class, 'destroy'])->name('circuits.destroy');
             Route::patch('/circuits/{circuit}/restore', [CircuitController::class, 'restore'])->withTrashed()->name('circuits.restore');

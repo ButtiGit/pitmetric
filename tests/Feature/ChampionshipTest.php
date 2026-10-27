@@ -13,6 +13,7 @@ use App\Services\ChampionshipStandings;
 use App\Services\DataHubService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
     $this->withoutVite();
@@ -334,4 +335,22 @@ test('legacy version one backups remain readable without championship tables', f
     $this->actingAs($target)->withSession(['pitmetric.current_workspace_id' => $workspace->id]);
     $service->import($workspace, $target, $backup);
     expect(Driver::query()->first()->display_name)->toBe('Legacy driver')->and(Championship::query()->count())->toBe(0);
+});
+
+test('import steps enforce separate limits without consuming unrelated route budgets', function () {
+    Route::post('/championship-throttle-probe', fn () => response()->noContent())->middleware(['web', 'auth', 'throttle:1,1']);
+
+    for ($i = 0; $i < 10; $i++) {
+        $token = championshipUpload($this, $this->championship, 'participants', "Name,Number\nAlice,7\n");
+    }
+    $this->postJson(route('championships.imports.upload', $this->championship), [])->assertTooManyRequests();
+
+    for ($i = 0; $i < 30; $i++) {
+        championshipPreview($this, $this->championship, $token, ['name' => 0, 'number' => 1])->assertOk();
+    }
+    championshipPreview($this, $this->championship, $token, ['name' => 0, 'number' => 1])->assertTooManyRequests();
+    $this->postJson(route('championships.imports.confirm', $this->championship), ['token' => $token])->assertOk()->assertJsonPath('imported', 1);
+
+    $this->postJson('/championship-throttle-probe')->assertNoContent();
+    $this->postJson('/championship-throttle-probe')->assertTooManyRequests();
 });
