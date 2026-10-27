@@ -23,7 +23,8 @@ test('Nixpacks publishes the web build and routes the installable app shell', ()
 
 test('browser boot uses web-compatible local quick records before native plugins', () => {
   const app = source('src/App.vue');
-  assert.match(app, /if \(webPreview\) \{\s*quick\.value = await quickRecords\(\);\s*ready\.value = true;\s*return;/);
+  assert.match(app, /if \(webPreview\) \{\s*try \{\s*quick\.value = await quickRecords\(\);/);
+  assert.match(app, /catch \{\s*actionMessage\.value = 'Archivio offline non disponibile\./);
   assert.match(app, /webPreview && \['garage', 'gallery', 'account', 'weekend'\]/);
   assert.match(app, /if \(!webPreview\) pending\.value = await pendingCount\(\)/);
 });

@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
+import { addWebQuickRecord, deleteWebQuickRecord, readWebQuickRecords } from './web-quicklog';
 
 export type QuickRecordKind = 'lap_time' | 'session' | 'note' | 'setup' | 'maintenance';
 
@@ -13,7 +14,6 @@ export type QuickRecord = {
 };
 
 const FILE_PATH = 'pitmetric/quick-records.json';
-const WEB_KEY = 'pitmetric.quick-records';
 
 function sortRecords(records: QuickRecord[]): QuickRecord[] {
   return [...records].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
@@ -40,19 +40,7 @@ async function writeNative(records: QuickRecord[]): Promise<void> {
 
 export async function quickRecords(): Promise<QuickRecord[]> {
   if (Capacitor.isNativePlatform()) return readNative();
-  try {
-    return sortRecords(JSON.parse(localStorage.getItem(WEB_KEY) || '[]') as QuickRecord[]);
-  } catch {
-    return [];
-  }
-}
-
-async function persist(records: QuickRecord[]): Promise<void> {
-  if (Capacitor.isNativePlatform()) {
-    await writeNative(records);
-    return;
-  }
-  localStorage.setItem(WEB_KEY, JSON.stringify(sortRecords(records)));
+  return readWebQuickRecords();
 }
 
 export async function addQuickRecord(
@@ -70,14 +58,22 @@ export async function addQuickRecord(
     value_ms: valueMs,
     payload,
   };
-  const records = await quickRecords();
-  records.unshift(record);
-  await persist(records.slice(0, 1000));
+  if (Capacitor.isNativePlatform()) {
+    const records = await readNative();
+    records.unshift(record);
+    await writeNative(records.slice(0, 1000));
+  } else {
+    await addWebQuickRecord(record);
+  }
   return record;
 }
 
 export async function deleteQuickRecord(id: string): Promise<void> {
-  await persist((await quickRecords()).filter(record => record.id !== id));
+  if (Capacitor.isNativePlatform()) {
+    await writeNative((await readNative()).filter(record => record.id !== id));
+  } else {
+    await deleteWebQuickRecord(id);
+  }
 }
 
 export function parseLapTime(input: string): number | null {

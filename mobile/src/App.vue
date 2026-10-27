@@ -152,6 +152,16 @@ function quickMeta(item: QuickRecord): string {
   return formatDate(item.occurred_at);
 }
 
+async function saveLocalRecord(action: () => Promise<unknown>): Promise<boolean> {
+  try {
+    await action();
+    return true;
+  } catch {
+    actionMessage.value = 'Salvataggio offline non riuscito: verifica lo spazio disponibile e le impostazioni del browser.';
+    return false;
+  }
+}
+
 async function refreshLocal(preferCloud = false) {
   [gallery.value, quick.value, pending.value, pendingOps.value, snapshot.value] = await Promise.all([
     galleryItems(), quickRecords(), pendingCount(), pendingOperations(), cachedSnapshot()
@@ -199,11 +209,11 @@ function pauseTimer() {
 function resetTimer() { pauseTimer(); timerElapsed.value = 0; }
 
 async function storeLap(value: number, source: 'stopwatch' | 'manual') {
-  await addQuickRecord('lap_time', timingLabel.value || 'Tempo sul giro', {
+  if (!(await saveLocalRecord(() => addQuickRecord('lap_time', timingLabel.value || 'Tempo sul giro', {
     vehicle: timingVehicle.value || null,
     notes: timingNotes.value || null,
     source,
-  }, value);
+  }, value)))) return;
   quick.value = await quickRecords();
   actionMessage.value = `Tempo salvato: ${formatLapTime(value)}. Nessuna configurazione necessaria.`;
 }
@@ -242,9 +252,12 @@ async function saveSession() {
     configuration_version_id: sessionConfigurationId.value,
   };
 
-  await addQuickRecord('session', 'Sessione', common, bestLapMs, common.started_at);
+  if (!(await saveLocalRecord(() => addQuickRecord('session', 'Sessione', common, bestLapMs, common.started_at)))) return;
   if (bestLapMs !== null) {
-    await addQuickRecord('lap_time', 'Best lap sessione', { source: 'session', notes: sessionNotes.value || null }, bestLapMs, common.started_at);
+    if (!(await saveLocalRecord(() => addQuickRecord('lap_time', 'Best lap sessione', { source: 'session', notes: sessionNotes.value || null }, bestLapMs, common.started_at)))) {
+      actionMessage.value = 'Sessione salvata, ma non è stato possibile registrare il miglior giro.';
+      return;
+    }
   }
 
   if (!webPreview && sessionConfigurationId.value) {
@@ -272,11 +285,11 @@ async function saveSession() {
 
 async function savePitNote() {
   if (!noteBody.value.trim()) return;
-  await addQuickRecord('note', noteBody.value.trim().slice(0, 52), {
+  if (!(await saveLocalRecord(() => addQuickRecord('note', noteBody.value.trim().slice(0, 52), {
     kind: noteKind.value,
     body: noteBody.value.trim(),
     event_id: selectedEventId.value,
-  });
+  })))) return;
   quick.value = await quickRecords();
   noteBody.value = '';
   actionMessage.value = 'Nota salvata localmente.';
@@ -296,11 +309,11 @@ async function saveVehicle() {
 
 async function saveWorkOrder() {
   if (!workOrderTitle.value.trim()) return;
-  await addQuickRecord('maintenance', workOrderTitle.value.trim(), {
+  if (!(await saveLocalRecord(() => addQuickRecord('maintenance', workOrderTitle.value.trim(), {
     maintenance_schedule_id: workOrderScheduleId.value,
     priority: workOrderPriority.value,
     notes: workOrderNotes.value || null,
-  });
+  })))) return;
   quick.value = await quickRecords();
   workOrderTitle.value = ''; workOrderNotes.value = '';
   actionMessage.value = 'Promemoria manutenzione salvato.';
@@ -316,11 +329,11 @@ async function saveSetup() {
     ['brake_bias_pct', setupBrakeBias.value]
   ];
   map.forEach(([key, value]) => { if (value !== null && value !== undefined) values[key] = Number(value); });
-  await addQuickRecord('setup', setupName.value.trim(), {
+  if (!(await saveLocalRecord(() => addQuickRecord('setup', setupName.value.trim(), {
     vehicle_id: setupVehicleId.value,
     description: setupDescription.value || null,
     values,
-  });
+  })))) return;
   quick.value = await quickRecords();
   setupName.value = ''; setupDescription.value = '';
   actionMessage.value = 'Setup salvato localmente.';
@@ -341,7 +354,7 @@ async function addMedia() {
   }
 }
 async function removeQuick(id: string) {
-  await deleteQuickRecord(id);
+  if (!(await saveLocalRecord(() => deleteQuickRecord(id)))) return;
   quick.value = await quickRecords();
 }
 async function forceSync() {
@@ -371,7 +384,11 @@ async function signOut() {
 
 onMounted(async () => {
   if (webPreview) {
-    quick.value = await quickRecords();
+    try {
+      quick.value = await quickRecords();
+    } catch {
+      actionMessage.value = 'Archivio offline non disponibile. Controlla le impostazioni di Safari prima di registrare dati.';
+    }
     ready.value = true;
     return;
   }
