@@ -44,6 +44,12 @@ test('five vital workflows', async ({ page }, testInfo) => {
         await expectReadableWorkflows(page, testInfo);
     });
 
+    if (!testInfo.project.name.includes('mobile')) {
+        await test.step('sidebar information stays grouped above the active account', async () => {
+            await expectSidebarFooter(page);
+        });
+    }
+
     await test.step('vehicle creation', async () => {
         await page.goto('/garage');
         await openModal(page, /Add vehicle/i);
@@ -191,5 +197,54 @@ async function expectReadableWorkflows(page, testInfo) {
             await page.screenshot({ path: testInfo.outputPath(`workflow-${locale}-${path.slice(1)}.png`), fullPage: true });
         }
     }
+    await page.setViewportSize(originalViewport);
+}
+
+async function expectSidebarFooter(page) {
+    const originalViewport = page.viewportSize();
+    await page.goto('/dashboard');
+    const footer = page.locator('[data-pm-sidebar-footer]');
+    const menu = footer.locator('[data-pm-sidebar-info]');
+    const summary = menu.locator('summary');
+    const account = page.locator('[data-test="sidebar-menu-button"]');
+
+    for (const height of [600, 1000]) {
+        await page.setViewportSize({ width: originalViewport.width, height });
+        await expect(footer).toBeVisible();
+        await expect(menu).not.toHaveAttribute('open', '');
+        await expect(menu.locator('a')).toHaveCount(4);
+        await expect(menu.locator('a').first()).toBeHidden();
+        await summary.click();
+        await expect(menu).toHaveAttribute('open', '');
+        for (const link of await menu.locator('a').all()) {
+            await expect(link).toBeVisible();
+        }
+        await expect(menu.getByRole('group', { name: 'Language', exact: true })).toBeVisible();
+        await expect(menu.getByRole('button', { name: 'English', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
+        const footerBox = await footer.boundingBox();
+        const accountBox = await account.boundingBox();
+        expect(footerBox.y + footerBox.height).toBeLessThanOrEqual(accountBox.y + 1);
+        expect(accountBox.y + accountBox.height).toBeLessThanOrEqual(height + 1);
+        await summary.click();
+    }
+
+    await summary.click();
+    await menu.getByRole('button', { name: 'Italiano', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'it');
+    await summary.click();
+    await expect(menu.getByRole('link', { name: 'Chi sono', exact: true })).toHaveAttribute('href', /\/it\/about$/);
+    await expect(menu.getByRole('link', { name: 'Home', exact: true })).toHaveAttribute('href', /\/it$/);
+    await expect(menu.getByRole('link', { name: 'Aggiornamenti', exact: true })).toHaveAttribute('href', /\/it\/updates$/);
+    await menu.getByRole('button', { name: 'English', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+    await page.goto('/newsletter');
+    await expect(menu).toHaveAttribute('open', '');
+    await expect(menu.getByRole('link', { name: 'Newsletter', exact: true })).toBeVisible();
+    await summary.click();
+    await summary.focus();
+    await summary.press('Enter');
+    await expect(menu).toHaveAttribute('open', '');
     await page.setViewportSize(originalViewport);
 }
