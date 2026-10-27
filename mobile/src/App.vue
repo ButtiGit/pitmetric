@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { Capacitor } from '@capacitor/core';
 import {
   IonApp, IonPage, IonContent, IonButton, IonInput, IonTextarea, IonIcon, IonBadge,
   IonTabBar, IonTabButton, IonSelect, IonSelectOption, IonLabel, IonSpinner
@@ -25,6 +26,7 @@ import {
 
 type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weekend' | 'maintenance' | 'setup' | 'gallery' | 'account';
 
+const webPreview = !Capacitor.isNativePlatform();
 const ready = ref(false);
 const session = ref<SessionState | null>(null);
 const active = ref<Screen>('home');
@@ -245,7 +247,7 @@ async function saveSession() {
     await addQuickRecord('lap_time', 'Best lap sessione', { source: 'session', notes: sessionNotes.value || null }, bestLapMs, common.started_at);
   }
 
-  if (sessionConfigurationId.value) {
+  if (!webPreview && sessionConfigurationId.value) {
     const payload: Record<string, unknown> = {
       configuration_version_id: sessionConfigurationId.value,
       session_type: sessionType.value,
@@ -260,7 +262,7 @@ async function saveSession() {
   }
 
   quick.value = await quickRecords();
-  pending.value = await pendingCount();
+  if (!webPreview) pending.value = await pendingCount();
   sessionLaps.value = null;
   sessionDuration.value = null;
   sessionBestLap.value = '';
@@ -343,6 +345,11 @@ async function removeQuick(id: string) {
   quick.value = await quickRecords();
 }
 async function forceSync() {
+  if (webPreview) {
+    active.value = 'account';
+    actionMessage.value = 'La sincronizzazione cloud non è ancora disponibile nella PWA beta.';
+    return;
+  }
   if (!session.value?.cloudEnabled) {
     active.value = 'account';
     actionMessage.value = 'Il cloud è opzionale: collega un account solo se vuoi sincronizzare.';
@@ -363,6 +370,11 @@ async function signOut() {
 }
 
 onMounted(async () => {
+  if (webPreview) {
+    quick.value = await quickRecords();
+    ready.value = true;
+    return;
+  }
   await bootLocalStore();
   session.value = await restoreSession();
   biometric.value = await biometricAvailable().catch(() => false);
@@ -386,6 +398,11 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
             <span>{{ cloudLabel }}</span>
           </button>
         </header>
+
+        <div v-if="webPreview" class="pwa-beta-banner" role="status">
+          <strong>PWA BETA</strong>
+          <span>Tempi, sessioni, note e setup restano in questo browser. Cloud e galleria in arrivo: non usarla ancora come unico archivio.</span>
+        </div>
 
         <button v-if="actionMessage" class="toast" type="button" @click="actionMessage = ''">{{ actionMessage }}</button>
 
@@ -484,6 +501,14 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
           <section class="panel"><div class="panel-head"><div><p class="eyebrow">LOCAL SESSIONS</p><h2>Storico</h2></div><span>{{ sessionRecords.length }}</span></div><div class="activity-list"><article v-for="item in sessionRecords.slice(0,12)" :key="item.id" class="activity-row"><div class="activity-dot"><ion-icon :icon="flagOutline"/></div><div><strong>{{ String(item.payload.session_type || 'Sessione') }}</strong><span>{{ quickMeta(item) }} · {{ item.payload.completed_laps || '—' }} giri</span></div><button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div></section>
         </main>
 
+        <main v-else-if="webPreview && ['garage', 'gallery', 'account', 'weekend'].includes(active)" class="screen">
+          <section class="screen-title"><div><p class="eyebrow">PWA BETA</p><h1>Funzione in preparazione</h1><p>Questa funzione richiede ancora i servizi nativi o la sincronizzazione cloud.</p></div></section>
+          <section class="panel form-panel">
+            <p>Per ora puoi registrare tempi, sessioni, note, setup e promemoria in locale. Per garage, account, eventi e galleria continua a usare l’APK Android o il gestionale PitMetric.</p>
+            <button class="save-button" type="button" @click="active = 'home'">Torna alla dashboard</button>
+          </section>
+        </main>
+
         <main v-else-if="active === 'garage'" class="screen">
           <section class="screen-title"><div><p class="eyebrow">GARAGE</p><h1>Mezzi</h1><p>Puoi registrare tempi anche senza aggiungere un mezzo.</p></div><ion-badge>{{ snapshot.vehicles.length }}</ion-badge></section>
           <div class="vehicle-grid"><article v-for="vehicle in snapshot.vehicles" :key="vehicle.id" class="vehicle-card"><ion-icon :icon="carSportOutline"/><div><strong>{{ vehicle.name }}</strong><span>{{ [vehicle.manufacturer, vehicle.model].filter(Boolean).join(' ') || vehicle.category }}</span></div><small>{{ vehicle.status }}</small></article></div>
@@ -521,3 +546,4 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
     </ion-page>
   </ion-app>
 </template>
+

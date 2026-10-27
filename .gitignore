@@ -3,6 +3,7 @@
 /playwright-report
 /test-results
 /public/build
+/public/mobile
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
@@ -24,3 +25,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+

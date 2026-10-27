@@ -563,6 +563,20 @@ h2 {
 .tools-grid strong { align-self: end; font-size: 14px; }
 .tools-grid span { align-self: start; color: var(--pm-muted); font-size: 10px; }
 
+.pwa-beta-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 20px;
+  color: #663e0a;
+  background: #fff3d7;
+  border-bottom: 1px solid #ebd19a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.pwa-beta-banner strong { flex: none; font-size: 10px; letter-spacing: .08em; }
+.pwa-beta-banner span { max-width: 760px; }
+
 .bottom-nav {
   position: fixed;
   right: 0;
@@ -605,3 +619,4 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
