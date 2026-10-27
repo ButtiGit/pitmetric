@@ -192,7 +192,7 @@
                         <p class="max-w-2xl text-sm text-pm-text-secondary">{{ $it ? 'Ogni fase diventa pronta solo quando PitMetric verifica davvero la dipendenza precedente.' : 'Each stage becomes ready only when PitMetric verifies the previous operational dependency.' }}</p>
                     </div>
 
-                    <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+                    <div class="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
                         @foreach ([
                             ['vehicle', $it ? '1. Mezzo' : '1. Vehicle', $it ? 'Base fisica del programma' : 'Physical program base'],
                             ['components', $it ? '2. Componenti' : '2. Components', $it ? 'Parti realmente installate' : 'Physically installed parts'],
@@ -212,13 +212,13 @@
                             @endphp
 
                             @if ($routeName)
-                                <a href="{{ route($routeName) }}" class="rounded-xl border {{ $done ? 'border-pm-success/25 bg-pm-success-subtle' : ($isNext ? 'border-pm-accent/40 bg-pm-accent/5' : 'border-pm-border bg-pm-subtle') }} p-4 transition hover:border-pm-border-strong">
-                                    <div class="flex items-center justify-between gap-3"><p class="font-bold text-pm-text">{{ $title }}</p><span class="text-[10px] font-black uppercase tracking-[0.1em] {{ $done ? 'text-pm-success' : ($isNext ? 'text-pm-accent' : 'text-pm-warning') }}">{{ $statusLabel }}</span></div>
+                                <a href="{{ route($routeName) }}" class="min-w-0 rounded-xl border {{ $done ? 'border-pm-success/25 bg-pm-success-subtle' : ($isNext ? 'border-pm-accent/40 bg-pm-accent/5' : 'border-pm-border bg-pm-subtle') }} p-4 transition hover:border-pm-border-strong">
+                                    <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2"><p data-pm-workflow-title class="shrink-0 whitespace-nowrap font-bold text-pm-text">{{ $title }}</p><span data-pm-workflow-status class="shrink-0 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.1em] {{ $done ? 'text-pm-success' : ($isNext ? 'text-pm-accent' : 'text-pm-warning') }}">{{ $statusLabel }}</span></div>
                                     <p class="mt-2 text-xs text-pm-text-secondary">{{ $copy }}</p>
                                 </a>
                             @else
-                                <div class="rounded-xl border {{ $done ? 'border-pm-success/25 bg-pm-success-subtle' : ($isNext ? 'border-pm-accent/40 bg-pm-accent/5' : 'border-pm-border bg-pm-subtle') }} p-4">
-                                    <div class="flex items-center justify-between gap-3"><p class="font-bold text-pm-text">{{ $title }}</p><span class="text-[10px] font-black uppercase tracking-[0.1em] {{ $done ? 'text-pm-success' : ($isNext ? 'text-pm-accent' : 'text-pm-muted') }}">{{ $statusLabel }}</span></div>
+                                <div class="min-w-0 rounded-xl border {{ $done ? 'border-pm-success/25 bg-pm-success-subtle' : ($isNext ? 'border-pm-accent/40 bg-pm-accent/5' : 'border-pm-border bg-pm-subtle') }} p-4">
+                                    <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2"><p data-pm-workflow-title class="shrink-0 whitespace-nowrap font-bold text-pm-text">{{ $title }}</p><span data-pm-workflow-status class="shrink-0 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.1em] {{ $done ? 'text-pm-success' : ($isNext ? 'text-pm-accent' : 'text-pm-muted') }}">{{ $statusLabel }}</span></div>
                                     <p class="mt-2 text-xs text-pm-text-secondary">{{ $copy }}</p>
                                 </div>
                             @endif

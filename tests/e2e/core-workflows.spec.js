@@ -126,3 +126,57 @@ test('five vital workflows', async ({ page }, testInfo) => {
         await expect(page.getByText(workTitle, { exact: false }).last()).toBeVisible();
     });
 });
+
+test('workflow stages stay fully readable without horizontal scrolling', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+    await login(page);
+
+    for (const locale of ['it', 'en']) {
+        const token = await page.locator('input[name="_token"]').first().inputValue();
+        const response = await page.request.post('/locale', {
+            form: { _token: token, locale, redirect: '/dashboard' },
+        });
+        expect(response.ok()).toBeTruthy();
+
+        for (const [path, selector] of [
+            ['/dashboard', '[data-pm-dashboard-workflow]'],
+            ['/components', '[data-pm-workflow-nav]'],
+        ]) {
+            await page.goto(path);
+            const workflow = page.locator(selector);
+            await expect(workflow).toBeVisible();
+            await expect(workflow.locator('[data-pm-workflow-title]')).toHaveCount(7);
+            await page.evaluate(() => document.fonts.ready);
+
+            for (const width of [320, 390, 768, 1024, 1280, 1440, 1536, 1920]) {
+                await page.setViewportSize({ width, height: 1000 });
+                await expect(async () => {
+                    const problems = await workflow.evaluate((root) => {
+                        const bounds = root.getBoundingClientRect();
+                        const problems = [];
+                        const elements = [root, ...root.querySelectorAll('nav, ol, li, a, p, [data-pm-workflow-title], [data-pm-workflow-status]')];
+
+                        for (const element of elements) {
+                            const rect = element.getBoundingClientRect();
+                            if (element.scrollWidth > element.clientWidth + 1
+                                || rect.left < Math.max(0, bounds.left) - 1
+                                || rect.right > Math.min(innerWidth, bounds.right) + 1) {
+                                problems.push(`Overflow: ${element.textContent.trim()}`);
+                            }
+                            if (element.matches('[data-pm-workflow-title], [data-pm-workflow-status]')) {
+                                const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+                                if (rect.height > lineHeight + 1) {
+                                    problems.push(`Split label: ${element.textContent.trim()}`);
+                                }
+                            }
+                        }
+                        return problems;
+                    });
+                    expect(problems, `${locale} ${path} at ${width}px`).toEqual([]);
+                }).toPass();
+            }
+
+            await page.screenshot({ path: testInfo.outputPath(`workflow-${locale}-${path.slice(1)}.png`), fullPage: true });
+        }
+    }
+});
