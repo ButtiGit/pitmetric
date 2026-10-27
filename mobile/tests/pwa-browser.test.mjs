@@ -13,6 +13,14 @@ test('PWA deployment uses the public /mobile/ path without changing the native b
   assert.match(config, /outDir: mode === 'pwa' \? '\.\.\/public\/mobile' : 'dist'/);
 });
 
+test('Nixpacks publishes the web build and routes the installable app shell', () => {
+  const deploy = source('../nixpacks.toml');
+  assert.match(deploy, /"npm --prefix mobile install --include=dev --no-fund"/);
+  assert.match(deploy, /"npm --prefix mobile run build:pwa"/);
+  assert.match(deploy, /location = \/mobile\/ \{\s*rewrite \^ \/mobile\/index\.html last;/);
+  assert.match(deploy, /location = \/mobile\/manifest\.webmanifest \{\s*default_type application\/manifest\+json;/);
+});
+
 test('browser boot uses web-compatible local quick records before native plugins', () => {
   const app = source('src/App.vue');
   assert.match(app, /if \(webPreview\) \{\s*quick\.value = await quickRecords\(\);\s*ready\.value = true;\s*return;/);

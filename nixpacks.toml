@@ -16,6 +16,8 @@ cmds = [
     "php -r 'if (PHP_VERSION_ID < 80427 || PHP_VERSION_ID >= 80500) { fwrite(STDERR, \"PHP 8.4.27 or a newer 8.4 security release is required.\\n\"); exit(1); }'",
     "composer check-platform-reqs --no-dev",
     "npm run build",
+    "npm --prefix mobile install --include=dev --no-fund",
+    "npm --prefix mobile run build:pwa",
     "mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache",
     "rm -rf public/storage && ln -s ../storage/app/public public/storage",
     "chown -R $(id -u nobody):$(id -g nobody) storage bootstrap/cache",
@@ -92,6 +94,20 @@ http {
 
         location = /syspilot/ {
             rewrite ^ /syspilot/index.html last;
+        }
+
+        # The PWA has its own static index; do not route /mobile/ through Laravel.
+        location = /mobile {
+            return 301 /mobile/;
+        }
+
+        location = /mobile/ {
+            rewrite ^ /mobile/index.html last;
+        }
+
+        location = /mobile/manifest.webmanifest {
+            default_type application/manifest+json;
+            try_files $uri =404;
         }
 
         location / {
