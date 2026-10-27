@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Schema;
+
 class WorkspaceBackupTableRegistry
 {
     /** @return list<string> */
     public function workspaceTables(): array
     {
-        return [
+        $tables = [
             'vehicles',
             'component_types',
             'components',
@@ -29,5 +31,12 @@ class WorkspaceBackupTableRegistry
             'setup_snapshots',
             'maintenance_work_orders',
         ];
+        foreach (['championships', 'championship_rounds', 'championship_participants', 'championship_results'] as $table) {
+            if (Schema::hasTable($table)) {
+                $tables[] = $table;
+            }
+        }
+
+        return $tables;
     }
 }

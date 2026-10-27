@@ -27,7 +27,7 @@ async function selectOptionContaining(select, text) {
 }
 
 test('five vital workflows', async ({ page }, testInfo) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     const suffix = surfaceName(testInfo);
     const vehicleName = `E2E ${suffix} Vehicle`;
     const buildName = `E2E ${suffix} Build`;
@@ -49,6 +49,10 @@ test('five vital workflows', async ({ page }, testInfo) => {
             await expectSidebarFooter(page);
         });
     }
+
+    await test.step('championship modals import and scoring work end to end', async () => {
+        await expectChampionshipFlow(page, testInfo);
+    });
 
     await test.step('vehicle creation', async () => {
         await page.goto('/garage');
@@ -247,4 +251,99 @@ async function expectSidebarFooter(page) {
     await summary.press('Enter');
     await expect(menu).toHaveAttribute('open', '');
     await page.setViewportSize(originalViewport);
+}
+
+async function expectChampionshipFlow(page, testInfo) {
+    const surface = surfaceName(testInfo);
+    const name = `E2E ${surface} Championship`;
+    const alice = `E2E ${surface} Alice`;
+    const bob = `E2E ${surface} Bob`;
+    const licence = `E2E-${surface}-A`;
+    const errors = [];
+    const captureError = (error) => errors.push(error.message);
+    page.on('pageerror', captureError);
+    await page.goto('/championships');
+    await page.getByRole('button', { name: 'New championship', exact: true }).click();
+    const create = page.locator('#new-championship');
+    await expect(create).toBeVisible();
+    await create.locator('[name="name"]').fill(name);
+    await create.locator('[name="season"]').fill('2027');
+    await create.locator('[name="category"]').fill('KZ');
+    await create.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page).toHaveURL(/\/championships\/\d+$/);
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+
+    await page.getByRole('button', { name: /^Enrolled drivers/ }).click();
+    await page.getByRole('button', { name: 'Enroll driver', exact: true }).click();
+    const enroll = page.locator('#new-championship-participant');
+    await enroll.locator('[name="name"]').fill(alice);
+    await enroll.locator('[name="number"]').fill('7');
+    await enroll.locator('[name="licence"]').fill(licence);
+    await enroll.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.locator('[data-championship-participant]').filter({ hasText: alice })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Import Excel / CSV', exact: true }).click();
+    const wizard = page.locator('#championship-import');
+    await wizard.locator('[name="file"]').setInputFiles({
+        name: 'drivers.csv', mimeType: 'text/csv',
+        buffer: Buffer.from(`Name,Number,Licence,Team\n${alice},7,${licence},E2E\n${bob},8,E2E-${surface}-B,E2E\n`),
+    });
+    await wizard.getByRole('button', { name: 'Read file', exact: true }).click();
+    await expect(wizard.locator('[data-import-step="1"]')).toBeVisible();
+    await expect(wizard.locator('[data-field="name"]')).toHaveValue('0');
+    const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/imports/preview'));
+    await wizard.getByRole('button', { name: 'Check preview', exact: true }).click();
+    expect((await previewResponse).ok()).toBeTruthy();
+    await expect(wizard.locator('[data-import-step="2"]')).toBeVisible();
+    await expect(wizard.locator('[data-import-row-state="new"]')).toHaveCount(1);
+    await expect(wizard.locator('[data-import-row-state="skip"]')).toHaveCount(1);
+    await expect(wizard.locator('[data-import-confirm]')).toBeEnabled();
+    const confirmed = page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/imports/confirm'));
+    const importedPage = page.waitForNavigation({ waitUntil: 'domcontentloaded' });
+    await wizard.getByRole('button', { name: 'Confirm import', exact: true }).click();
+    expect((await confirmed).ok()).toBeTruthy();
+    await importedPage;
+    await expect(page.getByRole('status').filter({ hasText: 'Import completed' })).toContainText('1 rows imported');
+
+    await page.getByRole('button', { name: /^Rounds/ }).click();
+    await page.getByRole('button', { name: 'Add round', exact: true }).click();
+    const round = page.locator('#new-championship-round');
+    await round.locator('[name="name"]').fill('E2E Busca');
+    await round.locator('[name="starts_on"]').fill('2026-11-01');
+    await round.locator('[name="ends_on"]').fill('2026-11-02');
+    await round.getByRole('button', { name: 'Save', exact: true }).click();
+    const roundCard = page.locator('[data-championship-round]').filter({ hasText: 'E2E Busca' });
+    await expect(roundCard).toBeVisible();
+    await roundCard.getByRole('button', { name: /^Results/ }).click();
+    const resultList = page.locator('dialog[id^="championship-round-results-"][open]');
+    await resultList.getByRole('button', { name: 'Add result', exact: true }).click();
+    const result = page.locator('dialog[id^="new-championship-result-"][open]');
+    await selectOptionContaining(result.locator('[name="participant_id"]'), alice);
+    await result.locator('[name="position"]').fill('1');
+    await result.locator('[name="adjustment"]').fill('-0.50');
+    await result.locator('[name="pole"]').check();
+    await result.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.locator('[data-championship-round]').getByRole('button', { name: 'Results (1)', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Standings', exact: true }).click();
+    await expect(page.locator('[data-standings-row]').filter({ hasText: alice })).toContainText('24.5');
+    await page.getByRole('button', { name: 'Scoring', exact: true }).click();
+    const scoring = page.locator('#championship-scoring');
+    await scoring.getByRole('button', { name: 'Add position', exact: true }).click();
+    await scoring.locator('[name="points[21]"]').fill('0.25');
+    await scoring.locator('[name="points[1]"]').fill('30.50');
+    await scoring.locator('[name="pole_bonus"]').fill('1.25');
+    await scoring.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.locator('[data-standings-row]').filter({ hasText: alice })).toContainText('31.25');
+    if (testInfo.project.name.includes('mobile')) {
+        await page.setViewportSize({ width: 320, height: 844 });
+        const lastDriver = page.locator('[data-standings-row]').last();
+        await lastDriver.scrollIntoViewIfNeeded();
+        const lastDriverBox = await lastDriver.boundingBox();
+        const navigationBox = await page.locator('[data-pm-mobile-bottom-nav]').boundingBox();
+        expect(lastDriverBox.y + lastDriverBox.height).toBeLessThanOrEqual(navigationBox.y + 1);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath('championship-standings.png'), fullPage: true });
+    expect(errors).toEqual([]);
+    page.off('pageerror', captureError);
 }

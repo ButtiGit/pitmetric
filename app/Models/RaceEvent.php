@@ -78,6 +78,12 @@ class RaceEvent extends Model
         return $this->hasMany(MaintenanceRecord::class, 'event_id');
     }
 
+    /** @return HasMany<ChampionshipRound, $this> */
+    public function championshipRounds(): HasMany
+    {
+        return $this->hasMany(ChampionshipRound::class, 'event_id');
+    }
+
     protected function casts(): array
     {
         return [

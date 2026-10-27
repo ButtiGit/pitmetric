@@ -41,6 +41,15 @@
     <div class="pitmetric-app pm-mobile-page-with-dock min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-[1500px] space-y-5">
             @include('events.partials.overview')
+            @if ($event->relationLoaded('championshipRounds') && $event->championshipRounds->isNotEmpty())
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($event->championshipRounds as $championshipRound)
+                        @if ($championshipRound->championship && !$championshipRound->championship->trashed())
+                            <a class="pm-ghost-button" href="{{ route('championships.show', $championshipRound->championship) }}">{{ $championshipRound->championship->name }} / {{ $championshipRound->championship->season }} / {{ __('championship.rounds') }} {{ $championshipRound->number }}</a>
+                        @endif
+                    @endforeach
+                </div>
+            @endif
 
             <section class="grid gap-5 2xl:grid-cols-[1.45fr_0.55fr]">
                 @include('events.partials.trackside')
