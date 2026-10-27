@@ -165,7 +165,9 @@ test('workflow stages stay fully readable without horizontal scrolling', async (
                             }
                             if (element.matches('[data-pm-workflow-title], [data-pm-workflow-status]')) {
                                 const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
-                                if (rect.height > lineHeight + 1) {
+                                const textRange = document.createRange();
+                                textRange.selectNodeContents(element);
+                                if (textRange.getBoundingClientRect().height > lineHeight + 1) {
                                     problems.push(`Split label: ${element.textContent.trim()}`);
                                 }
                             }
