@@ -41,7 +41,7 @@ npm run test:pwa
 npm run build:pwa
 ```
 
-The PWA build writes a separate static app into Laravel's `public/mobile/`, served at `https://pitmetric.it/mobile/`. Native builds still use `mobile/dist/` with Capacitor's root asset paths. `public/mobile/` is generated, not committed; **build it on the web server or include the command in the deployment process**:
+The PWA build writes a separate static app into Laravel's `public/mobile/`, served at `https://pitmetric.it/mobile/`. Native builds still use `mobile/dist/` with Capacitor's root asset paths. `public/mobile/` is generated, not committed. **The Nixpacks image build installs the mobile dependencies and generates this directory automatically**. For manual/local testing, run:
 
 ```bash
 # From the root of the deployed PitMetric checkout:
@@ -51,7 +51,7 @@ npm --prefix mobile run build:pwa
 
 `npm ci` is not supported until a `mobile/package-lock.json` is committed; the mobile package currently uses `npm install` in CI as well.
 
-The `/app` marketing page displays the PWA install action next to the Android APK. To avoid sending visitors to a missing URL, its PWA button enables **only after** `public/mobile/index.html` and `public/mobile/sw.js` exist on the server. Deployment of the Laravel application alone does not create this generated folder.
+The `/app` marketing page displays the PWA install action next to the Android APK. To avoid sending visitors to a missing URL, its PWA button enables **only after** `public/mobile/index.html` and `public/mobile/sw.js` exist on the server. A new Nixpacks deployment includes both generated files and an explicit Nginx route for `/mobile/`; an existing running container must be redeployed to gain them permanently.
 
 - iOS: open `/mobile/` in Safari, then **Share → Add to Home Screen**.
 - Android: open `/mobile/` in Chrome and use **Install app / Add to Home Screen**.
