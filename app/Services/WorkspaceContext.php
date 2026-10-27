@@ -98,6 +98,15 @@ class WorkspaceContext
             && Schema::hasColumn('maintenance_records', 'event_id');
     }
 
+    public function isChampionshipsReady(): bool
+    {
+        return $this->isEventsReady()
+            && Schema::hasTable('championships')
+            && Schema::hasTable('championship_rounds')
+            && Schema::hasTable('championship_participants')
+            && Schema::hasTable('championship_results');
+    }
+
     public function currentId(User $user): ?int
     {
         $userId = (int) $user->getKey();

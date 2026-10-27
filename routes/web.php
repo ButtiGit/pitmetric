@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ButtiDeskBridgeController;
+use App\Http\Controllers\ChampionshipController;
+use App\Http\Controllers\ChampionshipImportController;
 use App\Http\Controllers\CircuitController;
 use App\Http\Controllers\ComponentController;
 use App\Http\Controllers\ComponentInstallationController;
@@ -138,6 +140,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('team.invitations.accept');
 
     Route::middleware('database.access')->group(function () {
+        Route::get('/championships', [ChampionshipController::class, 'index'])->name('championships.index');
+        Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
         Route::post('/team', [TeamController::class, 'store'])->name('team.store');
         Route::put('/team', [TeamController::class, 'update'])->name('team.update');
@@ -159,6 +163,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
 
         Route::middleware('can:team-write')->group(function () {
+            Route::post('/championships', [ChampionshipController::class, 'store'])->name('championships.store');
+            Route::put('/championships/{championship}', [ChampionshipController::class, 'update'])->name('championships.update');
+            Route::delete('/championships/{championship}', [ChampionshipController::class, 'archive'])->name('championships.archive');
+            Route::patch('/championships/{championship}/restore', [ChampionshipController::class, 'restore'])->withTrashed()->name('championships.restore');
+            Route::put('/championships/{championship}/scoring', [ChampionshipController::class, 'scoring'])->name('championships.scoring');
+            Route::post('/championships/{championship}/rounds', [ChampionshipController::class, 'round'])->name('championships.rounds.store');
+            Route::put('/championships/{championship}/rounds/{round}', [ChampionshipController::class, 'round'])->whereNumber('round')->name('championships.rounds.update');
+            Route::delete('/championships/{championship}/rounds/{round}', [ChampionshipController::class, 'archiveRound'])->whereNumber('round')->name('championships.rounds.archive');
+            Route::post('/championships/{championship}/participants', [ChampionshipController::class, 'participant'])->name('championships.participants.store');
+            Route::put('/championships/{championship}/participants/{participant}', [ChampionshipController::class, 'updateParticipant'])->whereNumber('participant')->name('championships.participants.update');
+            Route::post('/championships/{championship}/rounds/{round}/results', [ChampionshipController::class, 'result'])->whereNumber('round')->name('championships.results.store');
+            Route::delete('/championships/{championship}/rounds/{round}/results/{result}', [ChampionshipController::class, 'removeResult'])->whereNumber(['round', 'result'])->name('championships.results.remove');
+            Route::post('/championships/{championship}/imports/upload', [ChampionshipImportController::class, 'upload'])->middleware('throttle:10,1,championship-import-upload')->name('championships.imports.upload');
+            Route::post('/championships/{championship}/imports/preview', [ChampionshipImportController::class, 'preview'])->middleware('throttle:30,1,championship-import-preview')->name('championships.imports.preview');
+            Route::post('/championships/{championship}/imports/confirm', [ChampionshipImportController::class, 'confirm'])->middleware('throttle:10,1,championship-import-confirm')->name('championships.imports.confirm');
+
             Route::delete('/circuits/{circuit}', [CircuitController::class, 'destroy'])->name('circuits.destroy');
             Route::patch('/circuits/{circuit}/restore', [CircuitController::class, 'restore'])->withTrashed()->name('circuits.restore');
             Route::delete('/circuits/{circuit}/layouts/{circuitLayout}', [CircuitController::class, 'destroyLayout'])->name('circuits.layouts.destroy');

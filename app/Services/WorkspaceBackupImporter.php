@@ -84,6 +84,29 @@ class WorkspaceBackupImporter
 
                 return $row;
             });
+            $maps['championships'] = $this->insertRows('championships', $tables['championships'] ?? [], fn (array $row): array => $this->prepare($row, $workspaceId, $userId));
+            $maps['championship_rounds'] = $this->insertRows('championship_rounds', $tables['championship_rounds'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                $row['championship_id'] = $this->mapped($maps['championships'], $row['championship_id']);
+                $row['event_id'] = $this->mappedNullable($maps['events'], $row['event_id'] ?? null);
+
+                return $row;
+            });
+            $maps['championship_participants'] = $this->insertRows('championship_participants', $tables['championship_participants'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                $row['championship_id'] = $this->mapped($maps['championships'], $row['championship_id']);
+                $row['driver_id'] = $this->mapped($maps['drivers'], $row['driver_id']);
+
+                return $row;
+            });
+            $maps['championship_results'] = $this->insertRows('championship_results', $tables['championship_results'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                $row['championship_id'] = $this->mapped($maps['championships'], $row['championship_id']);
+                $row['round_id'] = $this->mapped($maps['championship_rounds'], $row['round_id']);
+                $row['participant_id'] = $this->mapped($maps['championship_participants'], $row['participant_id']);
+
+                return $row;
+            });
             $maps['technical_setups'] = $this->insertRows('technical_setups', $tables['technical_setups'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
                 $row = $this->prepare($row, $workspaceId, $userId);
                 $row['vehicle_id'] = $this->mapped($maps['vehicles'], $row['vehicle_id']);
@@ -208,7 +231,7 @@ class WorkspaceBackupImporter
     /** @param array<string, mixed> $backup */
     private function validateBackup(array $backup): void
     {
-        if (($backup['format'] ?? null) !== DataHubService::FORMAT || (int) ($backup['version'] ?? 0) !== DataHubService::VERSION) {
+        if (($backup['format'] ?? null) !== DataHubService::FORMAT || ! in_array((int) ($backup['version'] ?? 0), [1, DataHubService::VERSION], true)) {
             throw ValidationException::withMessages([
                 'backup' => 'This file is not a supported PitMetric workspace backup.',
             ]);

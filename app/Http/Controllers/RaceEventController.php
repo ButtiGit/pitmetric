@@ -136,6 +136,10 @@ class RaceEventController extends Controller
             'maintenanceRecords.component',
         ]);
 
+        if ($workspaceContext->isChampionshipsReady()) {
+            $raceEvent->load('championshipRounds.championship');
+        }
+
         $componentIds = $raceEvent->entries
             ->flatMap(fn ($entry) => $entry->configurationVersion->components->pluck('id'))
             ->merge($raceEvent->sessions->flatMap(fn ($session) => $session->configurationVersion->components->pluck('id')))

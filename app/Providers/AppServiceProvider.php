@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Championship;
 use App\Models\Circuit;
 use App\Models\Component;
 use App\Models\ComponentInstallation;
@@ -47,6 +48,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         foreach ([
+            Championship::class,
             Circuit::class,
             Component::class,
             ComponentInstallation::class,

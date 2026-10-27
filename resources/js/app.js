@@ -11,3 +11,5 @@ import './pitmetric-demo';
 import './onboarding';
 import './workspace-forms';
 import './mobile-shell';
+
+import './championship-import';
