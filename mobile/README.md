@@ -34,13 +34,30 @@ For Face ID on iOS add `NSFaceIDUsageDescription` to the generated iOS app Info.
 
 The biometric prompt only unlocks the locally stored session; it never replaces server authentication.
 
-## PWA build (work in progress)
+## PWA beta for iPhone and Android
 
 ```bash
 npm run test:pwa
 npm run build:pwa
 ```
 
-The separate `dist-pwa/` output is configured for a future deployment at `https://pitmetric.it/mobile/`. The existing native build still uses `dist/` with Capacitor's root asset paths. The `/app` URL remains the public presentation page.
+The PWA build writes a separate static app into Laravel's `public/mobile/`, served at `https://pitmetric.it/mobile/`. Native builds still use `mobile/dist/` with Capacitor's root asset paths. `public/mobile/` is generated, not committed; **build it on the web server or include the command in the deployment process**:
 
-The manifest, iOS Home Screen metadata and icons are prepared, but the PWA is **not ready for field use** yet: the current local database and secure-storage implementations depend on native Capacitor plugins. Browser storage, offline boot, login-triggered synchronization and public deployment are separate roadmap steps.
+```bash
+# From the root of the deployed PitMetric checkout:
+npm --prefix mobile install
+npm --prefix mobile run build:pwa
+```
+
+`npm ci` is not supported until a `mobile/package-lock.json` is committed; the mobile package currently uses `npm install` in CI as well.
+
+The `/app` marketing page displays the PWA install action next to the Android APK. To avoid sending visitors to a missing URL, its PWA button enables **only after** `public/mobile/index.html` and `public/mobile/sw.js` exist on the server. Deployment of the Laravel application alone does not create this generated folder.
+
+- iOS: open `/mobile/` in Safari, then **Share → Add to Home Screen**.
+- Android: open `/mobile/` in Chrome and use **Install app / Add to Home Screen**.
+- The PWA has a scoped service worker for offline app-shell loading after the first successful visit. Reload it online after deployments to update its files.
+- The web beta starts without native SQLite or secure-storage plugins and supports local lap times, timer, sessions, notes, setups and maintenance reminders using browser storage.
+- Cloud login/sync, gallery, garage and synced events are **not available in the web beta**. Do not use browser-only records as the sole copy of important trackside data; clearing site data can erase them.
+
+Native Android/iOS application features and storage remain unchanged by this separate build mode.
+

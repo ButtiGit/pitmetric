@@ -1,8 +1,9 @@
 <x-layouts::public
-    :title="app()->getLocale() === 'it' ? 'App Android motorsport per piloti e team' : 'Android motorsport app for drivers and teams'"
-    :description="app()->getLocale() === 'it' ? 'Scarica PitMetric per Android, l’app motorsport per gestire sessioni, setup e manutenzione in pista anche offline, con sincronizzazione automatica.' : 'Download PitMetric for Android, the motorsport app for trackside sessions, setups and maintenance with offline support and automatic sync.'"
+    :title="app()->getLocale() === 'it' ? 'App motorsport Android e PWA per piloti e team' : 'Android and PWA motorsport app for drivers and teams'"
+    :description="app()->getLocale() === 'it' ? 'Scarica PitMetric per Android o aggiungi la PWA beta alla schermata Home di iPhone e Android per registrare tempi, sessioni e note in pista.' : 'Download PitMetric for Android or add the beta PWA to the Home Screen on iPhone and Android for trackside laps, sessions and notes.'"
 >
     @php($apkUrl = 'https://github.com/ButtiGit/pitmetric/releases/download/android-latest/PitMetric.apk')
+    @php($pwaReady = is_file(public_path('mobile/index.html')) && is_file(public_path('mobile/sw.js')))
 
     <section class="relative isolate overflow-hidden border-b border-white/10 bg-[#080A0D]">
         <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_70%_20%,rgba(225,6,0,.17),transparent_34%),radial-gradient(circle_at_20%_80%,rgba(225,6,0,.07),transparent_36%)]"></div>
@@ -10,7 +11,7 @@
             <div>
                 <img src="{{ asset('brand/pitmetric-primary-dark.svg') }}" alt="PitMetric" class="h-12 w-auto sm:h-14">
                 <div class="mt-7 flex flex-wrap items-center gap-3">
-                    <p class="m-0 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E10600]">PitMetric / Android</p>
+                    <p class="m-0 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E10600]">PitMetric / Android + PWA</p>
                     <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[9px] uppercase tracking-[.14em] text-zinc-400">Beta 0.3 · UI refresh</span>
                 </div>
                 <h1 class="mt-5 max-w-3xl text-5xl font-black tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl">
@@ -26,14 +27,27 @@
                     <a href="{{ $apkUrl }}" class="inline-flex min-h-12 items-center justify-center bg-[#E10600] px-6 py-3 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#F01812]">
                         {{ app()->getLocale() === 'it' ? 'Scarica APK Android' : 'Download Android APK' }}
                     </a>
-                    <span class="font-mono text-[11px] uppercase tracking-[0.12em] text-zinc-500">Latest build · Android · APK</span>
+                    @if ($pwaReady)
+                        <a href="{{ url('/mobile/') }}" data-pm-pwa-download class="inline-flex min-h-12 items-center justify-center border border-white/35 bg-white/10 px-6 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-white transition hover:border-white hover:bg-white/20">
+                            {{ app()->getLocale() === 'it' ? 'Installa PWA · iPhone / Android' : 'Install PWA · iPhone / Android' }}
+                        </a>
+                    @else
+                        <span data-pm-pwa-download aria-disabled="true" class="inline-flex min-h-12 items-center justify-center border border-white/20 bg-white/5 px-6 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-zinc-400">
+                            {{ app()->getLocale() === 'it' ? 'PWA · iPhone / Android · in attivazione' : 'PWA · iPhone / Android · coming soon' }}
+                        </span>
+                    @endif
                 </div>
 
-                <p class="mt-5 max-w-xl text-xs leading-6 text-zinc-500">
+                <p class="mt-5 max-w-2xl text-xs leading-6 text-zinc-400">
                     {{ app()->getLocale() === 'it'
-                        ? 'Il pulsante punta sempre all’ultima build Android pubblicata da PitMetric. Android potrebbe chiederti di autorizzare l’installazione da questa sorgente.'
-                        : 'The button always points to the latest Android build published by PitMetric. Android may ask you to allow installation from this source.' }}
+                        ? 'APK: ultima build Android. PWA beta: su iPhone apri il link con Safari, tocca Condividi e poi Aggiungi alla schermata Home; su Android usa Installa app in Chrome. Per ora i dati della PWA rimangono nel browser, senza sincronizzazione cloud.'
+                        : 'APK: latest Android build. Beta PWA: on iPhone open the link in Safari, tap Share and then Add to Home Screen; on Android use Install app in Chrome. PWA data currently stays in the browser, without cloud sync.' }}
                 </p>
+                @unless ($pwaReady)
+                    <p class="mt-2 max-w-2xl text-xs leading-6 text-amber-300/85">
+                        {{ app()->getLocale() === 'it' ? 'Il pulsante PWA si attiverà quando la versione web sarà pubblicata sul server.' : 'The PWA button will activate once the web build is deployed to the server.' }}
+                    </p>
+                @endunless
             </div>
 
             <div class="relative mx-auto w-full max-w-[390px]">
