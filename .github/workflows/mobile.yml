@@ -29,4 +29,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm install
+      - run: npm run test:pwa
       - run: npm run build
+      - run: npm run build:pwa

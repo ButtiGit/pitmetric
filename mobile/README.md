@@ -33,3 +33,14 @@ Use `VITE_PITMETRIC_API_URL` to override the default `https://pitmetric.it/api/m
 For Face ID on iOS add `NSFaceIDUsageDescription` to the generated iOS app Info.plist, for example: `PitMetric uses Face ID to unlock your saved mobile session.`
 
 The biometric prompt only unlocks the locally stored session; it never replaces server authentication.
+
+## PWA build (work in progress)
+
+```bash
+npm run test:pwa
+npm run build:pwa
+```
+
+The separate `dist-pwa/` output is configured for a future deployment at `https://pitmetric.it/mobile/`. The existing native build still uses `dist/` with Capacitor's root asset paths. The `/app` URL remains the public presentation page.
+
+The manifest, iOS Home Screen metadata and icons are prepared, but the PWA is **not ready for field use** yet: the current local database and secure-storage implementations depend on native Capacitor plugins. Browser storage, offline boot, login-triggered synchronization and public deployment are separate roadmap steps.
