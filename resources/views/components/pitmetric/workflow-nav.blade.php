@@ -73,7 +73,7 @@
 
 @if ($showCoreWorkflow)
     <section data-pm-workflow-nav class="mx-4 mt-4 rounded-2xl border border-pm-border bg-pm-panel/90 p-3 shadow-sm sm:mx-6 lg:mx-8" aria-label="{{ __('workflow.navigation') }}">
-        <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div class="flex min-w-0 flex-col gap-3">
             <div class="min-w-0">
                 <p class="text-[10px] font-black uppercase tracking-[0.14em] text-pm-accent">{{ __('workflow.core_flow') }}</p>
                 <p class="mt-1 text-xs text-pm-muted">{{ __('workflow.core_flow_description') }}</p>
@@ -87,8 +87,8 @@
                 @endif
             </div>
 
-            <nav class="-mx-1 overflow-x-auto px-1 pb-1" aria-label="{{ __('workflow.navigation') }}">
-                <ol class="flex min-w-max items-center gap-1.5">
+            <nav class="min-w-0" aria-label="{{ __('workflow.navigation') }}">
+                <ol class="flex flex-wrap items-stretch gap-2">
                     @foreach ($workflowSteps as $index => $step)
                         @php
                             $active = $step['matches'] !== [] && request()->routeIs(...$step['matches']);
@@ -106,34 +106,30 @@
                             };
                         @endphp
 
-                        <li class="flex items-center gap-1.5">
+                        <li class="flex min-w-0 max-w-full">
                             @if ($routeName !== null)
                                 <a
                                     href="{{ route($routeName) }}"
                                     @if ($active) aria-current="step" @endif
-                                    class="inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-bold transition {{ $classes }}"
+                                    class="inline-flex min-h-10 max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-3 py-2 text-xs font-bold transition {{ $classes }}"
                                 >
-                                    <span class="font-mono text-[10px] opacity-60">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                                    <span>{{ $step['label'] }}</span>
+                                    <span class="shrink-0 whitespace-nowrap font-mono text-[10px] opacity-60">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                    <span data-pm-workflow-title class="shrink-0 whitespace-nowrap">{{ $step['label'] }}</span>
                                     @if ($complete)
-                                        <span class="rounded bg-pm-success/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]">{{ __('workflow.done') }}</span>
+                                        <span data-pm-workflow-status class="shrink-0 whitespace-nowrap rounded bg-pm-success/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]">{{ __('workflow.done') }}</span>
                                     @elseif ($isNext)
-                                        <span class="rounded bg-pm-accent/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]">{{ __('workflow.next_short') }}</span>
+                                        <span data-pm-workflow-status class="shrink-0 whitespace-nowrap rounded bg-pm-accent/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]">{{ __('workflow.next_short') }}</span>
                                     @endif
                                 </a>
                             @else
                                 <span
-                                    class="inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-bold {{ $classes }}"
+                                    class="inline-flex min-h-10 max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-3 py-2 text-xs font-bold {{ $classes }}"
                                     title="{{ __('workflow.usage_automatic') }}"
                                 >
-                                    <span class="font-mono text-[10px] opacity-60">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                                    <span>{{ $step['label'] }}</span>
-                                    <span class="rounded bg-pm-success/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]">{{ $complete ? __('workflow.done') : __('workflow.automatic') }}</span>
+                                    <span class="shrink-0 whitespace-nowrap font-mono text-[10px] opacity-60">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                    <span data-pm-workflow-title class="shrink-0 whitespace-nowrap">{{ $step['label'] }}</span>
+                                    <span data-pm-workflow-status class="shrink-0 whitespace-nowrap rounded bg-pm-success/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]">{{ $complete ? __('workflow.done') : __('workflow.automatic') }}</span>
                                 </span>
-                            @endif
-
-                            @if (! $loop->last)
-                                <span class="text-xs text-pm-muted" aria-hidden="true">&rarr;</span>
                             @endif
                         </li>
                     @endforeach
