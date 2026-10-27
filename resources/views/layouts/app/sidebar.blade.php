@@ -107,14 +107,35 @@
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
-            <flux:sidebar.nav class="shrink-0 border-t border-white/5 pt-4">
-                <flux:sidebar.item icon="envelope" :href="route('newsletter.edit')" :current="request()->routeIs('newsletter.edit')">{{ __('demo.nav.newsletter') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="globe-alt" :href="route('localized.home', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="newspaper" :href="route('localized.updates.index', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
-                <flux:sidebar.item icon="user" :href="route('localized.about', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
+            <flux:sidebar.nav data-pm-sidebar-footer class="mt-auto mb-3 shrink-0 border-t border-white/5 pt-3">
+                <details name="pitmetric-sidebar-section" data-pm-sidebar-info class="group/sidebar-section" @if (request()->routeIs('newsletter.*')) open @endif>
+                    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden">
+                        <flux:icon.globe-alt class="size-4 shrink-0" />
+                        <span class="min-w-0 flex-1">PitMetric</span>
+                        <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
+                    </summary>
+                    <div class="ml-3 mt-1 grid max-h-[min(20rem,40dvh)] gap-1 overflow-y-auto border-l border-white/10 pl-2 pr-1 [scrollbar-width:thin]">
+                        <flux:sidebar.item icon="globe-alt" :href="route('localized.home', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.home') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="user" :href="route('localized.about', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.about') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="newspaper" :href="route('localized.updates.index', ['locale' => app()->getLocale()])">{{ __('pitmetric.nav.updates') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="envelope" :href="route('newsletter.edit')" :current="request()->routeIs('newsletter.edit')">{{ __('demo.nav.newsletter') }}</flux:sidebar.item>
+
+                        <div role="group" aria-labelledby="pm-sidebar-language-label" class="mt-2 border-t border-white/5 px-2 pt-3 pb-1">
+                            <p id="pm-sidebar-language-label" class="mb-2 text-xs font-medium text-zinc-400">{{ app()->getLocale() === 'it' ? 'Lingua' : 'Language' }}</p>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                @foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)
+                                    <form method="POST" action="{{ route('locale.update') }}">
+                                        @csrf
+                                        <input type="hidden" name="locale" value="{{ $locale }}">
+                                        <button type="submit" aria-label="{{ $locale === 'it' ? __('pitmetric.language.italian') : __('pitmetric.language.english') }}" aria-pressed="{{ app()->getLocale() === $locale ? 'true' : 'false' }}" class="w-full rounded-lg px-2 py-2 font-mono text-xs font-semibold tracking-[0.08em] transition {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white shadow-sm' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200' }}">{{ $label }}</button>
+                                    </form>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </details>
             </flux:sidebar.nav>
 
-            <div class="mx-2 mb-3 mt-4 shrink-0 rounded-xl border border-white/8 bg-white/[0.02] p-1.5"><div class="grid grid-cols-2 gap-1.5">@foreach (['en' => 'EN', 'it' => 'IT'] as $locale => $label)<form method="POST" action="{{ route('locale.update') }}">@csrf<input type="hidden" name="locale" value="{{ $locale }}"><button class="w-full rounded-lg px-2 py-2 font-mono text-xs font-semibold tracking-[0.08em] transition {{ app()->getLocale() === $locale ? 'bg-[#E10600] text-white shadow-sm' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200' }}">{{ $label }}</button></form>@endforeach</div></div>
             <x-desktop-user-menu class="hidden shrink-0 border-t border-white/5 pt-3 lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
