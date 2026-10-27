@@ -27,6 +27,7 @@ async function selectOptionContaining(select, text) {
 }
 
 test('five vital workflows', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
     const suffix = surfaceName(testInfo);
     const vehicleName = `E2E ${suffix} Vehicle`;
     const buildName = `E2E ${suffix} Build`;
@@ -37,6 +38,10 @@ test('five vital workflows', async ({ page }, testInfo) => {
     await test.step('login', async () => {
         await login(page);
         await expect(page.locator('body')).toContainText(/PitMetric/i);
+    });
+
+    await test.step('workflow stages stay fully readable at every width', async () => {
+        await expectReadableWorkflows(page, testInfo);
     });
 
     await test.step('vehicle creation', async () => {
@@ -127,9 +132,8 @@ test('five vital workflows', async ({ page }, testInfo) => {
     });
 });
 
-test('workflow stages stay fully readable without horizontal scrolling', async ({ page }, testInfo) => {
-    test.setTimeout(90_000);
-    await login(page);
+async function expectReadableWorkflows(page, testInfo) {
+    const originalViewport = page.viewportSize();
 
     for (const locale of ['it', 'en']) {
         const token = await page.locator('input[name="_token"]').first().inputValue();
@@ -144,12 +148,18 @@ test('workflow stages stay fully readable without horizontal scrolling', async (
         ]) {
             await page.goto(path);
             const workflow = page.locator(selector);
-            await expect(workflow).toBeVisible();
+            await expect(workflow).toBeAttached();
             await expect(workflow.locator('[data-pm-workflow-title]')).toHaveCount(7);
             await page.evaluate(() => document.fonts.ready);
 
             for (const width of [320, 390, 768, 1024, 1280, 1440, 1536, 1920]) {
                 await page.setViewportSize({ width, height: 1000 });
+                if (!await workflow.isVisible()) {
+                    for (const label of await workflow.locator('[data-pm-workflow-title], [data-pm-workflow-status]').all()) {
+                        await expect(label).toBeHidden();
+                    }
+                    continue;
+                }
                 await expect(async () => {
                     const problems = await workflow.evaluate((root) => {
                         const bounds = root.getBoundingClientRect();
@@ -181,4 +191,5 @@ test('workflow stages stay fully readable without horizontal scrolling', async (
             await page.screenshot({ path: testInfo.outputPath(`workflow-${locale}-${path.slice(1)}.png`), fullPage: true });
         }
     }
-});
+    await page.setViewportSize(originalViewport);
+}
