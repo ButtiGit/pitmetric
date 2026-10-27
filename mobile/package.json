@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build:pwa": "vue-tsc --noEmit && vite build --mode pwa",
+    "test:pwa": "node --test tests/pwa-manifest.test.mjs",
     "preview": "vite preview",
+    "preview:pwa": "vite preview --mode pwa",
     "cap:sync": "cap sync",
     "cap:android": "cap open android",
     "cap:ios": "cap open ios",
