@@ -129,7 +129,6 @@ it('lets an editor reply to a received email', function () {
     });
 });
 
-
 test('studio replies share outreach branding and preserve paragraphs safely', function () {
     $body = "Buongiorno,\nGrazie per la risposta.\n\n<script>alert('mail')</script> & disponibilità";
     $reply = new StudioReplyMail('Re: PitMetric', $body);
