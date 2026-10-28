@@ -8,12 +8,63 @@ use App\Models\Session;
 use App\Models\TimingLap;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\TelemetryValueNormalizer;
 use App\Services\WorkspaceContext;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TimingController extends Controller
 {
+    public function storeLap(Request $request, TelemetryValueNormalizer $normalizer): RedirectResponse
+    {
+        $validated = $request->validate([
+            'session_id' => ['required', 'integer'],
+            'driver_id' => ['nullable', 'integer'],
+            'lap_time' => ['required', 'string', 'max:12', 'regex:/^(?:[0-9]+(?:[.,][0-9]{1,3})?|[0-9]{1,3}:[0-5][0-9](?:[.,][0-9]{1,3})?)$/'],
+        ]);
+
+        $session = Session::query()->with('eventEntry')->findOrFail((int) $validated['session_id']);
+        Gate::authorize('update', $session);
+
+        $driverId = isset($validated['driver_id'])
+            ? Driver::query()->findOrFail((int) $validated['driver_id'])->getKey()
+            : $session->eventEntry?->driver_id;
+
+        $lapTimeMs = $normalizer->parseDurationMs(str_replace(',', '.', $validated['lap_time']));
+
+        if ($lapTimeMs === null || $lapTimeMs < 1 || $lapTimeMs > 3600000) {
+            throw ValidationException::withMessages([
+                'lap_time' => __('Enter a lap time between 0.001 seconds and 60 minutes.'),
+            ]);
+        }
+
+        DB::transaction(function () use ($session, $driverId, $lapTimeMs): void {
+            Session::query()->whereKey($session->getKey())->lockForUpdate()->firstOrFail();
+
+            $nextLapNumber = (int) TimingLap::query()
+                ->where('session_id', $session->getKey())
+                ->max('lap_number') + 1;
+
+            TimingLap::query()->create([
+                'session_id' => $session->getKey(),
+                'driver_id' => $driverId,
+                'vehicle_id' => $session->vehicle_id,
+                'circuit_layout_id' => $session->circuit_layout_id,
+                'lap_number' => $nextLapNumber,
+                'lap_time_ms' => $lapTimeMs,
+                'is_valid' => true,
+                'source' => 'manual',
+            ]);
+        });
+
+        return to_route('timing.index', ['session_id' => $session->getKey()])
+            ->with('status', __('Lap time recorded. Existing telemetry and session data were not changed.'));
+    }
+
     public function index(Request $request, WorkspaceContext $workspaceContext): View
     {
         $user = $request->user();

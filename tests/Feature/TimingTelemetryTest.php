@@ -11,6 +11,7 @@ use App\Models\TimingLap;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 function makeTelemetrySession(User $user): array
@@ -173,4 +174,134 @@ it('filters timing by driver without leaking other workspace data', function () 
         ->assertSee('Visible Driver')
         ->assertSee('1:01.234')
         ->assertDontSee('Hidden Driver');
+});
+
+it('records a manual lap in the existing timing archive and numbers it after imported laps', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [$workspace, $vehicle, $layout, $session] = makeTelemetrySession($user);
+    $driver = Driver::query()->create(['display_name' => 'Manual Lap Driver', 'status' => 'active']);
+
+    TimingLap::query()->create([
+        'session_id' => $session->id,
+        'driver_id' => $driver->id,
+        'vehicle_id' => $vehicle->id,
+        'circuit_layout_id' => $layout->id,
+        'lap_number' => 2,
+        'lap_time_ms' => 63456,
+        'is_valid' => true,
+        'source' => 'import',
+    ]);
+
+    $this->post(route('timing.laps.store'), [
+        'session_id' => $session->id,
+        'driver_id' => $driver->id,
+        'lap_time' => '1:02,345',
+    ])->assertSessionHasNoErrors()
+        ->assertRedirect(route('timing.index', ['session_id' => $session->id]));
+
+    $manualLap = TimingLap::query()->where('source', 'manual')->sole();
+
+    expect($manualLap->workspace_id)->toBe($workspace->id)
+        ->and($manualLap->session_id)->toBe($session->id)
+        ->and($manualLap->vehicle_id)->toBe($vehicle->id)
+        ->and($manualLap->circuit_layout_id)->toBe($layout->id)
+        ->and($manualLap->driver_id)->toBe($driver->id)
+        ->and($manualLap->lap_number)->toBe(3)
+        ->and($manualLap->lap_time_ms)->toBe(62345)
+        ->and($manualLap->is_valid)->toBeTrue()
+        ->and($manualLap->telemetry_import_id)->toBeNull()
+        ->and(TimingLap::query()->count())->toBe(2)
+        ->and($session->fresh()->completed_laps)->toBe(2);
+
+    $this->get(route('timing.index', ['session_id' => $session->id]))
+        ->assertOk()
+        ->assertSee('1:02.345')
+        ->assertSee('Manual Lap Driver')
+        ->assertSee('create-timing-lap');
+});
+
+it('accepts lap times entered directly as decimal seconds', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, , , $session] = makeTelemetrySession($user);
+
+    $this->post(route('timing.laps.store'), [
+        'session_id' => $session->id,
+        'lap_time' => '62.345',
+    ])->assertSessionHasNoErrors();
+
+    $lap = TimingLap::query()->sole();
+
+    expect($lap->lap_time_ms)->toBe(62345)
+        ->and($lap->lap_number)->toBe(1)
+        ->and($lap->driver_id)->toBeNull();
+});
+
+it('rejects invalid manual lap times without creating timing records', function (string $lapTime) {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, , , $session] = makeTelemetrySession($user);
+
+    $this->post(route('timing.laps.store'), [
+        'session_id' => $session->id,
+        'lap_time' => $lapTime,
+    ])->assertSessionHasErrors('lap_time');
+
+    expect(TimingLap::query()->count())->toBe(0);
+})->with(['not-a-time', '1:70.000', '-2.000', '0', '1:02.3456', '3601']);
+
+it('prevents manual lap insertion into another workspace or with its drivers', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, , , $session] = makeTelemetrySession($user);
+
+    $otherUser = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($otherUser);
+    [, , , $otherSession] = makeTelemetrySession($otherUser);
+    $otherDriver = Driver::query()->create(['display_name' => 'Other Workspace Driver', 'status' => 'active']);
+
+    $this->actingAs($user);
+
+    $this->post(route('timing.laps.store'), [
+        'session_id' => $otherSession->id,
+        'lap_time' => '62.345',
+    ])->assertNotFound();
+
+    $this->post(route('timing.laps.store'), [
+        'session_id' => $session->id,
+        'driver_id' => $otherDriver->id,
+        'lap_time' => '62.345',
+    ])->assertNotFound();
+
+    expect(TimingLap::query()->count())->toBe(0);
+});
+
+it('keeps manual lap entry read only for viewer team members', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($owner);
+    [$workspace, , , $session] = makeTelemetrySession($owner);
+    $viewer = User::factory()->create();
+    $viewer->forceFill(['database_access_enabled' => true])->save();
+
+    DB::table('workspace_user')->insert([
+        'workspace_id' => $workspace->id,
+        'user_id' => $viewer->id,
+        'role' => 'viewer',
+        'status' => 'active',
+        'joined_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($viewer)
+        ->get(route('timing.index'))
+        ->assertOk();
+
+    $this->post(route('timing.laps.store'), [
+        'session_id' => $session->id,
+        'lap_time' => '62.345',
+    ])->assertForbidden();
+
+    expect(TimingLap::query()->count())->toBe(0);
 });
