@@ -39,6 +39,7 @@ class TrackCaptureService
             'circuit_name' => $circuitName === '' ? null : $circuitName,
             'circuit_id' => $circuit?->getKey(),
             'circuit_layout_id' => $layout?->getKey(),
+            'session_id' => $data['session_id'] ?? null,
             'lap_time_ms' => isset($data['lap_time_ms']) ? (int) $data['lap_time_ms'] : null,
             'payload' => $payload,
             'occurred_at' => $data['occurred_at'] ?? now(),

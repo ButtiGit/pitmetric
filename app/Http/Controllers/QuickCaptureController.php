@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\LapTimeParser;
 use App\Services\TrackCaptureService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class QuickCaptureController extends Controller
 {
@@ -15,6 +15,7 @@ class QuickCaptureController extends Controller
         Request $request,
         WorkspaceContext $workspaceContext,
         TrackCaptureService $captureService,
+        LapTimeParser $lapTimeParser,
     ): RedirectResponse {
         $user = $request->user();
 
@@ -39,7 +40,7 @@ class QuickCaptureController extends Controller
         $capture = $captureService->create($user, [
             'kind' => 'lap_time',
             'circuit_name' => $validated['circuit_name'],
-            'lap_time_ms' => $this->parseLapTime($validated['lap_time']),
+            'lap_time_ms' => $lapTimeParser->parse($validated['lap_time']),
             'occurred_at' => $validated['occurred_at'] ?? now(),
             'notes' => $validated['notes'] ?? null,
             'context' => [
@@ -61,30 +62,5 @@ class QuickCaptureController extends Controller
         }
 
         return to_route('sessions.index', ['captured' => $capture->getKey()])->with('status', $message);
-    }
-
-    private function parseLapTime(string $value): int
-    {
-        $value = str_replace(',', '.', trim($value));
-
-        if (str_contains($value, ':')) {
-            [$minutes, $seconds] = array_pad(explode(':', $value, 2), 2, null);
-
-            if (! ctype_digit($minutes) || ! is_numeric($seconds) || (float) $seconds >= 60) {
-                throw ValidationException::withMessages(['lap_time' => __('Use a lap time like 1:02.345.')]);
-            }
-
-            $milliseconds = ((int) $minutes * 60000) + (int) round((float) $seconds * 1000);
-        } elseif (is_numeric($value)) {
-            $milliseconds = (int) round((float) $value * 1000);
-        } else {
-            throw ValidationException::withMessages(['lap_time' => __('Use a lap time like 1:02.345 or 62.345.')]);
-        }
-
-        if ($milliseconds < 1000 || $milliseconds > 3600000) {
-            throw ValidationException::withMessages(['lap_time' => __('Lap time must be between 1 second and 60 minutes.')]);
-        }
-
-        return $milliseconds;
     }
 }

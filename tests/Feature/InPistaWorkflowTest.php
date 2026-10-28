@@ -1,0 +1,171 @@
+<?php
+
+use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
+use App\Models\Configuration;
+use App\Models\Driver;
+use App\Models\EventEntry;
+use App\Models\RaceEvent;
+use App\Models\Session;
+use App\Models\TechnicalSetup;
+use App\Models\TimingLap;
+use App\Models\TrackCapture;
+use App\Models\User;
+use App\Models\Vehicle;
+use App\Services\CreateConfigurationVersionService;
+use Illuminate\Support\Facades\Http;
+
+function setUpInPistaKart(User $operator): array
+{
+    $kart = Vehicle::factory()->create([
+        'workspace_id' => $operator->workspaces()->firstOrFail()->getKey(),
+        'name' => 'PN Rent Kart 05',
+        'category' => 'kart',
+    ]);
+    $type = ComponentType::create(['name' => 'PN Rent engine']);
+    $component = Component::create([
+        'component_type_id' => $type->getKey(),
+        'name' => 'PN Rent engine 05',
+        'status' => 'active',
+    ]);
+    ComponentInstallation::create([
+        'vehicle_id' => $kart->getKey(),
+        'component_id' => $component->getKey(),
+        'created_by' => $operator->getKey(),
+        'installed_at' => now(),
+    ]);
+    $configuration = Configuration::create(['vehicle_id' => $kart->getKey(), 'name' => 'Race PN', 'status' => 'active']);
+    $version = app(CreateConfigurationVersionService::class)->create($configuration, $operator, [$component->getKey()]);
+    $setup = TechnicalSetup::create([
+        'vehicle_id' => $kart->getKey(),
+        'name' => 'Dry baseline',
+        'status' => 'active',
+        'values' => ['camber_front_deg' => -1.0, 'pinion_teeth' => 11, 'crown_teeth' => 74],
+        'created_by' => $operator->getKey(),
+    ]);
+    $driver = Driver::create(['display_name' => 'PN Driver', 'status' => 'active']);
+    $event = RaceEvent::create([
+        'name' => 'PN Rent Sunday', 'start_date' => today(), 'end_date' => today(),
+        'status' => 'planned', 'created_by' => $operator->getKey(),
+    ]);
+    $entry = EventEntry::create([
+        'event_id' => $event->getKey(), 'driver_id' => $driver->getKey(),
+        'vehicle_id' => $kart->getKey(), 'configuration_version_id' => $version->getKey(),
+    ]);
+
+    return compact('kart', 'version', 'setup', 'driver', 'event', 'entry');
+}
+
+test('the one-screen pit view auto-selects the kart, driver and active event', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = setUpInPistaKart($user)['kart'];
+
+    $this->get(route('pit-mode.index'))
+        ->assertOk()
+        ->assertSee('In pista')
+        ->assertSee('PN Rent Kart 05')
+        ->assertSee('PN Driver')
+        ->assertSee('PN Rent Sunday')
+        ->assertSee('Pronti per la prossima uscita?');
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()
+        ->assertSee('Prima della sessione')
+        ->assertSee('Dopo la sessione');
+});
+
+test('the mechanic records a session without leaving the pit screen or changing its original setup snapshot', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    ['kart' => $kart, 'entry' => $entry, 'version' => $version] = setUpInPistaKart($user);
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors()->assertRedirect(route('pit-mode.index', ['kart' => $kart->getKey()]));
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+
+    $session = Session::query()->firstOrFail();
+    expect(Session::query()->count())->toBe(1)
+        ->and($session->status)->toBe('draft')
+        ->and($session->event_entry_id)->toBe($entry->getKey())
+        ->and($session->configuration_version_id)->toBe($version->getKey())
+        ->and($session->setupSnapshot?->name)->toBe('Dry baseline');
+
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '0:52.345'])
+        ->assertSuccessful()->assertJsonPath('entry.summary', '0:52.345');
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '52,123'])
+        ->assertSuccessful();
+
+    $this->postJson(route('sessions.tyre-readings.store', $session), [
+        'phase' => 'cold', 'pressure_fl' => 0.79, 'pressure_fr' => 0.80,
+    ])->assertSuccessful()->assertJsonPath('entry.kind', 'Pressioni fredde');
+
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), [
+        'camber_front_deg' => -1.7, 'caster_front_deg' => 8.5,
+        'pinion_teeth' => 12, 'crown_teeth' => 73,
+    ])->assertSuccessful();
+    $this->postJson(route('pit-mode.sessions.notes.store', $session), [
+        'kind' => 'issue', 'note' => 'Rear axle vibration', 'severity' => 'warning',
+    ])->assertSuccessful();
+
+    expect(TimingLap::query()->where('session_id', $session->getKey())->pluck('lap_number')->all())->toBe([1, 2])
+        ->and(TrackCapture::query()->where('session_id', $session->getKey())->count())->toBe(2)
+        ->and(TrackCapture::query()->where('kind', 'setup_adjustment')->firstOrFail()->payload['values']['final_drive'])->toBe('12/73')
+        ->and($session->setupSnapshot->fresh()->values['camber_front_deg'])->toEqual(-1.0);
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()->assertSee('Sessione in corso')->assertSee('Rear axle vibration');
+
+    $this->post(route('pit-mode.sessions.finish', $session))->assertSessionHasNoErrors()->assertRedirect();
+    expect($session->fresh()->status)->toBe('finalized')
+        ->and($session->fresh()->completed_laps)->toBe(2);
+
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '51.123'])
+        ->assertUnprocessable();
+    expect(TimingLap::query()->where('session_id', $session->getKey())->count())->toBe(2);
+});
+
+test('GPS forecast can be saved from the pit screen through the existing session endpoint', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = setUpInPistaKart($user)['kart'];
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice']);
+    $session = Session::query()->firstOrFail();
+
+    Http::fake(['api.met.no/*' => Http::response([
+        'properties' => ['timeseries' => [[
+            'time' => now()->toIso8601String(),
+            'data' => ['instant' => ['details' => ['air_temperature' => 23.2, 'wind_speed' => 1.5]],
+                'next_1_hours' => ['summary' => ['symbol_code' => 'clearsky_day']]],
+        ]]],
+    ])]);
+
+    $this->postJson(route('sessions.weather.store', $session), [
+        'latitude' => 44.12, 'longitude' => 7.88,
+    ])->assertSuccessful()->assertJsonPath('weather.air_temperature_c', 23.2);
+
+    expect($session->fresh()->weather_snapshot['provider'])->toBe('met_norway');
+});
+
+test('pit operations cannot read or write another teams kart or session', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($owner);
+    $kart = setUpInPistaKart($owner)['kart'];
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice']);
+    $session = Session::query()->firstOrFail();
+
+    $outsider = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($outsider);
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])->assertNotFound();
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '52.123'])->assertNotFound();
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), ['caster_front_deg' => 7])->assertNotFound();
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))->assertDontSee('PN Rent Kart 05');
+
+    expect(TimingLap::query()->count())->toBe(0);
+});

@@ -12,6 +12,32 @@
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-3 py-4 sm:px-6 lg:px-8 lg:py-7">
         <div class="mx-auto w-full max-w-3xl space-y-4">
+            @if (session('status'))
+                <div class="rounded-xl border border-pm-success/25 bg-pm-success-subtle px-4 py-3 text-sm font-semibold text-pm-success" role="status">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="rounded-xl border border-pm-danger/30 bg-pm-danger-subtle p-4 text-sm text-pm-danger" role="alert">
+                    <ul class="list-disc space-y-1 pl-5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <x-pitmetric.in-pista-console
+                :karts="$karts" :kart="$kart" :track-session="$trackSession" :active-session="$activeSession"
+                :event-entry="$eventEntry" :configuration-version="$configurationVersion" :laps="$laps" :lap-count="$lapCount"
+                :session-captures="$sessionCaptures" :cold-reading="$coldReading" :hot-reading="$hotReading"
+                :setup-values="$setupValues"
+            />
+
+            <details class="in-pista-legacy rounded-2xl border border-pm-border bg-pm-panel p-4">
+                <summary class="cursor-pointer text-sm font-black text-pm-text">Strumenti classici · catture senza sessione <span class="ml-2 text-xs text-pm-muted">Apri</span></summary>
+                <div class="mt-4 space-y-4">
             <header class="rounded-2xl border border-pm-border bg-pm-panel p-4 sm:p-5">
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -28,22 +54,6 @@
                     </a>
                 </div>
             </header>
-
-            @if (session('status'))
-                <div class="rounded-xl border border-pm-success/25 bg-pm-success-subtle px-4 py-3 text-sm font-semibold text-pm-success">
-                    {{ session('status') }}
-                </div>
-            @endif
-
-            @if ($errors->any())
-                <div class="rounded-xl border border-pm-danger/30 bg-pm-danger-subtle p-4 text-sm text-pm-danger">
-                    <ul class="list-disc space-y-1 pl-5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
 
             <details class="rounded-2xl border border-pm-border bg-pm-panel p-4" {{ $contextIsEmpty ? 'open' : '' }}>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
@@ -301,6 +311,8 @@
                     </div>
                 </section>
             @endif
+                </div>
+            </details>
         </div>
     </div>
 </x-layouts::app>
