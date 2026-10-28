@@ -9,6 +9,15 @@
             'aero' => 'Aero',
             'drivetrain' => $it ? 'Trasmissione' : 'Drivetrain',
         ];
+        $comparisonSetups = $setups->map(fn ($setup) => [
+            'id' => $setup->id,
+            'vehicle_id' => $setup->vehicle_id,
+            'vehicle_name' => $setup->vehicle->name,
+            'name' => $setup->name,
+            'values' => $setup->values ?? [],
+        ])->values()->all();
+        $comparisonDefinitions = \App\Models\TechnicalSetup::FIELD_DEFINITIONS;
+        $comparisonLabels = ['notSet' => $it ? 'Non impostato' : 'Not set'];
     @endphp
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -22,15 +31,85 @@
                     />
                 </div>
 
-                @if ($canWrite)
-                    <x-crud-modal id="create-technical-setup" :title="$it ? 'Nuovo setup tecnico' : 'New technical setup'" :description="$it ? 'Inserisci solo i parametri che hanno senso per il tuo mezzo. I campi lasciati vuoti non vengono salvati.' : 'Enter only the parameters that make sense for your vehicle. Empty fields are not stored.'" :trigger="$it ? '+ Nuovo setup' : '+ New setup'" size="max-w-5xl">
-                        @can('team-write')<form method="POST" action="{{ route('setups.store') }}" class="space-y-5">
-                            @csrf
-                            @include('setups._fields', ['setup' => null])
-                            <div class="flex justify-end"><button class="pm-race-button" type="submit" @disabled($vehicles->isEmpty())>{{ $it ? 'Salva setup' : 'Save setup' }}</button></div>
-                        </form>@endcan
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-crud-modal id="compare-technical-setups" :title="$it ? 'Confronta setup' : 'Compare setups'" :description="$it ? 'Seleziona due profili dello stesso mezzo. I valori diversi vengono evidenziati senza modificare nessun setup.' : 'Select two profiles for the same vehicle. Different values are highlighted without changing either setup.'" :trigger="$it ? 'Confronta setup' : 'Compare setups'" trigger-class="pm-ghost-button" size="max-w-5xl" :permission="null">
+                        <div data-pm-setup-comparison x-data="window.PitMetricSetupComparison(@js($comparisonSetups), @js($comparisonDefinitions), @js($groups), @js($comparisonLabels))" class="space-y-5">
+                            <div class="grid gap-4 sm:grid-cols-3">
+                                <label class="grid gap-2">
+                                    <span class="pm-label">{{ $it ? 'Kart / mezzo' : 'Kart / vehicle' }}</span>
+                                    <select class="pm-input" x-model="vehicleId" x-on:change="resetSelection()" data-pm-compare-vehicle>
+                                        <template x-for="vehicle in vehicles" :key="vehicle.id">
+                                            <option :value="vehicle.id" x-text="vehicle.name"></option>
+                                        </template>
+                                    </select>
+                                </label>
+                                <label class="grid gap-2">
+                                    <span class="pm-label">{{ $it ? 'Setup di partenza' : 'Starting setup' }}</span>
+                                    <select class="pm-input" x-model="beforeId" data-pm-compare-before>
+                                        <template x-for="setup in availableSetups" :key="setup.id">
+                                            <option :value="String(setup.id)" x-text="setup.name"></option>
+                                        </template>
+                                    </select>
+                                </label>
+                                <label class="grid gap-2">
+                                    <span class="pm-label">{{ $it ? 'Setup da confrontare' : 'Comparison setup' }}</span>
+                                    <select class="pm-input" x-model="afterId" data-pm-compare-after>
+                                        <template x-for="setup in availableSetups" :key="setup.id">
+                                            <option :value="String(setup.id)" x-text="setup.name"></option>
+                                        </template>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <template x-if="!canCompare">
+                                <p class="rounded-xl border border-dashed border-pm-border bg-pm-subtle p-4 text-sm text-pm-muted" role="status">{{ $it ? 'Servono due setup differenti dello stesso mezzo per visualizzare il confronto.' : 'Select two different setups for the same vehicle to see their differences.' }}</p>
+                            </template>
+
+                            <template x-if="canCompare">
+                                <div class="space-y-4">
+                                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-pm-border bg-pm-subtle px-4 py-3">
+                                        <p class="text-sm font-bold text-pm-text" aria-live="polite"><span class="text-pm-accent" x-text="changedCount"></span> {{ $it ? 'parametri modificati' : 'changed parameters' }}</p>
+                                        <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold text-pm-text-secondary"><input type="checkbox" x-model="onlyChanges" class="accent-pm-accent">{{ $it ? 'Mostra solo differenze' : 'Show differences only' }}</label>
+                                    </div>
+
+                                    <template x-if="changedCount === 0">
+                                        <p class="rounded-xl border border-pm-success/25 bg-pm-success-subtle px-4 py-3 text-sm font-semibold text-pm-success">{{ $it ? 'Nessuna differenza nei parametri registrati.' : 'No differences in saved parameters.' }}</p>
+                                    </template>
+
+                                    <template x-for="group in groups" :key="group.key">
+                                        <section class="space-y-2" :aria-label="group.label">
+                                            <h3 class="text-[11px] font-black uppercase tracking-widest text-pm-muted" x-text="group.label"></h3>
+                                            <div class="overflow-hidden rounded-xl border border-pm-border">
+                                                <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 border-b border-pm-border bg-pm-subtle px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-pm-muted sm:gap-4 sm:px-4">
+                                                    <span>{{ $it ? 'Parametro' : 'Parameter' }}</span>
+                                                    <span>{{ $it ? 'Prima' : 'Before' }}</span>
+                                                    <span>{{ $it ? 'Dopo' : 'After' }}</span>
+                                                </div>
+                                                <template x-for="row in group.rows" :key="row.key">
+                                                    <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 border-b border-pm-border px-3 py-3 text-xs last:border-b-0 sm:gap-4 sm:px-4" :class="row.changed ? 'bg-pm-accent/10' : 'bg-pm-panel'" :data-pm-compare-field="row.key" :data-pm-compare-changed="row.changed ? 'true' : 'false'">
+                                                        <span class="min-w-0 break-words font-semibold text-pm-text" x-text="row.label"></span>
+                                                        <span class="min-w-0 break-words text-pm-muted" x-text="display(row.before, row.unit)"></span>
+                                                        <span class="min-w-0 break-words font-bold" :class="row.changed ? 'text-pm-accent' : 'text-pm-text-secondary'" x-text="display(row.after, row.unit)"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </section>
+                                    </template>
+                                    <p class="text-xs text-pm-muted">{{ $it ? 'Colonne: parametro, setup di partenza, setup da confrontare. Un valore non impostato non equivale a zero.' : 'Columns: parameter, starting setup, comparison setup. An unset value is not zero.' }}</p>
+                                </div>
+                            </template>
+                        </div>
                     </x-crud-modal>
-                @endif
+                    @if ($canWrite)
+                        <x-crud-modal id="create-technical-setup" :title="$it ? 'Nuovo setup tecnico' : 'New technical setup'" :description="$it ? 'Inserisci solo i parametri che hanno senso per il tuo mezzo. I campi lasciati vuoti non vengono salvati.' : 'Enter only the parameters that make sense for your vehicle. Empty fields are not stored.'" :trigger="$it ? '+ Nuovo setup' : '+ New setup'" size="max-w-5xl">
+                            @can('team-write')<form method="POST" action="{{ route('setups.store') }}" class="space-y-5">
+                                @csrf
+                                @include('setups._fields', ['setup' => null])
+                                <div class="flex justify-end"><button class="pm-race-button" type="submit" @disabled($vehicles->isEmpty())>{{ $it ? 'Salva setup' : 'Save setup' }}</button></div>
+                            </form>@endcan
+                        </x-crud-modal>
+                    @endif
+                </div>
             </div>
 
             @if (session('status'))<div class="rounded-xl border border-pm-success/25 bg-pm-success-subtle px-4 py-3 text-sm font-semibold text-pm-success">{{ session('status') }}</div>@endif

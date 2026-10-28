@@ -66,6 +66,49 @@ it('creates technical setups and records their optional work cost', function () 
         ->and($expense->category)->toBe('setup');
 });
 
+it('offers a read-only setup comparison with parameters restricted to the current workspace', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $vehicle = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'name' => 'My comparison kart']);
+
+    $this->actingAs($user);
+
+    TechnicalSetup::create([
+        'vehicle_id' => $vehicle->id,
+        'name' => 'Baseline dry',
+        'values' => ['tyre_pressure_fl' => 0.8, 'caster_front_deg' => 9],
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+    TechnicalSetup::create([
+        'vehicle_id' => $vehicle->id,
+        'name' => 'Baseline wet',
+        'values' => ['tyre_pressure_fl' => 0.85, 'caster_front_deg' => 10],
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    $other = User::factory()->withDatabaseAccess()->create();
+    $foreignWorkspace = $other->workspaces()->firstOrFail();
+    $foreignVehicle = Vehicle::factory()->create(['workspace_id' => $foreignWorkspace->id]);
+    TechnicalSetup::query()->forceCreate([
+        'workspace_id' => $foreignWorkspace->id,
+        'vehicle_id' => $foreignVehicle->id,
+        'name' => 'Private foreign setup',
+        'values' => ['caster_front_deg' => 4],
+        'status' => 'active',
+        'created_by' => $other->id,
+    ]);
+
+    $this->get(route('setups.index'))
+        ->assertSuccessful()
+        ->assertSee('compare-technical-setups')
+        ->assertSee('data-pm-setup-comparison', false)
+        ->assertSee('Baseline dry')
+        ->assertSee('Baseline wet')
+        ->assertDontSee('Private foreign setup');
+});
+
 it('records kart camber and caster and preserves their values in session snapshots', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspace = $user->workspaces()->firstOrFail();
