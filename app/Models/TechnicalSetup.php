@@ -22,6 +22,7 @@ class TechnicalSetup extends Model
         'ride_height_front_mm' => ['label' => 'Front ride height', 'unit' => 'mm', 'group' => 'chassis'],
         'ride_height_rear_mm' => ['label' => 'Rear ride height', 'unit' => 'mm', 'group' => 'chassis'],
         'camber_front_deg' => ['label' => 'Front camber', 'unit' => 'deg', 'group' => 'chassis'],
+        'caster_front_deg' => ['label' => 'Front caster', 'unit' => 'deg', 'group' => 'chassis'],
         'camber_rear_deg' => ['label' => 'Rear camber', 'unit' => 'deg', 'group' => 'chassis'],
         'toe_front_mm' => ['label' => 'Front toe', 'unit' => 'mm', 'group' => 'chassis'],
         'toe_rear_mm' => ['label' => 'Rear toe', 'unit' => 'mm', 'group' => 'chassis'],
