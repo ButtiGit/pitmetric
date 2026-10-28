@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'circuit_name',
     'circuit_id',
     'circuit_layout_id',
+    'session_id',
     'lap_time_ms',
     'payload',
     'occurred_at',
@@ -35,6 +36,12 @@ class TrackCapture extends Model
     public function circuitLayout(): BelongsTo
     {
         return $this->belongsTo(CircuitLayout::class)->withTrashed();
+    }
+
+    /** @return BelongsTo<Session, $this> */
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(Session::class);
     }
 
     /** @return HasMany<TrackCaptureReference, $this> */

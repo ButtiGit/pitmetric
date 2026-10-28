@@ -79,6 +79,18 @@ class Session extends Model
         return $this->hasMany(SessionTyreReading::class)->orderByDesc('measured_at')->orderByDesc('id');
     }
 
+    /** @return HasMany<TimingLap, $this> */
+    public function timingLaps(): HasMany
+    {
+        return $this->hasMany(TimingLap::class);
+    }
+
+    /** @return HasMany<TrackCapture, $this> */
+    public function trackCaptures(): HasMany
+    {
+        return $this->hasMany(TrackCapture::class);
+    }
+
     protected function casts(): array
     {
         return [

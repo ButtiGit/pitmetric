@@ -10,8 +10,10 @@ use App\Services\SessionPageService;
 use App\Services\SessionWeatherService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -52,7 +54,7 @@ class SessionController extends Controller
         return to_route('sessions.index')->with('status', __('Session notes updated. Recorded usage is unchanged.'));
     }
 
-    public function storeTyreReading(Request $request, Session $session): RedirectResponse
+    public function storeTyreReading(Request $request, Session $session): JsonResponse|RedirectResponse
     {
         Gate::authorize('update', $session);
 
@@ -86,7 +88,7 @@ class SessionController extends Controller
             throw ValidationException::withMessages(['pressure_fl' => __('Enter at least one tyre pressure.')]);
         }
 
-        $session->tyreReadings()->create([
+        $reading = $session->tyreReadings()->create([
             'phase' => $validated['phase'],
             'pressures' => $pressures,
             'measured_at' => $validated['measured_at'] ?? now(),
@@ -94,11 +96,22 @@ class SessionController extends Controller
             'created_by' => $request->user()?->getAuthIdentifier(),
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => __('Kart tyre pressures recorded without changing the session setup snapshot.'),
+                'entry' => [
+                    'kind' => $reading->phase === 'cold' ? 'Pressioni fredde' : 'Pressioni calde',
+                    'summary' => collect($pressures)->map(fn ($value, $corner) => strtoupper($corner).' '.$value)->join(' · ').' bar',
+                    'time' => Carbon::parse($reading->measured_at)->format('H:i'),
+                ],
+            ]);
+        }
+
         return to_route('sessions.index', ['recorded' => $session->getKey()])
             ->with('status', __('Kart tyre pressures recorded without changing the session setup snapshot.'));
     }
 
-    public function storeWeather(Request $request, Session $session, SessionWeatherService $weatherService): RedirectResponse
+    public function storeWeather(Request $request, Session $session, SessionWeatherService $weatherService): JsonResponse|RedirectResponse
     {
         Gate::authorize('update', $session);
 
@@ -122,6 +135,18 @@ class SessionController extends Controller
 
         $session->setAttribute('weather_snapshot', $snapshot);
         $session->save();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => __('Weather forecast saved to the session without changing its setup or recorded laps.'),
+                'weather' => $snapshot,
+                'entry' => [
+                    'kind' => 'Meteo GPS',
+                    'summary' => $snapshot['air_temperature_c'].' °C',
+                    'time' => now()->format('H:i'),
+                ],
+            ]);
+        }
 
         return to_route('sessions.index', [
             'weather_session' => $session->getKey(),

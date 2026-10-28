@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Session;
 use App\Models\TrackCapture;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Services\InPistaSessionService;
 use App\Services\TrackCaptureService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +15,7 @@ use Illuminate\View\View;
 
 class PitModeController extends Controller
 {
-    public function index(Request $request, WorkspaceContext $workspaceContext): View
+    public function index(Request $request, WorkspaceContext $workspaceContext, InPistaSessionService $inPista): View
     {
         $user = $this->user($request);
         $workspace = $workspaceContext->personal($user);
@@ -24,7 +27,62 @@ class PitModeController extends Controller
             ->limit(20)
             ->get();
 
-        return view('pit-mode.index', compact('context', 'captures'));
+        $karts = Vehicle::query()->where('category', 'kart')->where('status', 'active')->orderBy('name')->get();
+        $selectionKey = 'pitmetric.in_pista.kart.'.$workspace->getKey();
+        $requestedKartId = $request->query('kart');
+        $selectedId = is_numeric($requestedKartId)
+            ? (int) $requestedKartId
+            : (int) $request->session()->get($selectionKey, 0);
+        $kart = $karts->firstWhere('id', $selectedId) ?? $karts->first();
+
+        if ($kart instanceof Vehicle) {
+            $request->session()->put($selectionKey, $kart->getKey());
+        }
+
+        $activeSession = $kart instanceof Vehicle ? Session::query()
+            ->where('vehicle_id', $kart->getKey())->where('status', 'draft')
+            ->latest('id')->first() : null;
+        $trackSession = $activeSession ?? ($kart instanceof Vehicle ? Session::query()
+            ->where('vehicle_id', $kart->getKey())->latest('id')->first() : null);
+
+        $trackSession?->load([
+            'raceEvent', 'eventEntry.driver', 'configurationVersion.configuration',
+            'setupSnapshot', 'vehicle', 'circuitLayout.circuit',
+        ]);
+
+        if ($activeSession instanceof Session) {
+            $eventEntry = $activeSession->eventEntry;
+            $configurationVersion = $activeSession->configurationVersion;
+        } else {
+            $eventEntry = $kart instanceof Vehicle ? $inPista->currentEventEntry($kart) : null;
+            $configurationVersion = $kart instanceof Vehicle ? $inPista->recommendedVersion($kart, $eventEntry) : null;
+        }
+
+        $laps = $trackSession instanceof Session ? $trackSession->timingLaps()->orderByDesc('lap_number')->limit(20)->get() : collect();
+        $lapCount = $trackSession instanceof Session ? $trackSession->timingLaps()->count() : 0;
+        $sessionCaptures = $trackSession instanceof Session ? $trackSession->trackCaptures()->orderByDesc('occurred_at')->orderByDesc('id')->limit(30)->get() : collect();
+        $coldReading = $trackSession?->tyreReadings()->where('phase', 'cold')->first();
+        $hotReading = $trackSession?->tyreReadings()->where('phase', 'hot')->first();
+        $setupValues = $trackSession instanceof Session && $trackSession->setupSnapshot !== null
+            ? $trackSession->setupSnapshot->values : [];
+
+        foreach ($sessionCaptures->reverse() as $capture) {
+            if ($capture->kind !== 'setup_adjustment') {
+                continue;
+            }
+
+            foreach ((array) data_get($capture->payload, 'values', []) as $field => $value) {
+                $setupValues[$field] = $value;
+            }
+        }
+
+        $sessionCaptures = $sessionCaptures->reverse();
+
+        return view('pit-mode.index', compact(
+            'context', 'captures', 'karts', 'kart', 'trackSession', 'activeSession',
+            'eventEntry', 'configurationVersion', 'laps', 'lapCount', 'sessionCaptures',
+            'coldReading', 'hotReading', 'setupValues',
+        ));
     }
 
     public function updateContext(Request $request, WorkspaceContext $workspaceContext): RedirectResponse

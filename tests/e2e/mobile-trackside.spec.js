@@ -37,6 +37,13 @@ test('mobile trackside surfaces stay one-handed and action-first', async ({ page
     await test.step('Pit Mode keeps every quick action reachable and its chrome collision-free', async () => {
         await page.goto('/pit');
 
+        await expect(page.locator('[data-in-pista]')).toBeVisible();
+        await expect(page.locator('[data-in-pista-kart-select]')).toBeVisible();
+        const classicTools = page.locator('details.in-pista-legacy');
+        await expect(classicTools).not.toHaveAttribute('open', '');
+        await classicTools.locator('summary').first().click();
+        await expect(classicTools).toHaveAttribute('open', '');
+
         const root = page.locator('[data-pm-pit-page]');
         const header = page.locator('[data-pm-pit-header]');
         const context = page.locator('[data-pm-pit-context]');
