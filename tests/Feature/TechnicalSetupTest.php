@@ -134,6 +134,75 @@ it('validates kart caster limits before saving geometry', function () {
     expect(TechnicalSetup::query()->where('name', 'Invalid caster')->exists())->toBeFalse();
 });
 
+it('records kart track widths and retains their original measurements in session snapshots', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $this->actingAs($user);
+
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart', 'name' => 'Kart width test']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Standard width',
+        'track_width_front_mm' => '1180',
+        'track_width_rear_mm' => '1395',
+    ])->assertRedirect(route('setups.index'));
+
+    $setup = TechnicalSetup::query()->where('name', 'Standard width')->firstOrFail();
+    expect($setup->values)->toMatchArray([
+        'track_width_front_mm' => '1180',
+        'track_width_rear_mm' => '1395',
+    ]);
+
+    $version = createTechnicalSetupPhysicalVersion($user, $kart, 'Width race build');
+    $this->post(route('sessions.store'), [
+        'configuration_version_id' => $version->id,
+        'technical_setup_id' => $setup->id,
+        'session_type' => 'practice',
+        'started_at' => '2026-10-28 14:00:00',
+    ])->assertRedirect();
+
+    $snapshot = Session::query()->firstOrFail()->setupSnapshot()->firstOrFail();
+    expect($snapshot->values)->toMatchArray([
+        'track_width_front_mm' => '1180',
+        'track_width_rear_mm' => '1395',
+    ]);
+
+    $this->put(route('setups.update', $setup), [
+        'name' => 'Narrow rear setup',
+        'track_width_front_mm' => '1180',
+        'track_width_rear_mm' => '1360',
+    ])->assertRedirect(route('setups.index'));
+
+    expect($setup->fresh()->values)->toMatchArray(['track_width_rear_mm' => '1360'])
+        ->and($snapshot->fresh()->values)->toMatchArray([
+            'track_width_front_mm' => '1180',
+            'track_width_rear_mm' => '1395',
+        ]);
+
+    $this->get(route('setups.index'))->assertSuccessful()
+        ->assertSee('name="track_width_front_mm"', false)
+        ->assertSee('name="track_width_rear_mm"', false)
+        ->assertSee('value="1360"', false);
+});
+
+it('rejects invalid kart track widths and leaves setups unchanged', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart']);
+
+    $this->actingAs($user)
+        ->post(route('setups.store'), [
+            'vehicle_id' => $kart->id,
+            'name' => 'Invalid width',
+            'track_width_front_mm' => '400',
+            'track_width_rear_mm' => '1395.5',
+        ])
+        ->assertSessionHasErrors(['track_width_front_mm', 'track_width_rear_mm']);
+
+    expect(TechnicalSetup::query()->where('name', 'Invalid width')->exists())->toBeFalse();
+});
+
 it('captures an immutable copy of the technical setup when a session is recorded', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspace = $user->workspaces()->firstOrFail();
