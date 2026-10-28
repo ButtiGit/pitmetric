@@ -57,6 +57,59 @@ body:has([data-pm-workspace]) { overflow-x: clip; }
 [data-pm-workspace] dialog::backdrop { backdrop-filter: blur(3px); }
 [data-pm-workspace] dialog[open] { max-height: 92dvh; }
 
+.pm-weather-dashboard {
+    border: 1px solid rgba(190, 217, 255, .22);
+    border-radius: 1.8rem;
+    background: radial-gradient(ellipse at 78% 2%, rgba(151, 211, 255, .19), transparent 43%), linear-gradient(135deg, #163d72 0%, #325d99 53%, #4d79a6 100%);
+    box-shadow: 0 20px 60px rgba(4, 17, 38, .2), inset 0 1px 0 rgba(255, 255, 255, .13);
+}
+.pm-weather-dashboard[data-sky="rain"],
+.pm-weather-dashboard[data-sky="storm"] {
+    background: radial-gradient(ellipse at 78% 2%, rgba(138, 166, 226, .18), transparent 45%), linear-gradient(135deg, #152a4e 0%, #37496c 53%, #536b89 100%);
+}
+.pm-weather-dashboard[data-sky="snow"] {
+    background: radial-gradient(ellipse at 78% 2%, rgba(224, 242, 255, .3), transparent 45%), linear-gradient(135deg, #28476e 0%, #6e8eb5 100%);
+}
+.pm-weather-glow { background: #b7dbff; opacity: .17; filter: blur(65px); }
+.pm-weather-temperature { font-size: clamp(4.8rem, 13vw, 7.5rem); }
+.pm-weather-illustration { filter: drop-shadow(0 14px 23px rgba(20, 47, 88, .23)); }
+.pm-weather-glass {
+    border: 1px solid rgba(255, 255, 255, .17);
+    background: rgba(255, 255, 255, .105);
+    backdrop-filter: blur(12px);
+}
+.pm-weather-select {
+    border: 1px solid rgba(255, 255, 255, .24);
+    background: rgba(15, 37, 70, .46);
+    color: white;
+    color-scheme: dark;
+}
+.pm-weather-select option { background: #1a365f; color: white; }
+.pm-weather-select:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+.pm-weather-glass-button {
+    border: 1px solid rgba(255, 255, 255, .25);
+    background: rgba(255, 255, 255, .14);
+    color: white;
+    transition: background .15s ease;
+}
+.pm-weather-glass-button:hover { background: rgba(255, 255, 255, .22); }
+.pm-weather-action {
+    background: #f2f8ff;
+    color: #173a6a;
+    box-shadow: 0 5px 17px rgba(12, 28, 52, .18);
+    transition: background .15s ease, transform .15s ease;
+}
+.pm-weather-action:hover { background: white; transform: translateY(-1px); }
+.pm-weather-action:disabled { cursor: wait; opacity: .65; transform: none; }
+.pm-weather-dashboard button:focus-visible,
+.pm-weather-dashboard a:focus-visible,
+.pm-weather-dashboard summary:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pm-weather-action, .pm-weather-glass-button { transition: none; }
+    .pm-weather-action:hover { transform: none; }
+}
+
 @media (max-width: 639px) {
     [data-pm-workspace] { padding: .5rem; }
     [data-pm-workspace] dialog > div { padding: 1rem; max-height: 88dvh; }

@@ -13,3 +13,4 @@ import './workspace-forms';
 import './mobile-shell';
 
 import './championship-import';
+import './session-weather';

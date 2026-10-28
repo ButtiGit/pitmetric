@@ -87,6 +87,7 @@ class Session extends Model
             'duration_seconds' => 'integer',
             'distance_override_meters' => 'integer',
             'finalized_at' => 'datetime',
+            'weather_snapshot' => 'array',
         ];
     }
 }
