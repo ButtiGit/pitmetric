@@ -52,6 +52,8 @@
         <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Camber ant. (°)' : 'Front camber (°)' }}</span><input class="pm-input" name="camber_front_deg" type="number" inputmode="decimal" min="-15" max="15" step="0.01" value="{{ $fieldValue('camber_front_deg') }}"></label>
             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Caster ant. (°)' : 'Front caster (°)' }}</span><input class="pm-input" name="caster_front_deg" type="number" inputmode="decimal" min="-15" max="30" step="0.01" value="{{ $fieldValue('caster_front_deg') }}"></label>
+            <label class="grid gap-2" x-show="isKart"><span class="pm-label">{{ $it ? 'Carreggiata ant. (mm)' : 'Front track width (mm)' }}</span><input class="pm-input" name="track_width_front_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" value="{{ $fieldValue('track_width_front_mm') }}"></label>
+            <label class="grid gap-2" x-show="isKart"><span class="pm-label">{{ $it ? 'Carreggiata post. (mm)' : 'Rear track width (mm)' }}</span><input class="pm-input" name="track_width_rear_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" value="{{ $fieldValue('track_width_rear_mm') }}"></label>
             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Altezza ant. (mm)' : 'Front ride height (mm)' }}</span><input class="pm-input" name="ride_height_front_mm" type="number" min="0" max="500" step="0.1" value="{{ $fieldValue('ride_height_front_mm') }}"></label>
             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Altezza post. (mm)' : 'Rear ride height (mm)' }}</span><input class="pm-input" name="ride_height_rear_mm" type="number" min="0" max="500" step="0.1" value="{{ $fieldValue('ride_height_rear_mm') }}"></label>
             <label class="grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Camber post. (°)' : 'Rear camber (°)' }}</span><input class="pm-input" name="camber_rear_deg" type="number" min="-15" max="15" step="0.01" value="{{ $fieldValue('camber_rear_deg') }}"></label>
@@ -60,6 +62,7 @@
             <label class="grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Barra ant.' : 'Front anti-roll' }}</span><input class="pm-input" name="anti_roll_front" type="number" min="0" max="100" step="0.1" value="{{ $fieldValue('anti_roll_front') }}"></label>
             <label class="grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Barra post.' : 'Rear anti-roll' }}</span><input class="pm-input" name="anti_roll_rear" type="number" min="0" max="100" step="0.1" value="{{ $fieldValue('anti_roll_rear') }}"></label>
         </div>
+        <p x-show="isKart" class="mt-3 text-xs text-pm-muted">{{ $it ? 'Misura sempre la carreggiata con lo stesso riferimento: potrai confrontare i setup fra una sessione e l’altra.' : 'Always measure track width using the same reference points to compare setups across sessions.' }}</p>
     </section>
 
     <section class="rounded-xl border border-pm-border bg-pm-subtle p-4">

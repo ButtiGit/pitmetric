@@ -143,6 +143,8 @@ class TechnicalSetupController extends Controller
             'ride_height_rear_mm' => ['nullable', 'numeric', 'min:0', 'max:500'],
             'camber_front_deg' => ['nullable', 'numeric', 'min:-15', 'max:15'],
             'caster_front_deg' => ['nullable', 'numeric', 'min:-15', 'max:30'],
+            'track_width_front_mm' => ['nullable', 'integer', 'min:500', 'max:3000'],
+            'track_width_rear_mm' => ['nullable', 'integer', 'min:500', 'max:3000'],
             'camber_rear_deg' => ['nullable', 'numeric', 'min:-15', 'max:15'],
             'toe_front_mm' => ['nullable', 'numeric', 'min:-20', 'max:20'],
             'toe_rear_mm' => ['nullable', 'numeric', 'min:-20', 'max:20'],
