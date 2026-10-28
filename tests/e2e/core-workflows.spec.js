@@ -84,6 +84,27 @@ test('five vital workflows', async ({ page }, testInfo) => {
         await expect(page.locator('body')).toContainText(BASELINE_VEHICLE);
     });
 
+    await test.step('kart gearing updates its calculated ratio while entering teeth', async () => {
+        await page.goto('/setups');
+        await openModal(page, /\+ New setup/i);
+
+        const form = page.locator('form[action$="/setups"]').first();
+        await selectOptionContaining(form.locator('select[name="vehicle_id"]'), BASELINE_VEHICLE);
+
+        const pinion = form.locator('input[name="pinion_teeth"]');
+        const crown = form.locator('input[name="crown_teeth"]');
+        const ratio = form.locator('[aria-live="polite"]');
+
+        await expect(pinion).toBeVisible();
+        await expect(crown).toBeVisible();
+        await pinion.fill('11');
+        await crown.fill('43');
+        await expect(ratio).toContainText('3.909:1');
+
+        await crown.fill('44');
+        await expect(ratio).toContainText('4.000:1');
+    });
+
     await test.step('session recording and finalization', async () => {
         await page.goto('/sessions');
         await openModal(page, /Record session/i);

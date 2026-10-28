@@ -35,7 +35,10 @@ class TechnicalSetup extends Model
         'differential_exit_pct' => ['label' => 'Differential exit', 'unit' => '%', 'group' => 'controls'],
         'aero_front' => ['label' => 'Front aero', 'unit' => '', 'group' => 'aero'],
         'aero_rear' => ['label' => 'Rear aero', 'unit' => '', 'group' => 'aero'],
+        'pinion_teeth' => ['label' => 'Pinion teeth', 'unit' => '', 'group' => 'drivetrain'],
+        'crown_teeth' => ['label' => 'Crown teeth', 'unit' => '', 'group' => 'drivetrain'],
         'final_drive' => ['label' => 'Final drive', 'unit' => '', 'group' => 'drivetrain'],
+        'gear_ratio' => ['label' => 'Gear reduction', 'unit' => ':1', 'group' => 'drivetrain'],
         'fuel_target_l' => ['label' => 'Fuel target', 'unit' => 'L', 'group' => 'drivetrain'],
     ];
 

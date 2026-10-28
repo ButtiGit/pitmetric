@@ -203,6 +203,88 @@ it('rejects invalid kart track widths and leaves setups unchanged', function () 
     expect(TechnicalSetup::query()->where('name', 'Invalid width')->exists())->toBeFalse();
 });
 
+it('calculates kart gearing from pinion and crown teeth and preserves the original session ratio', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $this->actingAs($user);
+
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart', 'name' => 'Kart gearing']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Short gearing',
+        'pinion_teeth' => '11',
+        'crown_teeth' => '43',
+        'final_drive' => 'manual old ratio',
+        'gear_ratio' => '999',
+    ])->assertRedirect(route('setups.index'));
+
+    $setup = TechnicalSetup::query()->where('name', 'Short gearing')->firstOrFail();
+    expect($setup->values)->toMatchArray([
+        'pinion_teeth' => '11',
+        'crown_teeth' => '43',
+        'final_drive' => '11/43',
+        'gear_ratio' => 3.909,
+    ]);
+
+    $version = createTechnicalSetupPhysicalVersion($user, $kart, 'Gearing race build');
+    $this->post(route('sessions.store'), [
+        'configuration_version_id' => $version->id,
+        'technical_setup_id' => $setup->id,
+        'session_type' => 'practice',
+        'started_at' => '2026-10-28 15:00:00',
+    ])->assertRedirect();
+
+    $snapshot = Session::query()->firstOrFail()->setupSnapshot()->firstOrFail();
+    expect($snapshot->values)->toMatchArray(['final_drive' => '11/43', 'gear_ratio' => 3.909]);
+
+    $this->put(route('setups.update', $setup), [
+        'name' => 'Longer gearing',
+        'pinion_teeth' => '12',
+        'crown_teeth' => '45',
+        'final_drive' => '11/43',
+    ])->assertRedirect(route('setups.index'));
+
+    expect($setup->fresh()->values)->toMatchArray(['final_drive' => '12/45', 'gear_ratio' => 3.75])
+        ->and($snapshot->fresh()->values)->toMatchArray(['final_drive' => '11/43', 'gear_ratio' => 3.909]);
+
+    $this->get(route('setups.index'))->assertSuccessful()
+        ->assertSee('name="pinion_teeth"', false)
+        ->assertSee('name="crown_teeth"', false)
+        ->assertSee('value="45"', false);
+});
+
+it('keeps manually entered legacy ratios and validates both kart gear tooth counts', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart']);
+    $this->actingAs($user);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Old sprocket notes',
+        'final_drive' => '11/43',
+    ])->assertRedirect(route('setups.index'));
+
+    $legacySetup = TechnicalSetup::query()->where('name', 'Old sprocket notes')->firstOrFail();
+    expect($legacySetup->values)->toBe(['final_drive' => '11/43']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Missing crown',
+        'pinion_teeth' => '11',
+    ])->assertSessionHasErrors('crown_teeth');
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Invalid tooth counts',
+        'pinion_teeth' => '0',
+        'crown_teeth' => '43.5',
+    ])->assertSessionHasErrors(['pinion_teeth', 'crown_teeth']);
+
+    expect(TechnicalSetup::query()->count())->toBe(1);
+});
+
 it('captures an immutable copy of the technical setup when a session is recorded', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspace = $user->workspaces()->firstOrFail();
