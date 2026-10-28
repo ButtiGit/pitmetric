@@ -196,6 +196,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/maintenance/{maintenanceSchedule}/restore', [MaintenanceController::class, 'restore'])->name('maintenance.restore');
             Route::delete('/maintenance/work-orders/{maintenanceWorkOrder}', [MaintenanceController::class, 'destroyWorkOrder'])->name('maintenance.work-orders.destroy');
             Route::put('/sessions/{session}', [SessionController::class, 'update'])->name('sessions.update');
+            Route::post('/sessions/{session}/tyre-readings', [SessionController::class, 'storeTyreReading'])->name('sessions.tyre-readings.store');
             Route::delete('/telemetry/{telemetryImport}', [TelemetryController::class, 'destroy'])->name('telemetry.destroy');
 
             Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
