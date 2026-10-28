@@ -16,10 +16,52 @@
                     <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-pm-accent">{{ $it ? 'ANALISI TEMPI' : 'TIMING ANALYSIS' }}</p>
                     <x-pitmetric.page-header
                         :title="$it ? 'Tempi' : 'Timing'"
-                        :description="$it ? 'Confronta giri e settori provenienti dalle sessioni e dagli import telemetrici.' : 'Compare laps and sectors from sessions and telemetry imports.'"
+                        :description="$it ? 'Confronta i giri inseriti manualmente e quelli importati dalla telemetria, nello stesso archivio.' : 'Compare manually entered laps and telemetry imports in the same timing archive.'"
                     />
                 </div>
-                <a href="{{ route('telemetry.index') }}" class="pm-race-button inline-flex items-center justify-center">{{ $it ? 'Apri Telemetria' : 'Open Telemetry' }}</a>
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-crud-modal
+                        id="create-timing-lap"
+                        :title="$it ? 'Registra tempo sul giro' : 'Record lap time'"
+                        :description="$it ? 'Inserisci il tempo preso in pista. PitMetric assegna automaticamente il numero del giro, usando la stessa cronologia degli import telemetrici.' : 'Enter the time measured on track. PitMetric automatically assigns the lap number in the same history used by telemetry imports.'"
+                        :trigger="$it ? '+ Inserisci tempo' : '+ Add lap time'"
+                        size="max-w-xl"
+                    >
+                        <form method="POST" action="{{ route('timing.laps.store') }}" class="grid gap-4">
+                            @csrf
+                            <label class="grid gap-2">
+                                <span class="pm-label">{{ $it ? 'Sessione in pista' : 'Track session' }}</span>
+                                <select name="session_id" class="pm-input" required>
+                                    <option value="">{{ $it ? 'Seleziona una sessione' : 'Select a session' }}</option>
+                                    @foreach ($sessions as $session)
+                                        <option value="{{ $session->id }}" @selected((string) old('session_id', $filters['session_id'] ?? '') === (string) $session->id)>
+                                            #{{ $session->id }} · {{ $session->started_at?->format('d/m/Y H:i') ?? '—' }} · {{ $session->vehicle?->name ?? '—' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="grid gap-2">
+                                <span class="pm-label">{{ $it ? 'Tempo sul giro' : 'Lap time' }}</span>
+                                <input name="lap_time" class="pm-input font-mono text-lg" type="text" inputmode="decimal" autocomplete="off" required maxlength="12" value="{{ old('lap_time') }}" placeholder="1:02.345">
+                                <span class="text-xs text-pm-muted">{{ $it ? 'Formati accettati: 1:02.345 oppure 62.345 (secondi). Anche la virgola è valida.' : 'Accepted formats: 1:02.345 or 62.345 (seconds). Commas are supported too.' }}</span>
+                            </label>
+                            <label class="grid gap-2">
+                                <span class="pm-label">{{ $it ? 'Pilota (facoltativo)' : 'Driver (optional)' }}</span>
+                                <select name="driver_id" class="pm-input">
+                                    <option value="">{{ $it ? 'Automatico dalla sessione, se presente' : 'Auto from session, if available' }}</option>
+                                    @foreach ($drivers as $driver)
+                                        <option value="{{ $driver->id }}" @selected((string) old('driver_id') === (string) $driver->id)>{{ $driver->display_name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            @if ($sessions->isEmpty())
+                                <p class="text-sm text-pm-muted">{{ $it ? 'Per registrare un tempo, crea prima una sessione in pista.' : 'Create a track session before recording a lap time.' }} <a class="font-semibold text-pm-accent hover:underline" href="{{ route('sessions.index') }}">{{ $it ? 'Vai alle sessioni' : 'Go to sessions' }}</a></p>
+                            @endif
+                            <button type="submit" class="pm-race-button w-full" @disabled($sessions->isEmpty())>{{ $it ? 'Salva giro' : 'Save lap' }}</button>
+                        </form>
+                    </x-crud-modal>
+                    <a href="{{ route('telemetry.index') }}" class="pm-ghost-button inline-flex items-center justify-center">{{ $it ? 'Apri Telemetria' : 'Open Telemetry' }}</a>
+                </div>
             </div>
 
             <form method="GET" action="{{ route('timing.index') }}" class="pm-panel grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -90,7 +132,7 @@
                                     <td class="px-4 py-3 text-xs text-pm-muted">{{ $lap->telemetryImport?->source_vendor ?? $lap->source }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="9" class="px-5 py-12 text-center text-pm-muted">{{ $it ? 'Nessun giro disponibile con questi filtri. Importa un file telemetrico che contenga numero giro e tempi.' : 'No laps match these filters. Import telemetry containing lap numbers and times.' }}</td></tr>
+                                <tr><td colspan="9" class="px-5 py-12 text-center text-pm-muted">{{ $it ? 'Nessun giro disponibile con questi filtri. Inserisci un tempo manualmente o importa un file telemetrico.' : 'No laps match these filters. Add a lap time manually or import telemetry.' }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>

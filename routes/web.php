@@ -163,6 +163,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
 
         Route::middleware('can:team-write')->group(function () {
+            Route::post('/timing/laps', [TimingController::class, 'storeLap'])->name('timing.laps.store');
             Route::post('/championships', [ChampionshipController::class, 'store'])->name('championships.store');
             Route::put('/championships/{championship}', [ChampionshipController::class, 'update'])->name('championships.update');
             Route::delete('/championships/{championship}', [ChampionshipController::class, 'archive'])->name('championships.archive');
