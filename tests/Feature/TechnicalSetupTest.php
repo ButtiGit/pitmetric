@@ -66,6 +66,74 @@ it('creates technical setups and records their optional work cost', function () 
         ->and($expense->category)->toBe('setup');
 });
 
+it('records kart camber and caster and preserves their values in session snapshots', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $this->actingAs($user);
+
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart', 'name' => 'Kart geometry']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Front axle baseline',
+        'camber_front_deg' => '-1.25',
+        'caster_front_deg' => '10.50',
+    ])->assertRedirect(route('setups.index'));
+
+    $setup = TechnicalSetup::query()->where('name', 'Front axle baseline')->firstOrFail();
+    expect($setup->values)->toMatchArray([
+        'camber_front_deg' => '-1.25',
+        'caster_front_deg' => '10.50',
+    ]);
+
+    $version = createTechnicalSetupPhysicalVersion($user, $kart, 'Geometry race build');
+    $this->post(route('sessions.store'), [
+        'configuration_version_id' => $version->id,
+        'technical_setup_id' => $setup->id,
+        'session_type' => 'practice',
+        'started_at' => '2026-10-28 13:00:00',
+    ])->assertRedirect();
+
+    $snapshot = Session::query()->firstOrFail()->setupSnapshot()->firstOrFail();
+    expect($snapshot->values)->toMatchArray([
+        'camber_front_deg' => '-1.25',
+        'caster_front_deg' => '10.50',
+    ]);
+
+    $this->put(route('setups.update', $setup), [
+        'name' => 'Front axle baseline v2',
+        'camber_front_deg' => '0.25',
+        'caster_front_deg' => '12.00',
+    ])->assertRedirect(route('setups.index'));
+
+    expect($setup->fresh()->values)->toMatchArray(['caster_front_deg' => '12.00'])
+        ->and($snapshot->fresh()->values)->toMatchArray([
+            'camber_front_deg' => '-1.25',
+            'caster_front_deg' => '10.50',
+        ]);
+
+    $this->get(route('setups.index'))->assertSuccessful()
+        ->assertSee('name="caster_front_deg"', false)
+        ->assertSee('value="12.00"', false);
+});
+
+it('validates kart caster limits before saving geometry', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart']);
+
+    $this->actingAs($user)
+        ->post(route('setups.store'), [
+            'vehicle_id' => $kart->id,
+            'name' => 'Invalid caster',
+            'camber_front_deg' => '-1.00',
+            'caster_front_deg' => '31',
+        ])
+        ->assertSessionHasErrors('caster_front_deg');
+
+    expect(TechnicalSetup::query()->where('name', 'Invalid caster')->exists())->toBeFalse();
+});
+
 it('captures an immutable copy of the technical setup when a session is recorded', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspace = $user->workspaces()->firstOrFail();
