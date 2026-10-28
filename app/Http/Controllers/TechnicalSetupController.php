@@ -155,6 +155,8 @@ class TechnicalSetupController extends Controller
             'differential_exit_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'aero_front' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'aero_rear' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'pinion_teeth' => ['nullable', 'required_with:crown_teeth', 'integer', 'min:1', 'max:200'],
+            'crown_teeth' => ['nullable', 'required_with:pinion_teeth', 'integer', 'min:1', 'max:200'],
             'final_drive' => ['nullable', 'string', 'max:30'],
             'fuel_target_l' => ['nullable', 'numeric', 'min:0', 'max:500'],
             'operation_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
@@ -181,6 +183,13 @@ class TechnicalSetupController extends Controller
             }
 
             $values[$key] = $validated[$key];
+        }
+
+        if (isset($validated['pinion_teeth'], $validated['crown_teeth'])) {
+            $pinionTeeth = (int) $validated['pinion_teeth'];
+            $crownTeeth = (int) $validated['crown_teeth'];
+            $values['final_drive'] = $pinionTeeth.'/'.$crownTeeth;
+            $values['gear_ratio'] = round($crownTeeth / $pinionTeeth, 3);
         }
 
         return $values;

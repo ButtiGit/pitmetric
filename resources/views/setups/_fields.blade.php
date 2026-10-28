@@ -4,6 +4,10 @@
     $fieldValue = static fn (string $key): mixed => old($key, $setupValues[$key] ?? '');
     $initialVehicle = $technicalSetup?->vehicle ?? $vehicles->firstWhere('id', old('vehicle_id'));
     $initialIsKart = $initialVehicle?->category === 'kart';
+    $legacyGearParts = [];
+    preg_match('/^\s*(\d+)\s*\/\s*(\d+)\s*$/', (string) ($setupValues['final_drive'] ?? ''), $legacyGearParts);
+    $pinionValue = old('pinion_teeth', $setupValues['pinion_teeth'] ?? ($legacyGearParts[1] ?? ''));
+    $crownValue = old('crown_teeth', $setupValues['crown_teeth'] ?? ($legacyGearParts[2] ?? ''));
 @endphp
 
 <div class="grid gap-5" x-data="{ isKart: @js($initialIsKart), advanced: false }">
@@ -67,7 +71,16 @@
 
     <section class="rounded-xl border border-pm-border bg-pm-subtle p-4">
         <p class="text-[11px] font-black uppercase tracking-[0.12em] text-pm-accent">{{ $it ? 'Trasmissione' : 'Drivetrain' }}</p>
-        <label class="mt-3 grid gap-2"><span class="pm-label">{{ $it ? 'Rapporto finale' : 'Final drive' }}</span><input class="pm-input" name="final_drive" maxlength="30" value="{{ $fieldValue('final_drive') }}" placeholder="11/43"></label>
+        <div x-show="isKart" x-data="{ pinion: @js((string) $pinionValue), crown: @js((string) $crownValue) }" class="mt-3 grid gap-3 sm:grid-cols-2">
+            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Denti pignone' : 'Pinion teeth' }}</span><input class="pm-input" name="pinion_teeth" type="number" inputmode="numeric" min="1" max="200" step="1" x-model="pinion" value="{{ $pinionValue }}" placeholder="11"></label>
+            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Denti corona' : 'Crown teeth' }}</span><input class="pm-input" name="crown_teeth" type="number" inputmode="numeric" min="1" max="200" step="1" x-model="crown" value="{{ $crownValue }}" placeholder="43"></label>
+            <div class="rounded-lg border border-pm-border bg-pm-panel p-3 sm:col-span-2" aria-live="polite">
+                <span class="pm-label">{{ $it ? 'Rapporto calcolato · corona ÷ pignone' : 'Calculated ratio · crown ÷ pinion' }}</span>
+                <strong class="mt-1 block font-mono text-lg text-pm-text" x-text="Number(pinion) > 0 && Number(crown) > 0 ? (Number(crown) / Number(pinion)).toFixed(3) + ':1' : '—'"></strong>
+            </div>
+        </div>
+        <label class="mt-3 grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Rapporto finale manuale / precedente' : 'Manual / legacy final drive' }}</span><input class="pm-input" name="final_drive" maxlength="30" value="{{ $fieldValue('final_drive') }}" placeholder="11/43"><span x-show="isKart" class="text-xs text-pm-muted">{{ $it ? 'Usato soltanto quando non specifichi pignone e corona.' : 'Used only when pinion and crown are not specified.' }}</span></label>
+        <p x-show="isKart" class="mt-3 text-xs text-pm-muted">{{ $it ? 'Inserisci entrambi i numeri: PitMetric salva anche il formato pignone/corona. I vecchi rapporti restano disponibili nei parametri avanzati.' : 'Enter both values: PitMetric also saves pinion/crown notation. Older ratios remain available under advanced parameters.' }}</p>
     </section>
 
     <button class="pm-ghost-button justify-center" type="button" x-show="isKart" x-on:click="advanced = !advanced" x-text="advanced ? @js($it ? 'Nascondi parametri avanzati' : 'Hide advanced parameters') : @js($it ? 'Mostra parametri avanzati' : 'Show advanced parameters')"></button>
