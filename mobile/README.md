@@ -57,6 +57,7 @@ The `/app` marketing page displays the PWA install action next to the Android AP
 - Android: open `/mobile/` in Chrome and use **Install app / Add to Home Screen**.
 - The PWA has a scoped service worker for offline app-shell loading after the first successful visit. Reload it online after deployments to update its files.
 - The web beta starts without native SQLite or secure-storage plugins and supports local lap times, timer, sessions, notes, setups and maintenance reminders using browser storage.
+- The browser has an IndexedDB storage layer for downloaded team snapshots and a durable, UUID-keyed outbox, isolated by authenticated user ID and workspace ID. This is a **storage foundation only**: the PWA does not yet authenticate or send these operations to the cloud; those connections will be added in later steps of the PN Rent pilot.
 - Cloud login/sync, gallery, garage and synced events are **not available in the web beta**. Do not use browser-only records as the sole copy of important trackside data; clearing site data can erase them.
 
 Native Android/iOS application features and storage remain unchanged by this separate build mode.
