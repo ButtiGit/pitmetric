@@ -12,6 +12,7 @@ import './trackside.css';
 import './ios-polish.css';
 import './ios-glance.css';
 import './onboarding.css';
+import './weather.css';
 
 createApp(App).use(IonicVue).mount('#app');
 if (import.meta.env.MODE !== 'pwa') {

@@ -8,9 +8,10 @@ import {
 import {
   addOutline, analyticsOutline, buildOutline, cameraOutline, carSportOutline,
   checkmarkCircleOutline, chevronForwardOutline, cloudDoneOutline, cloudOfflineOutline,
-  ellipsisHorizontalOutline, flagOutline, homeOutline, imagesOutline, logOutOutline,
+  cloudOutline, cloudyOutline, ellipsisHorizontalOutline, flagOutline, homeOutline, imagesOutline, locationOutline, logOutOutline,
   pauseOutline, personCircleOutline, playOutline, settingsOutline, speedometerOutline,
-  stopwatchOutline, syncOutline, timeOutline, trashOutline, videocamOutline
+  partlySunnyOutline, rainyOutline, snowOutline, stopwatchOutline, sunnyOutline,
+  syncOutline, thunderstormOutline, timeOutline, trashOutline, videocamOutline
 } from 'ionicons/icons';
 import {
   addGalleryMedia, addGalleryPhoto, biometricAvailable, biometricUnlock, bootLocalStore,
@@ -23,14 +24,22 @@ import {
   addQuickRecord, deleteQuickRecord, formatLapTime, parseLapTime, quickRecords,
   type QuickRecord
 } from './quicklog';
+import {
+  loadDeviceWeather, readDeviceCoordinates, weatherDescription, weatherHour, weatherSky,
+  windDirection, type MobileWeatherSnapshot
+} from './mobile-weather';
 
-type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weekend' | 'maintenance' | 'setup' | 'gallery' | 'account';
+type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weekend' | 'maintenance' | 'setup' | 'gallery' | 'account' | 'weather';
 
 const webPreview = !Capacitor.isNativePlatform();
 const ready = ref(false);
 const session = ref<SessionState | null>(null);
 const active = ref<Screen>('home');
 const actionMessage = ref('');
+const weather = ref<MobileWeatherSnapshot | null>(null);
+const weatherLoading = ref(false);
+const weatherStage = ref('');
+const weatherError = ref('');
 const syncing = ref(false);
 const biometric = ref(false);
 let stopAutoSync: (() => Promise<void>) | null = null;
@@ -103,6 +112,33 @@ const cloudLabel = computed(() => session.value?.cloudEnabled ? 'Cloud attivo' :
 const currentEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === selectedEventId.value) || null);
 const selectedSessionEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === sessionEventId.value) || null);
 const moreSelected = computed(() => !['home', 'timer', 'sessions', 'garage'].includes(active.value));
+const sky = computed(() => weatherSky(weather.value?.symbol_code ?? 'cloudy'));
+
+function weatherIcon(symbolCode: string): string {
+  const condition = weatherSky(symbolCode);
+  if (condition === 'storm') return thunderstormOutline;
+  if (condition === 'rain') return rainyOutline;
+  if (condition === 'snow') return snowOutline;
+  if (condition === 'clear') return sunnyOutline;
+  return symbolCode.includes('partly') ? partlySunnyOutline : cloudyOutline;
+}
+
+async function updateWeatherFromGps(): Promise<void> {
+  if (weatherLoading.value) return;
+  weatherLoading.value = true;
+  weatherError.value = '';
+  try {
+    weatherStage.value = 'Ricerca posizione GPS…';
+    const coordinates = await readDeviceCoordinates();
+    weatherStage.value = 'Aggiornamento previsioni…';
+    weather.value = await loadDeviceWeather(coordinates.latitude, coordinates.longitude);
+  } catch (error) {
+    weatherError.value = error instanceof Error ? error.message : 'Non è stato possibile aggiornare il meteo.';
+  } finally {
+    weatherStage.value = '';
+    weatherLoading.value = false;
+  }
+}
 
 const bestLap = computed(() => {
   const values = lapRecords.value.map(item => Number(item.value_ms));
@@ -458,7 +494,7 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
             <button class="quick-card primary" type="button" @click="active = 'timer'"><span class="quick-icon"><ion-icon :icon="stopwatchOutline" /></span><strong>Nuovo tempo</strong><small>Cronometro o manuale</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
             <button class="quick-card" type="button" @click="active = 'sessions'"><span class="quick-icon"><ion-icon :icon="flagOutline" /></span><strong>Sessione</strong><small>Senza gerarchie obbligatorie</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
             <button class="quick-card" type="button" @click="active = 'pit'"><span class="quick-icon"><ion-icon :icon="speedometerOutline" /></span><strong>Nota</strong><small>Trackside in 2 tocchi</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
-            <button class="quick-card" type="button" @click="active = 'garage'"><span class="quick-icon"><ion-icon :icon="carSportOutline" /></span><strong>Garage</strong><small>{{ snapshot.vehicles.length }} mezzi cloud</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
+            <button class="quick-card weather-quick-card" type="button" @click="active = 'weather'"><span class="quick-icon"><ion-icon :icon="partlySunnyOutline" /></span><strong>Meteo GPS</strong><small>Previsioni in pista</small><ion-icon class="chev" :icon="chevronForwardOutline" /></button>
           </section>
 
           <section class="panel activity-panel">
@@ -518,6 +554,48 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
           <section class="panel"><div class="panel-head"><div><p class="eyebrow">LOCAL SESSIONS</p><h2>Storico</h2></div><span>{{ sessionRecords.length }}</span></div><div class="activity-list"><article v-for="item in sessionRecords.slice(0,12)" :key="item.id" class="activity-row"><div class="activity-dot"><ion-icon :icon="flagOutline"/></div><div><strong>{{ String(item.payload.session_type || 'Sessione') }}</strong><span>{{ quickMeta(item) }} · {{ item.payload.completed_laps || '—' }} giri</span></div><button type="button" class="icon-button" @click="removeQuick(item.id)"><ion-icon :icon="trashOutline"/></button></article></div></section>
         </main>
 
+        <main v-else-if="active === 'weather'" class="screen pm-weather-mobile">
+          <section class="pm-weather-title">
+            <div><p class="eyebrow">TRACKSIDE WEATHER</p><h1>Meteo in pista</h1><p>Previsioni per la tua posizione, senza inserire il circuito.</p></div>
+            <span class="pm-weather-gps"><ion-icon :icon="locationOutline" /> GPS</span>
+          </section>
+
+          <section class="pm-weather-sky" :data-sky="sky">
+            <div class="pm-weather-sky-light" aria-hidden="true"></div>
+            <div class="pm-weather-sky-top"><span><ion-icon :icon="locationOutline" /> Posizione attuale</span><span v-if="weather">{{ formatDate(weather.captured_at) }}</span></div>
+            <template v-if="weather">
+              <div class="pm-weather-main-reading"><ion-icon :icon="weatherIcon(weather.symbol_code)" class="pm-weather-hero-icon" /><div><strong>{{ Math.round(weather.air_temperature_c) }}<sup>°</sup></strong><span>{{ weatherDescription(weather.symbol_code) }}</span></div></div>
+              <div class="pm-weather-forecast-label">Previsione MET Norway · {{ formatDate(weather.forecast_at) }}</div>
+            </template>
+            <template v-else>
+              <div class="pm-weather-main-reading pm-weather-empty-reading"><ion-icon :icon="partlySunnyOutline" class="pm-weather-hero-icon" /><div><strong>—<sup>°</sup></strong><span>Meteo pronto quando vuoi</span></div></div>
+              <p class="pm-weather-empty-hint">Consenti la posizione per conoscere temperatura, vento e condizioni della pista.</p>
+            </template>
+            <button class="pm-weather-update" type="button" :disabled="weatherLoading" @click="updateWeatherFromGps">
+              <ion-spinner v-if="weatherLoading" name="crescent" /><ion-icon v-else :icon="locationOutline" />
+              {{ weatherLoading ? weatherStage : weather ? 'Aggiorna con GPS' : 'Rileva posizione e meteo' }}
+            </button>
+            <p v-if="weatherError" class="pm-weather-error" role="alert">{{ weatherError }}</p>
+          </section>
+
+          <template v-if="weather">
+            <section class="pm-weather-metrics" aria-label="Dettagli meteo">
+              <article><ion-icon :icon="cloudOutline" /><span>Umidità</span><strong>{{ weather.humidity_pct == null ? '—' : `${weather.humidity_pct}%` }}</strong></article>
+              <article><ion-icon :icon="locationOutline" /><span>Vento</span><strong>{{ weather.wind_speed_kmh == null ? '—' : `${Math.round(weather.wind_speed_kmh)} km/h` }}</strong><small>{{ windDirection(weather.wind_direction_deg) }}</small></article>
+              <article><ion-icon :icon="speedometerOutline" /><span>Pressione</span><strong>{{ weather.pressure_hpa == null ? '—' : `${Math.round(weather.pressure_hpa)} hPa` }}</strong></article>
+              <article><ion-icon :icon="rainyOutline" /><span>Pioggia · 1h</span><strong>{{ weather.precipitation_next_hour_mm == null ? '—' : `${weather.precipitation_next_hour_mm} mm` }}</strong></article>
+              <article><ion-icon :icon="cloudyOutline" /><span>Nuvolosità</span><strong>{{ weather.cloud_cover_pct == null ? '—' : `${Math.round(weather.cloud_cover_pct)}%` }}</strong></article>
+              <article><ion-icon :icon="sunnyOutline" /><span>Temperatura</span><strong>{{ weather.air_temperature_c.toFixed(1) }} °C</strong></article>
+            </section>
+            <section v-if="weather.hourly.length" class="pm-weather-hourly">
+              <div class="pm-weather-section-heading"><h2>Prossime ore</h2><span>Previsione oraria</span></div>
+              <div class="pm-weather-hours"><article v-for="hour in weather.hourly" :key="hour.at"><span>{{ weatherHour(hour.at) }}</span><ion-icon :icon="weatherIcon(hour.symbol_code)" /><strong>{{ Math.round(hour.temperature_c) }}°</strong></article></div>
+            </section>
+          </template>
+
+          <p class="pm-weather-disclaimer">La posizione viene richiesta solo quando tocchi il pulsante. Sono previsioni meteorologiche, non misure dei sensori del kart. Dati: <a href="https://www.met.no/en/free-meteorological-data" target="_blank" rel="noopener noreferrer">MET Norway (CC BY 4.0)</a>. Il servizio richiede internet.</p>
+        </main>
+
         <main v-else-if="webPreview && ['garage', 'gallery', 'account', 'weekend'].includes(active)" class="screen">
           <section class="screen-title"><div><p class="eyebrow">PWA BETA</p><h1>Funzione in preparazione</h1><p>Questa funzione richiede ancora i servizi nativi o la sincronizzazione cloud.</p></div></section>
           <section class="panel form-panel">
@@ -549,7 +627,7 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
 
         <main v-else class="screen">
           <section class="screen-title"><div><p class="eyebrow">TOOLS</p><h1>Altro</h1></div></section>
-          <section class="tools-grid"><button type="button" @click="active='pit'"><ion-icon :icon="speedometerOutline"/><strong>Nota rapida</strong><span>Trackside</span></button><button type="button" @click="active='setup'"><ion-icon :icon="settingsOutline"/><strong>Setup</strong><span>Assetto libero</span></button><button type="button" @click="active='maintenance'"><ion-icon :icon="buildOutline"/><strong>Manutenzione</strong><span>Promemoria</span></button><button type="button" @click="active='gallery'"><ion-icon :icon="imagesOutline"/><strong>Galleria</strong><span>Foto + video</span></button><button type="button" @click="active='weekend'"><ion-icon :icon="flagOutline"/><strong>Weekend</strong><span>Cloud opzionale</span></button><button type="button" @click="active='account'"><ion-icon :icon="personCircleOutline"/><strong>Account</strong><span>{{ session ? 'Collegato' : 'Opzionale' }}</span></button></section>
+          <section class="tools-grid"><button type="button" @click="active='weather'"><ion-icon :icon="partlySunnyOutline"/><strong>Meteo GPS</strong><span>Previsioni in pista</span></button><button type="button" @click="active='pit'"><ion-icon :icon="speedometerOutline"/><strong>Nota rapida</strong><span>Trackside</span></button><button type="button" @click="active='setup'"><ion-icon :icon="settingsOutline"/><strong>Setup</strong><span>Assetto libero</span></button><button type="button" @click="active='maintenance'"><ion-icon :icon="buildOutline"/><strong>Manutenzione</strong><span>Promemoria</span></button><button type="button" @click="active='gallery'"><ion-icon :icon="imagesOutline"/><strong>Galleria</strong><span>Foto + video</span></button><button type="button" @click="active='weekend'"><ion-icon :icon="flagOutline"/><strong>Weekend</strong><span>Cloud opzionale</span></button><button type="button" @click="active='account'"><ion-icon :icon="personCircleOutline"/><strong>Account</strong><span>{{ session ? 'Collegato' : 'Opzionale' }}</span></button></section>
         </main>
       </ion-content>
 

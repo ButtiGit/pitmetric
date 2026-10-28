@@ -13,6 +13,7 @@ Native mobile client for PitMetric built with Ionic Vue + Capacitor 8.
 - offline outbox with automatic retry when connectivity returns
 - clear local-only mode when `database_access_enabled` is false
 - gallery capture/import with title and description stored on-device and queued for cloud sync
+- GPS weather on demand (Android native geolocation / PWA browser geolocation) with MET Norway forecasts via the existing PitMetric API, including permission/error handling; no background location tracking
 - server-side mobile bearer tokens and gallery metadata API
 
 ## Local setup
@@ -33,6 +34,10 @@ Use `VITE_PITMETRIC_API_URL` to override the default `https://pitmetric.it/api/m
 For Face ID on iOS add `NSFaceIDUsageDescription` to the generated iOS app Info.plist, for example: `PitMetric uses Face ID to unlock your saved mobile session.`
 
 The biometric prompt only unlocks the locally stored session; it never replaces server authentication.
+
+Android requires precise and approximate location permissions for on-demand weather. The `npm run cap:sync` command injects these permissions into the generated `AndroidManifest.xml`; the GitHub Actions APK workflow applies them too, since `mobile/android` is not committed. The user must approve location access in Android settings. No continuous/background geolocation permission is requested.
+
+For an independently generated native iOS shell, configure `NSLocationWhenInUseUsageDescription` in the generated Info.plist before shipping; the PWA on iPhone requests browser permission through Safari instead.
 
 ## PWA beta for iPhone and Android
 
@@ -57,6 +62,7 @@ The `/app` marketing page displays the PWA install action next to the Android AP
 - Android: open `/mobile/` in Chrome and use **Install app / Add to Home Screen**.
 - The PWA has a scoped service worker for offline app-shell loading after the first successful visit. Reload it online after deployments to update its files.
 - The web beta starts without native SQLite or secure-storage plugins and supports local lap times, timer, sessions, notes, setups and maintenance reminders using browser storage.
+- The GPS weather screen requests browser location **only after the user taps Update** and requires an internet connection for forecasts. The mobile weather API is available without logging into the cloud (including PWA beta); coordinates are sent to PitMetric for the MET Norway lookup but not stored against user accounts or sessions.
 - The browser has an IndexedDB storage layer for downloaded team snapshots and a durable, UUID-keyed outbox, isolated by authenticated user ID and workspace ID. This is a **storage foundation only**: the PWA does not yet authenticate or send these operations to the cloud; those connections will be added in later steps of the PN Rent pilot.
 - Cloud login/sync, gallery, garage and synced events are **not available in the web beta**. Do not use browser-only records as the sole copy of important trackside data; clearing site data can erase them.
 

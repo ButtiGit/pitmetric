@@ -43,6 +43,7 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          node configure-android-geolocation.mjs
           npx capacitor-assets generate --android --iconBackgroundColor '#0b0d10' --splashBackgroundColor '#0b0d10'
 
       - name: Build signed installable APK
