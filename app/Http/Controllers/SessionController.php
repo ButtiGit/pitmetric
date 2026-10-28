@@ -7,13 +7,16 @@ use App\Models\Session;
 use App\Models\User;
 use App\Services\RecordSessionService;
 use App\Services\SessionPageService;
+use App\Services\SessionWeatherService;
 use App\Services\WorkspaceContext;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use RuntimeException;
 
 class SessionController extends Controller
 {
@@ -93,6 +96,39 @@ class SessionController extends Controller
 
         return to_route('sessions.index', ['recorded' => $session->getKey()])
             ->with('status', __('Kart tyre pressures recorded without changing the session setup snapshot.'));
+    }
+
+    public function storeWeather(Request $request, Session $session, SessionWeatherService $weatherService): RedirectResponse
+    {
+        Gate::authorize('update', $session);
+
+        abort_unless(Schema::hasColumn('track_sessions', 'weather_snapshot'), 503, __('Session weather is not available until the database has been updated.'));
+
+        $validated = $request->validate([
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:10000'],
+        ]);
+
+        try {
+            $snapshot = $weatherService->capture((float) $validated['latitude'], (float) $validated['longitude']);
+        } catch (ConnectionException|RuntimeException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'weather' => __('The weather service is temporarily unavailable. Try again in a moment.'),
+            ]);
+        }
+
+        $session->setAttribute('weather_snapshot', $snapshot);
+        $session->save();
+
+        return to_route('sessions.index', [
+            'weather_session' => $session->getKey(),
+            'recorded' => $session->getKey(),
+            'page' => $validated['page'] ?? 1,
+        ])
+            ->with('status', __('Weather forecast saved to the session without changing its setup or recorded laps.'));
     }
 
     public function store(

@@ -22,6 +22,7 @@ class SessionPageService
     public function data(Request $request, Workspace $workspace): array
     {
         $tyreReadingsReady = Schema::hasTable('session_tyre_readings');
+        $weatherReady = Schema::hasColumn('track_sessions', 'weather_snapshot');
         $relations = [
             'vehicle',
             'configurationVersion.configuration',
@@ -58,6 +59,9 @@ class SessionPageService
         });
 
         $lastSession = $sessions->first();
+        $weatherSession = $sessions->getCollection()->first(
+            fn (Session $session): bool => (string) $session->getKey() === (string) $request->query('weather_session')
+        ) ?? $lastSession;
         $requestedVersionId = $request->integer('configuration_version_id');
         $defaultVersionId = $versions->contains(fn (ConfigurationVersion $version): bool => $version->getKey() === $requestedVersionId)
             ? $requestedVersionId
@@ -82,6 +86,8 @@ class SessionPageService
                 ->get(),
             'sessions' => $sessions,
             'tyreReadingsReady' => $tyreReadingsReady,
+            'weatherReady' => $weatherReady,
+            'weatherSession' => $weatherSession,
             'defaults' => [
                 'configuration_version_id' => $defaultVersionId,
                 'technical_setup_id' => $lastSession?->setupSnapshot?->technical_setup_id,

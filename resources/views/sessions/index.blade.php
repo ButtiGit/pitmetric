@@ -42,6 +42,10 @@
             @if ((int) session('maintenance_attention', 0) > 0)<div class="rounded-xl border border-pm-warning/30 bg-pm-warning-subtle px-4 py-3 text-sm font-semibold text-pm-warning">{{ $it ? session('maintenance_attention').' interventi richiedono attenzione dopo l’aggiornamento utilizzo.' : session('maintenance_attention').' maintenance items need attention after usage was updated.' }} <a href="{{ route('maintenance.index') }}" class="underline">{{ $it ? 'Apri manutenzione' : 'Open maintenance' }}</a></div>@endif
             @if ($errors->any())<div class="rounded-xl border border-pm-danger/30 bg-pm-danger-subtle p-4 text-sm text-pm-danger"><ul class="list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
+            @if ($weatherReady)
+                @include('sessions.partials.weather-panel')
+            @endif
+
             <section class="pm-mobile-stat-strip grid gap-3 sm:grid-cols-3" aria-label="{{ $it ? 'Stato manutenzione' : 'Maintenance status' }}">
                 <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'Scaduti' : 'Overdue' }}</p><p class="mt-3 text-3xl font-black text-pm-danger">{{ $maintenanceSummary['overdue'] }}</p></article>
                 <article class="pm-stat-card"><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-pm-muted">{{ $it ? 'In scadenza' : 'Due soon' }}</p><p class="mt-3 text-3xl font-black text-pm-warning">{{ $maintenanceSummary['due_soon'] }}</p></article>
