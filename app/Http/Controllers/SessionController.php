@@ -11,6 +11,8 @@ use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SessionController extends Controller
@@ -45,6 +47,52 @@ class SessionController extends Controller
         $session->update($request->validate(['notes' => ['nullable', 'string', 'max:4000']]));
 
         return to_route('sessions.index')->with('status', __('Session notes updated. Recorded usage is unchanged.'));
+    }
+
+    public function storeTyreReading(Request $request, Session $session): RedirectResponse
+    {
+        Gate::authorize('update', $session);
+
+        abort_unless(Schema::hasTable('session_tyre_readings'), 503, __('Tyre readings are not available until the database has been updated.'));
+
+        if ($session->vehicle?->category !== 'kart') {
+            throw ValidationException::withMessages(['session' => __('Tyre readings are available for kart sessions.')]);
+        }
+
+        $validated = $request->validate([
+            'phase' => ['required', 'in:cold,hot'],
+            'pressure_fl' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
+            'pressure_fr' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
+            'pressure_rl' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
+            'pressure_rr' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
+            'measured_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $pressures = [];
+
+        foreach (['fl', 'fr', 'rl', 'rr'] as $corner) {
+            $value = $validated['pressure_'.$corner] ?? null;
+
+            if ($value !== null && $value !== '') {
+                $pressures[$corner] = round((float) $value, 2);
+            }
+        }
+
+        if ($pressures === []) {
+            throw ValidationException::withMessages(['pressure_fl' => __('Enter at least one tyre pressure.')]);
+        }
+
+        $session->tyreReadings()->create([
+            'phase' => $validated['phase'],
+            'pressures' => $pressures,
+            'measured_at' => $validated['measured_at'] ?? now(),
+            'notes' => $validated['notes'] ?? null,
+            'created_by' => $request->user()?->getAuthIdentifier(),
+        ]);
+
+        return to_route('sessions.index', ['recorded' => $session->getKey()])
+            ->with('status', __('Kart tyre pressures recorded without changing the session setup snapshot.'));
     }
 
     public function store(

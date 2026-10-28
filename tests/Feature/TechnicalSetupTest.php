@@ -178,3 +178,88 @@ it('does not allow a setup snapshot to be changed after capture', function () {
     expect(fn () => $snapshot->update(['name' => 'Changed']))
         ->toThrow(LogicException::class, 'Setup snapshots are immutable.');
 });
+
+it('records hot and cold kart measurements after the session without rewriting its cold setup snapshot', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $workspace = $user->workspaces()->firstOrFail();
+    $this->actingAs($user);
+
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart', 'name' => 'Kart 12']);
+    $version = createTechnicalSetupPhysicalVersion($user, $kart, 'Kart race build');
+    $setup = TechnicalSetup::create([
+        'vehicle_id' => $kart->id,
+        'name' => 'Dry cold baseline',
+        'values' => ['tyre_pressure_fl' => 0.8, 'tyre_pressure_rr' => 0.86],
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    $this->post(route('sessions.store'), [
+        'configuration_version_id' => $version->id,
+        'technical_setup_id' => $setup->id,
+        'session_type' => 'practice',
+        'started_at' => '2026-10-28 10:00:00',
+    ])->assertRedirect();
+
+    $session = Session::query()->firstOrFail();
+    $snapshot = $session->setupSnapshot()->firstOrFail();
+
+    $this->post(route('sessions.tyre-readings.store', $session), [
+        'phase' => 'hot',
+        'pressure_fl' => '0.97',
+        'pressure_rr' => '1.04',
+        'measured_at' => '2026-10-28 10:25',
+        'notes' => 'After session',
+    ])->assertRedirect(route('sessions.index', ['recorded' => $session->id]));
+
+    $this->post(route('sessions.tyre-readings.store', $session), [
+        'phase' => 'cold',
+        'pressure_fr' => '0.82',
+    ])->assertRedirect();
+
+    $this->post(route('sessions.tyre-readings.store', $session), [
+        'phase' => 'hot',
+        'pressure_fr' => '1.01',
+    ])->assertRedirect();
+
+    expect($session->tyreReadings()->count())->toBe(3)
+        ->and($session->tyreReadings()->where('phase', 'hot')->where('notes', 'After session')->firstOrFail()->pressures)->toBe(['fl' => 0.97, 'rr' => 1.04])
+        ->and($session->tyreReadings()->where('phase', 'cold')->firstOrFail()->pressures)->toBe(['fr' => 0.82])
+        ->and($snapshot->fresh()->values)->toBe(['tyre_pressure_fl' => 0.8, 'tyre_pressure_rr' => 0.86]);
+
+    $this->put(route('setups.update', $setup), ['name' => 'Updated setup', 'tyre_pressure_fl' => 1.1])->assertRedirect();
+    expect($snapshot->fresh()->values)->toBe(['tyre_pressure_fl' => 0.8, 'tyre_pressure_rr' => 0.86]);
+
+    $this->get(route('sessions.index'))->assertSuccessful()
+        ->assertSee('After session')
+        ->assertSee('0,97 bar')
+        ->assertSee('1,01 bar');
+});
+
+it('validates kart pressure measurements and blocks sessions from other workspaces', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $workspace = $owner->workspaces()->firstOrFail();
+    $this->actingAs($owner);
+
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->id, 'category' => 'kart']);
+    $version = createTechnicalSetupPhysicalVersion($owner, $kart, 'Kart pressure build');
+    $this->post(route('sessions.store'), [
+        'configuration_version_id' => $version->id,
+        'session_type' => 'test',
+        'started_at' => '2026-10-28 12:00:00',
+    ])->assertRedirect();
+
+    $session = Session::query()->firstOrFail();
+    $this->post(route('sessions.tyre-readings.store', $session), ['phase' => 'hot'])
+        ->assertSessionHasErrors('pressure_fl');
+    $this->post(route('sessions.tyre-readings.store', $session), ['phase' => 'hot', 'pressure_fl' => '11'])
+        ->assertSessionHasErrors('pressure_fl');
+    expect($session->tyreReadings()->count())->toBe(0);
+
+    $otherUser = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($otherUser)
+        ->post(route('sessions.tyre-readings.store', $session), ['phase' => 'hot', 'pressure_fl' => '0.8'])
+        ->assertNotFound();
+
+    expect($session->tyreReadings()->withoutGlobalScopes()->count())->toBe(0);
+});

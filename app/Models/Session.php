@@ -73,6 +73,12 @@ class Session extends Model
         return $this->hasOne(SetupSnapshot::class);
     }
 
+    /** @return HasMany<SessionTyreReading, $this> */
+    public function tyreReadings(): HasMany
+    {
+        return $this->hasMany(SessionTyreReading::class)->orderByDesc('measured_at')->orderByDesc('id');
+    }
+
     protected function casts(): array
     {
         return [

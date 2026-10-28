@@ -9,6 +9,7 @@ use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class SessionPageService
 {
@@ -20,16 +21,23 @@ class SessionPageService
     /** @return array<string, mixed> */
     public function data(Request $request, Workspace $workspace): array
     {
+        $tyreReadingsReady = Schema::hasTable('session_tyre_readings');
+        $relations = [
+            'vehicle',
+            'configurationVersion.configuration',
+            'circuitLayout.circuit',
+            'usageValues.metric',
+            'raceEvent',
+            'eventEntry.driver',
+            'setupSnapshot.technicalSetup',
+        ];
+
+        if ($tyreReadingsReady) {
+            $relations[] = 'tyreReadings';
+        }
+
         $sessions = Session::query()
-            ->with([
-                'vehicle',
-                'configurationVersion.configuration',
-                'circuitLayout.circuit',
-                'usageValues.metric',
-                'raceEvent',
-                'eventEntry.driver',
-                'setupSnapshot.technicalSetup',
-            ])
+            ->with($relations)
             ->latest('started_at')
             ->latest('id')
             ->paginate(25)
@@ -73,6 +81,7 @@ class SessionPageService
                 ->orderBy('name')
                 ->get(),
             'sessions' => $sessions,
+            'tyreReadingsReady' => $tyreReadingsReady,
             'defaults' => [
                 'configuration_version_id' => $defaultVersionId,
                 'technical_setup_id' => $lastSession?->setupSnapshot?->technical_setup_id,

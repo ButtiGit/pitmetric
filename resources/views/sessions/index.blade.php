@@ -94,6 +94,65 @@
                                 <p class="mt-2 text-xs text-pm-muted">{{ $it ? 'Snapshot storico senza parametri tecnici specificati.' : 'Historical snapshot with no technical parameters specified.' }}</p>
                             @endif
                         </div>
+
+                        @if ($tyreReadingsReady && $session->vehicle->category === 'kart')
+                            @php
+                                $corners = ['fl' => 'Ant. SX', 'fr' => 'Ant. DX', 'rl' => 'Post. SX', 'rr' => 'Post. DX'];
+                                $setupCold = collect($corners)->mapWithKeys(fn ($label, $corner) => [$corner => $snapshot?->values['tyre_pressure_'.$corner] ?? null])->all();
+                                $measuredCold = $session->tyreReadings->where('phase', 'cold')->reverse()->reduce(fn ($pressures, $reading) => array_replace($pressures, $reading->pressures), []);
+                                $hotPressures = $session->tyreReadings->where('phase', 'hot')->reverse()->reduce(fn ($pressures, $reading) => array_replace($pressures, $reading->pressures), []);
+                                $coldPressures = array_replace($setupCold, $measuredCold);
+                            @endphp
+                            <section class="mt-4 rounded-xl border border-pm-border bg-pm-subtle p-4">
+                                <div class="flex flex-wrap items-center justify-between gap-3">
+                                    <div><p class="text-[10px] font-black uppercase tracking-[0.12em] text-pm-accent">KART · {{ $it ? 'PNEUMATICI' : 'TYRES' }}</p><h3 class="mt-1 text-sm font-bold text-pm-text">{{ $it ? 'Pressioni a freddo / a caldo' : 'Cold / hot pressures' }}</h3></div>
+                                    @can('update', $session)
+                                        <x-crud-modal id="add-tyre-reading-{{ $session->id }}" :title="$it ? 'Registra pressioni kart' : 'Record kart pressures'" :trigger="$it ? '+ Registra pressioni' : '+ Record pressures'" trigger-class="pm-ghost-button" size="max-w-lg">
+                                            <form method="POST" action="{{ route('sessions.tyre-readings.store', $session) }}" class="grid gap-3 sm:grid-cols-2">
+                                                @csrf
+                                                <label class="grid gap-1.5 sm:col-span-2"><span class="pm-label">{{ $it ? 'Misurazione' : 'Measurement' }}</span><select class="pm-input" name="phase"><option value="hot">{{ $it ? 'A caldo · dopo la sessione' : 'Hot · after session' }}</option><option value="cold">{{ $it ? 'A freddo' : 'Cold' }}</option></select></label>
+                                                @foreach (['fl' => 'FL', 'fr' => 'FR', 'rl' => 'RL', 'rr' => 'RR'] as $corner => $label)
+                                                    <label class="grid gap-1.5"><span class="pm-label">{{ $label }} · bar</span><input class="pm-input" name="pressure_{{ $corner }}" type="number" min="0.1" max="10" step="0.01" inputmode="decimal" placeholder="—"></label>
+                                                @endforeach
+                                                <label class="grid gap-1.5 sm:col-span-2"><span class="pm-label">{{ $it ? 'Data e ora misura' : 'Measurement time' }}</span><input class="pm-input" name="measured_at" type="datetime-local" value="{{ now()->format('Y-m-d\TH:i') }}"></label>
+                                                <label class="grid gap-1.5 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note opzionali' : 'Optional notes' }}</span><textarea class="pm-input min-h-16" name="notes" maxlength="1000"></textarea></label>
+                                                <p class="text-xs text-pm-muted sm:col-span-2">{{ $it ? 'Compila solo i valori misurati. Lo snapshot del setup non cambia.' : 'Enter only measured values. The setup snapshot stays unchanged.' }}</p>
+                                                <div class="flex justify-end sm:col-span-2"><button class="pm-race-button" type="submit">{{ $it ? 'Salva misurazione' : 'Save measurement' }}</button></div>
+                                            </form>
+                                        </x-crud-modal>
+                                    @endcan
+                                </div>
+                                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                    @foreach (['cold' => $coldPressures, 'hot' => $hotPressures] as $phase => $pressures)
+                                        <div class="rounded-lg border border-pm-border bg-pm-panel p-3">
+                                            <p class="text-xs font-bold text-pm-text">{{ $phase === 'cold' ? ($it ? 'A freddo' : 'Cold') : ($it ? 'A caldo' : 'Hot') }}</p>
+                                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                                @foreach ($corners as $corner => $label)
+                                                    <div><span class="block text-[10px] text-pm-muted">{{ $label }}</span><strong class="font-mono text-sm text-pm-text">{{ isset($pressures[$corner]) ? number_format((float) $pressures[$corner], 2, ',', '.') . ' bar' : '—' }}</strong>
+                                                        @if ($phase === 'hot' && isset($pressures[$corner], $coldPressures[$corner]))
+                                                            <span class="block text-[10px] text-pm-muted">{{ sprintf('%+.2f', (float) $pressures[$corner] - (float) $coldPressures[$corner]) }} bar</span>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @if ($session->tyreReadings->isNotEmpty())
+                                    <details class="mt-3 text-xs text-pm-text-secondary"><summary class="cursor-pointer font-semibold">{{ $it ? 'Storico misurazioni' : 'Measurement history' }} · {{ $session->tyreReadings->count() }}</summary>
+                                        <ul class="mt-2 space-y-2">
+                                            @foreach ($session->tyreReadings as $reading)
+                                                <li class="rounded-lg border border-pm-border bg-pm-panel p-3">
+                                                    <strong class="text-pm-text">{{ $reading->phase === 'hot' ? ($it ? 'Caldo' : 'Hot') : ($it ? 'Freddo' : 'Cold') }} · {{ $reading->measured_at->format('d/m/Y H:i') }}</strong>
+                                                    <p class="mt-1 font-mono">@foreach ($reading->pressures as $corner => $value){{ strtoupper($corner) }} {{ number_format((float) $value, 2, ',', '.') }} bar{{ ! $loop->last ? ' · ' : '' }}@endforeach</p>
+                                                    @if ($reading->notes)<p class="mt-1 whitespace-pre-wrap">{{ $reading->notes }}</p>@endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </details>
+                                @endif
+                            </section>
+                        @endif
                     </article>
                 @empty
                     <x-pitmetric.empty-state :title="$it ? 'Nessuna sessione' : 'No sessions'" :description="$it ? 'Crea una configurazione, prepara un setup tecnico e registra la prima sessione. PitMetric collegherà automaticamente componenti, setup, utilizzo, manutenzione e costi.' : 'Create a configuration, prepare a technical setup and record the first session. PitMetric will automatically connect components, setup, usage, maintenance and costs.'" />
