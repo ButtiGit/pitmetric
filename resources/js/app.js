@@ -16,3 +16,4 @@ import './mobile-shell';
 import './championship-import';
 import './session-weather';
 import './in-pista';
+import './setup-comparison';
