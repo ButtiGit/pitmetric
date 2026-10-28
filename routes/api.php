@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\ButtiDeskBridgeController;
 use App\Http\Controllers\MobileAppController;
+use App\Http\Controllers\MobileWeatherController;
 use App\Http\Middleware\AuthenticateButtiDeskBridge;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile')->group(function (): void {
     Route::post('/login', [MobileAppController::class, 'login'])->middleware('throttle:20,1');
     Route::post('/register', [MobileAppController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('/weather', [MobileWeatherController::class, 'show'])->middleware('throttle:12,1')->name('mobile.weather');
 
     Route::middleware('mobile.auth')->group(function (): void {
         Route::get('/me', [MobileAppController::class, 'me']);
