@@ -460,3 +460,175 @@ it('protects manual weather observations from other workspaces and read-only use
 
     expect($session->weatherObservations()->count())->toBe(0);
 });
+
+it('retrieves historical modeled weather for the actual session hour separately from forecasts and trackside measurements', function () {
+    app()->setLocale('it');
+    Cache::flush();
+    Http::preventStrayRequests();
+    Http::fake([
+        'power.larc.nasa.gov/*' => Http::response([
+            'properties' => ['parameter' => [
+                'T2M' => ['2026100110' => 18.4],
+                'RH2M' => ['2026100110' => 62.2],
+                'WS10M' => ['2026100110' => 3.2],
+                'PS' => ['2026100110' => 101.46],
+                'PRECTOT' => ['2026100110' => 0.4],
+            ]],
+        ]),
+    ]);
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+    $session->update(['started_at' => '2026-10-01 10:42:00']);
+    $circuit = Circuit::create(['name' => 'PN Rent Historical Circuit', 'latitude' => 44.391234, 'longitude' => 7.547891]);
+    $layout = $circuit->layouts()->create(['name' => 'Circuit for history', 'length_meters' => 950]);
+    $session->update(['circuit_layout_id' => $layout->id]);
+    $session->setAttribute('weather_snapshot', [
+        'provider' => 'met_norway',
+        'latitude' => 40.0,
+        'longitude' => 9.0,
+        'air_temperature_c' => 22.5,
+        'forecast_at' => '2026-10-28T12:00:00Z',
+        'captured_at' => '2026-10-28T11:55:00Z',
+    ]);
+    $session->save();
+    $session->weatherObservations()->create([
+        'values' => ['track_temperature_c' => 34.6],
+        'measured_at' => '2026-10-01 10:40:00',
+        'notes' => 'Pista asciutta',
+        'created_by' => $user->id,
+    ]);
+    $forecastBefore = $session->fresh()->weather_snapshot;
+
+    $this->post(route('sessions.weather-history.store', $session), ['page' => 1])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('sessions.index', [
+            'weather_session' => $session->id,
+            'page' => 1,
+        ]).'#session-weather');
+
+    $historical = $session->fresh()->historical_weather_snapshot;
+    expect($historical['provider'])->toBe('nasa_power')
+        ->and($historical['data_type'])->toBe('historical_reanalysis')
+        ->and($historical['valid_at'])->toBe('2026-10-01T10:00:00+00:00')
+        ->and($historical['session_started_at'])->toBe('2026-10-01T10:42:00+00:00')
+        ->and($historical['location_source'])->toBe('circuit')
+        ->and($historical['latitude'])->toBe(44.3912)
+        ->and($historical['longitude'])->toBe(7.5479)
+        ->and($historical['air_temperature_c'])->toBe(18.4)
+        ->and($historical['humidity_pct'])->toBe(62.2)
+        ->and($historical['wind_speed_kmh'])->toBe(11.5)
+        ->and($historical['pressure_hpa'])->toBe(1014.6)
+        ->and($historical['precipitation_mm'])->toBe(0.4)
+        ->and($historical)->not->toHaveKey('track_temperature_c')
+        ->and($session->fresh()->weather_snapshot)->toBe($forecastBefore)
+        ->and($session->weatherObservations()->firstOrFail()->values['track_temperature_c'])->toBe(34.6);
+
+    Http::assertSent(fn ($request): bool => str_contains($request->url(), 'power.larc.nasa.gov/api/temporal/hourly/point')
+        && str_contains($request->url(), 'latitude=44.3912')
+        && str_contains($request->url(), 'longitude=7.5479')
+        && str_contains($request->url(), 'start=20261001')
+        && str_contains($request->url(), 'end=20261001'));
+
+    $this->get(route('sessions.index', ['weather_session' => $session->id]))
+        ->assertSuccessful()
+        ->assertSee('STORICO ORARIO · NASA POWER')
+        ->assertSee('DATI STORICI DA MODELLO')
+        ->assertSee('18,4 °C')
+        ->assertSee('34,6 °C')
+        ->assertSee('Questo bollettino non è riferito all’ora della sessione')
+        ->assertSee('Pista asciutta');
+});
+
+it('uses the stored session location for historical weather when no circuit coordinates exist', function () {
+    Cache::flush();
+    Http::preventStrayRequests();
+    Http::fake(['power.larc.nasa.gov/*' => Http::response([
+        'properties' => ['parameter' => [
+            'T2M' => ['2026100108' => 15.2],
+            'RH2M' => ['2026100108' => -999],
+            'WS10M' => ['2026100108' => -999],
+            'PS' => ['2026100108' => -999],
+            'PRECTOT' => ['2026100108' => -999],
+        ]],
+    ])]);
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+    $session->update(['started_at' => '2026-10-01 08:55:00']);
+    $session->setAttribute('weather_snapshot', ['provider' => 'met_norway', 'latitude' => 45.1235, 'longitude' => 8.1157]);
+    $session->save();
+
+    $this->post(route('sessions.weather-history.store', $session))->assertSessionHasNoErrors();
+    $history = $session->fresh()->historical_weather_snapshot;
+    expect($history['location_source'])->toBe('saved_forecast')
+        ->and($history['air_temperature_c'])->toBe(15.2)
+        ->and($history['humidity_pct'])->toBeNull()
+        ->and($history['wind_speed_kmh'])->toBeNull()
+        ->and($history['precipitation_mm'])->toBeNull();
+});
+
+it('does not claim historical data for recent sessions or sessions without a known location', function () {
+    Http::preventStrayRequests();
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+
+    $this->post(route('sessions.weather-history.store', $session))->assertSessionHasErrors('history');
+
+    $session->update(['started_at' => '2026-10-01 10:42:00']);
+    $this->post(route('sessions.weather-history.store', $session))->assertSessionHasErrors('history');
+
+    expect($session->fresh()->historical_weather_snapshot)->toBeNull();
+    Http::assertNothingSent();
+});
+
+it('preserves historical readings if the archive has no data for the session hour', function () {
+    Cache::flush();
+    Http::preventStrayRequests();
+    Http::fake(['power.larc.nasa.gov/*' => Http::response(['properties' => ['parameter' => ['T2M' => ['2026100110' => -999]]]])]);
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+    $session->update(['started_at' => '2026-10-01 10:42:00']);
+    $session->setAttribute('weather_snapshot', ['provider' => 'met_norway', 'latitude' => 44.2, 'longitude' => 7.5]);
+    $session->setAttribute('historical_weather_snapshot', [
+        'provider' => 'nasa_power',
+        'air_temperature_c' => 18.2,
+        'valid_at' => '2026-10-01T10:00:00Z',
+    ]);
+    $session->save();
+
+    $this->post(route('sessions.weather-history.store', $session))->assertSessionHasErrors('history');
+    expect($session->fresh()->historical_weather_snapshot['air_temperature_c'])->toBe(18.2);
+});
+
+it('isolates historical weather imports by workspace and session update permissions', function () {
+    Http::preventStrayRequests();
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($owner);
+    $session = weatherTestSession($owner);
+    $workspace = $owner->workspaces()->firstOrFail();
+
+    $outsider = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($outsider)->post(route('sessions.weather-history.store', $session))->assertNotFound();
+
+    $viewer = User::factory()->create();
+    $viewer->forceFill(['database_access_enabled' => true])->save();
+    DB::table('workspace_user')->insert([
+        'workspace_id' => $workspace->id,
+        'user_id' => $viewer->id,
+        'role' => 'viewer',
+        'status' => 'active',
+        'joined_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($viewer)->post(route('sessions.weather-history.store', $session))->assertForbidden();
+    expect($session->fresh()->historical_weather_snapshot)->toBeNull();
+    Http::assertNothingSent();
+});

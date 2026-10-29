@@ -121,6 +121,7 @@ class Session extends Model
             'distance_override_meters' => 'integer',
             'finalized_at' => 'datetime',
             'weather_snapshot' => 'array',
+            'historical_weather_snapshot' => 'array',
         ];
     }
 }

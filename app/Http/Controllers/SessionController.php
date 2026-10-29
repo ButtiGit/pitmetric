@@ -6,6 +6,7 @@ use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\User;
 use App\Services\RecordSessionService;
+use App\Services\SessionHistoricalWeatherService;
 use App\Services\SessionPageService;
 use App\Services\SessionWeatherService;
 use App\Services\WorkspaceContext;
@@ -232,6 +233,67 @@ class SessionController extends Controller
         ])->with('status', $isReset
             ? __('Manual weather readings cleared. The history and MET Norway forecast were preserved.')
             : __('Operator weather observations saved without changing the MET Norway forecast.'));
+    }
+
+    public function storeHistoricalWeather(Request $request, Session $session, SessionHistoricalWeatherService $historyService): RedirectResponse
+    {
+        Gate::authorize('update', $session);
+
+        abort_unless(Schema::hasColumn('track_sessions', 'historical_weather_snapshot'), 503, __('Historical weather is not available until the database has been updated.'));
+
+        $validated = $request->validate([
+            'page' => ['nullable', 'integer', 'min:1', 'max:10000'],
+        ]);
+
+        $startedAt = Carbon::parse((string) $session->started_at);
+
+        if ($startedAt->greaterThan(now()->subDays(3))
+            || $startedAt->lessThan(Carbon::parse('2001-01-01 00:00:00', 'UTC'))) {
+            throw ValidationException::withMessages([
+                'history' => __('Historical model data is available for sessions from 2001, at least three days after the session.'),
+            ]);
+        }
+
+        $circuit = $session->weatherCircuit();
+        $weatherSnapshot = $session->getAttribute('weather_snapshot');
+        $forecast = is_array($weatherSnapshot) ? $weatherSnapshot : [];
+
+        if ($circuit !== null) {
+            $latitude = $circuit->latitude;
+            $longitude = $circuit->longitude;
+            $locationSource = 'circuit';
+        } else {
+            $latitude = $forecast['latitude'] ?? null;
+            $longitude = $forecast['longitude'] ?? null;
+            $locationSource = 'saved_forecast';
+        }
+
+        if (is_numeric($latitude) === false || is_numeric($longitude) === false
+            || abs((float) $latitude) > 90 || abs((float) $longitude) > 180) {
+            throw ValidationException::withMessages([
+                'history' => __('Save circuit coordinates or a session forecast with a valid location before requesting historical weather.'),
+            ]);
+        }
+
+        try {
+            $snapshot = $historyService->capture((float) $latitude, (float) $longitude, $startedAt);
+        } catch (ConnectionException|RuntimeException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'history' => __('Historical model data is not available for that session yet. Try again later; existing readings are unchanged.'),
+            ]);
+        }
+
+        $snapshot['location_source'] = $locationSource;
+        $session->setAttribute('historical_weather_snapshot', $snapshot);
+        $session->save();
+
+        return to_route('sessions.index', [
+            'weather_session' => $session->getKey(),
+            'page' => $validated['page'] ?? 1,
+        ])->withFragment('session-weather')
+            ->with('status', __('Historical hourly weather retrieved and saved separately from forecasts and operator observations.'));
     }
 
     public function store(
