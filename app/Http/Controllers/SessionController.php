@@ -118,19 +118,39 @@ class SessionController extends Controller
         abort_unless(Schema::hasColumn('track_sessions', 'weather_snapshot'), 503, __('Session weather is not available until the database has been updated.'));
 
         $validated = $request->validate([
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'source' => ['nullable', 'in:circuit,gps,manual'],
+            'latitude' => ['required_unless:source,circuit', 'numeric', 'between:-90,90'],
+            'longitude' => ['required_unless:source,circuit', 'numeric', 'between:-180,180'],
             'page' => ['nullable', 'integer', 'min:1', 'max:10000'],
         ]);
 
+        $source = $validated['source'] ?? 'manual';
+        $circuit = $source === 'circuit' ? $session->weatherCircuit() : null;
+
+        if ($source === 'circuit' && $circuit === null) {
+            throw ValidationException::withMessages([
+                'weather' => __('The selected circuit has no saved coordinates. Use device GPS or enter them manually.'),
+            ]);
+        }
+
         try {
-            $snapshot = $weatherService->capture((float) $validated['latitude'], (float) $validated['longitude']);
+            $snapshot = $weatherService->capture(
+                (float) ($circuit->latitude ?? $validated['latitude']),
+                (float) ($circuit->longitude ?? $validated['longitude']),
+            );
         } catch (ConnectionException|RuntimeException $exception) {
             report($exception);
 
             throw ValidationException::withMessages([
                 'weather' => __('The weather service is temporarily unavailable. Try again in a moment.'),
             ]);
+        }
+
+        $snapshot['location_source'] = $source;
+
+        if ($circuit !== null) {
+            $snapshot['circuit_id'] = $circuit->getKey();
+            $snapshot['circuit_name'] = $circuit->name;
         }
 
         $session->setAttribute('weather_snapshot', $snapshot);

@@ -28,7 +28,7 @@ class SessionPageService
             'configurationVersion.configuration',
             'circuitLayout.circuit',
             'usageValues.metric',
-            'raceEvent',
+            'raceEvent.circuitLayout.circuit',
             'eventEntry.driver',
             'setupSnapshot.technicalSetup',
         ];
