@@ -37,6 +37,7 @@ export default defineConfig({
         env: {
             PITMETRIC_EDITOR_EMAILS: 'e2e@pitmetric.test,e2e-f1@pitmetric.test',
             MAIL_MAILER: 'array',
+            APP_ENV: 'testing',
         },
         reuseExistingServer: !process.env.CI,
         timeout: 30_000,

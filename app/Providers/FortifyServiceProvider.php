@@ -65,7 +65,9 @@ class FortifyServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            // Browser E2E scenarios repeatedly sign in with the same fixture account.
+            // Keep the production limit unchanged while avoiding test-only throttling.
+            return Limit::perMinute(app()->environment('testing') ? 100 : 5)->by($throttleKey);
         });
 
     }
