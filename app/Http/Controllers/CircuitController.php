@@ -54,6 +54,8 @@ class CircuitController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120', Rule::unique('circuits', 'name')->where('workspace_id', $workspace->getKey())],
             'country' => ['nullable', 'string', 'max:80'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'layout_name' => ['required', 'string', 'max:120'],
             'length_meters' => ['required', 'integer', 'min:1', 'max:100000'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -64,6 +66,8 @@ class CircuitController extends Controller
                 'name' => $validated['name'],
                 'country' => $validated['country'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
             ]);
 
             $circuit->layouts()->create([
@@ -82,6 +86,8 @@ class CircuitController extends Controller
         $circuit->update($request->validate([
             'name' => ['required', 'string', 'max:120', Rule::unique('circuits', 'name')->where('workspace_id', $circuit->workspace_id)->ignore($circuit)],
             'country' => ['nullable', 'string', 'max:80'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]));
 
