@@ -133,6 +133,76 @@ test('the mechanic records a session without leaving the pit screen or changing 
     expect(TimingLap::query()->where('session_id', $session->getKey())->count())->toBe(2);
 });
 
+test('pit adjustments accept independent geometry units, sides and axle measures without changing the initial snapshot', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = setUpInPistaKart($user)['kart'];
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+    $session = Session::query()->sole();
+
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), [
+        'camber_mode' => 'notches',
+        'caster_mode' => 'degrees',
+        'geometry_side_mode' => 'separate',
+        'rear_width_mode' => 'both',
+        'camber_front_left_position' => '2',
+        'camber_front_right_position' => '3',
+        'caster_front_left_deg' => 8.5,
+        'caster_front_right_deg' => 9.5,
+        'track_width_rear_mm' => 1380,
+        'rear_axle_length_mm' => 1030,
+        'camber_front_deg' => -3,
+    ])->assertSuccessful()
+        ->assertJsonPath('geometry_summary.camber', 'SX 2 tacche · DX 3 tacche')
+        ->assertJsonPath('geometry_summary.caster', 'SX 8.5 ° · DX 9.5 °')
+        ->assertJsonPath('geometry_summary.rear_width', 'Carreggiata 1380 mm · Assale 1030 mm');
+
+    $captureValues = TrackCapture::query()->where('kind', 'setup_adjustment')->sole()->payload['values'];
+    expect($captureValues)->toMatchArray([
+        'camber_mode' => 'notches', 'caster_mode' => 'degrees', 'geometry_side_mode' => 'separate',
+        'rear_width_mode' => 'both', 'camber_front_left_position' => '2', 'camber_front_right_position' => '3',
+        'caster_front_left_deg' => 8.5, 'caster_front_right_deg' => 9.5,
+        'track_width_rear_mm' => 1380, 'rear_axle_length_mm' => 1030,
+    ])->not->toHaveKey('camber_front_deg')
+        ->and($session->setupSnapshot->fresh()->values['camber_front_deg'])->toEqual(-1);
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()
+        ->assertSee('SX 2 tacche · DX 3 tacche')
+        ->assertSee('Assale 1030 mm');
+
+    $this->post(route('pit-mode.sessions.finish', $session))->assertSessionHasNoErrors();
+
+    $recent = app(InPistaSessionService::class)->latestUsedSettings($kart);
+    expect($recent['values'])->toMatchArray([
+        'camber_mode' => 'notches',
+        'geometry_side_mode' => 'separate',
+        'camber_front_left_position' => '2',
+        'camber_front_right_position' => '3',
+        'rear_width_mode' => 'both',
+        'rear_axle_length_mm' => 1030,
+    ]);
+});
+
+test('pit geometry validation rejects invalid units and out of range side readings', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = setUpInPistaKart($user)['kart'];
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'test']);
+    $session = Session::query()->sole();
+
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), [
+        'camber_mode' => 'imperial',
+        'geometry_side_mode' => 'separate',
+        'camber_front_left_deg' => -22,
+        'rear_axle_length_mm' => -1,
+    ])->assertUnprocessable()->assertJsonValidationErrors(['camber_mode', 'camber_front_left_deg', 'rear_axle_length_mm']);
+
+    expect(TrackCapture::query()->where('kind', 'setup_adjustment')->count())->toBe(0);
+});
+
 test('manual lap corrections preserve both original values and operator history even after session closure', function () {
     $operator = User::factory()->withDatabaseAccess()->create();
     $this->actingAs($operator);
@@ -229,7 +299,7 @@ test('the session overview displays the fastest valid lap and setup with all rec
         ->assertOk()
         ->assertSee('data-in-pista-best-lap>0:50.000</strong>', false)
         ->assertSee('Giro #4 · Importato')
-        ->assertSee('data-in-pista-setup-field="camber_front_deg">-1.7 °</strong>', false)
+        ->assertSee('data-in-pista-geometry-summary="camber">-1.7 °</strong>', false)
         ->assertSee('data-in-pista-setup-field="final_drive">12/73</strong>', false)
         ->assertSee('1 regolazione registrata')
         ->assertSee('non sono associati automaticamente a un singolo giro');

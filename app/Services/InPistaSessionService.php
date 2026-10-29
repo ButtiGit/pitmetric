@@ -18,10 +18,6 @@ use Illuminate\Validation\ValidationException;
 class InPistaSessionService
 {
     private const LAST_USED_FIELDS = [
-        'camber_front_deg',
-        'caster_front_deg',
-        'track_width_front_mm',
-        'track_width_rear_mm',
         'pinion_teeth',
         'crown_teeth',
         'final_drive',
@@ -72,11 +68,7 @@ class InPistaSessionService
             ->where('workspace_id', $kart->workspace_id)
             ->where('vehicle_id', $kart->getKey())
             ->where('status', 'finalized')
-            ->with([
-                'setupSnapshot',
-                'trackCaptures' => fn ($query) => $query->where('kind', 'setup_adjustment')
-                    ->orderBy('occurred_at')->orderBy('id'),
-            ])
+            ->with('setupSnapshot')
             ->latest('started_at')
             ->latest('id')
             ->first();
@@ -85,24 +77,8 @@ class InPistaSessionService
             return null;
         }
 
-        $snapshotValues = $lastSession->setupSnapshot->values ?? [];
-        $values = is_array($snapshotValues) ? $snapshotValues : [];
-
-        foreach ($lastSession->trackCaptures as $capture) {
-            $adjustments = data_get($capture->payload, 'values', []);
-
-            if (! is_array($adjustments)) {
-                continue;
-            }
-
-            foreach ($adjustments as $field => $value) {
-                if (is_string($field) && array_key_exists($field, TechnicalSetup::FIELD_DEFINITIONS) && is_scalar($value)) {
-                    $values[$field] = $value;
-                }
-            }
-        }
-
-        $recentValues = [];
+        $values = $this->currentSetupValues($lastSession);
+        $recentValues = TechnicalSetup::selectedKartGeometry($values);
 
         foreach (self::LAST_USED_FIELDS as $field) {
             $value = $values[$field] ?? null;
@@ -122,6 +98,27 @@ class InPistaSessionService
             'setup_name' => $lastSession->setupSnapshot->name ?? __('Unspecified setup'),
             'values' => $recentValues,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    public function currentSetupValues(Session $session): array
+    {
+        $session->loadMissing('setupSnapshot');
+        $snapshotValues = $session->setupSnapshot->values ?? [];
+        $values = is_array($snapshotValues) ? $snapshotValues : [];
+
+        $captures = $session->trackCaptures()->where('kind', 'setup_adjustment')
+            ->orderBy('occurred_at')->orderBy('id')->get(['id', 'payload']);
+
+        foreach ($captures as $capture) {
+            foreach ((array) data_get($capture->payload, 'values', []) as $field => $value) {
+                if (is_string($field) && array_key_exists($field, TechnicalSetup::FIELD_DEFINITIONS) && is_scalar($value)) {
+                    $values[$field] = $value;
+                }
+            }
+        }
+
+        return $values;
     }
 
     public function start(User $user, Vehicle $kart, ConfigurationVersion $version, ?EventEntry $entry, string $type): Session

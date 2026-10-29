@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Session;
+use App\Models\TechnicalSetup;
 use App\Models\TimingLap;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -115,19 +116,16 @@ class InPistaController extends Controller
     {
         Gate::authorize('update', $session);
         $validated = $request->validate([
-            'camber_front_deg' => ['nullable', 'numeric', 'between:-15,15'],
-            'caster_front_deg' => ['nullable', 'numeric', 'between:-15,30'],
-            'track_width_front_mm' => ['nullable', 'integer', 'between:500,3000'],
-            'track_width_rear_mm' => ['nullable', 'integer', 'between:500,3000'],
+            ...TechnicalSetup::kartGeometryRules(),
             'pinion_teeth' => ['nullable', 'required_with:crown_teeth', 'integer', 'between:1,200'],
             'crown_teeth' => ['nullable', 'required_with:pinion_teeth', 'integer', 'between:1,200'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $values = [];
-        foreach ($validated as $field => $value) {
-            if ($field !== 'notes' && $value !== null && $value !== '') {
-                $values[$field] = $value;
+        $values = TechnicalSetup::selectedKartGeometry($validated);
+        foreach (['pinion_teeth', 'crown_teeth'] as $field) {
+            if (isset($validated[$field]) && $validated[$field] !== '') {
+                $values[$field] = $validated[$field];
             }
         }
         if ($values === []) {
@@ -141,7 +139,15 @@ class InPistaController extends Controller
 
         $capture = $service->addCapture($session, $this->user($request), 'setup_adjustment', ['values' => $values], $validated['notes'] ?? null);
 
-        return $this->saved($request, $session, __('Session setup adjustment recorded.'), 'Regolazione', implode(' · ', array_keys($values)), Carbon::parse($capture->occurred_at)->format('H:i'));
+        return $this->saved(
+            $request,
+            $session,
+            __('Session setup adjustment recorded.'),
+            'Regolazione',
+            implode(' · ', array_keys($values)),
+            Carbon::parse($capture->occurred_at)->format('H:i'),
+            ['geometry_summary' => TechnicalSetup::kartGeometrySummary($service->currentSetupValues($session))],
+        );
     }
 
     public function note(Request $request, Session $session, InPistaSessionService $service): JsonResponse|RedirectResponse
@@ -196,7 +202,8 @@ class InPistaController extends Controller
         ];
     }
 
-    private function saved(Request $request, Session $session, string $message, string $kind, string $summary, ?string $time = null): JsonResponse|RedirectResponse
+    /** @param  array<string, mixed>  $extra */
+    private function saved(Request $request, Session $session, string $message, string $kind, string $summary, ?string $time = null, array $extra = []): JsonResponse|RedirectResponse
     {
         if ($request->expectsJson()) {
             return response()->json([
@@ -206,6 +213,7 @@ class InPistaController extends Controller
                     'summary' => $summary,
                     'time' => $time ?? now()->format('H:i'),
                 ],
+                ...$extra,
             ]);
         }
 
