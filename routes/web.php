@@ -199,6 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/sessions/{session}', [SessionController::class, 'update'])->name('sessions.update');
             Route::post('/sessions/{session}/tyre-readings', [SessionController::class, 'storeTyreReading'])->name('sessions.tyre-readings.store');
             Route::post('/sessions/{session}/weather', [SessionController::class, 'storeWeather'])->middleware('throttle:6,1')->name('sessions.weather.store');
+            Route::post('/sessions/{session}/weather-observations', [SessionController::class, 'storeWeatherObservation'])->middleware('throttle:30,1')->name('sessions.weather-observations.store');
             Route::delete('/telemetry/{telemetryImport}', [TelemetryController::class, 'destroy'])->name('telemetry.destroy');
 
             Route::post('/events', [RaceEventController::class, 'store'])->name('events.store');
