@@ -14,6 +14,7 @@ use App\Models\TrackCapture;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\CreateConfigurationVersionService;
+use App\Services\InPistaSessionService;
 use Illuminate\Support\Facades\Http;
 
 function setUpInPistaKart(User $operator): array
@@ -128,6 +129,87 @@ test('the mechanic records a session without leaving the pit screen or changing 
     $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '51.123'])
         ->assertUnprocessable();
     expect(TimingLap::query()->where('session_id', $session->getKey())->count())->toBe(2);
+});
+
+test('the pit screen suggests the finalized kart setup including its last recorded adjustments', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    ['kart' => $kart, 'setup' => $setup] = setUpInPistaKart($user);
+
+    expect(app(InPistaSessionService::class)->latestUsedSettings($kart))->toBeNull();
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+    $session = Session::query()->firstOrFail();
+
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), [
+        'camber_front_deg' => -1.7, 'caster_front_deg' => 9.5,
+        'pinion_teeth' => 12, 'crown_teeth' => 73,
+    ])->assertSuccessful();
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), [
+        'camber_front_deg' => -1.3,
+    ])->assertSuccessful();
+
+    expect(app(InPistaSessionService::class)->latestUsedSettings($kart))->toBeNull();
+
+    $this->post(route('pit-mode.sessions.finish', $session))->assertSessionHasNoErrors();
+
+    $recommended = app(InPistaSessionService::class)->latestUsedSettings($kart);
+    expect($recommended['session_id'])->toBe($session->getKey())
+        ->and($recommended['setup_name'])->toBe($setup->name)
+        ->and($recommended['values'])->toMatchArray([
+            'camber_front_deg' => -1.3,
+            'caster_front_deg' => 9.5,
+            'pinion_teeth' => 12,
+            'crown_teeth' => 73,
+            'final_drive' => '12/73',
+        ]);
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()
+        ->assertSee('Ultime regolazioni utilizzate')
+        ->assertSee('12/73');
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()
+        ->assertSee('Riprendi valori')
+        ->assertSee('data-in-pista-recommended-field="camber_front_deg" value="-1.3"', false)
+        ->assertSee('data-in-pista-recommended-field="crown_teeth" value="73"', false);
+
+    expect($session->setupSnapshot->fresh()->values['camber_front_deg'])->toEqual(-1.0);
+});
+
+test('latest kart settings exclude drafts, other karts and other workspaces', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($owner);
+    $kart = setUpInPistaKart($owner)['kart'];
+    $otherKart = Vehicle::factory()->create([
+        'workspace_id' => $owner->workspaces()->firstOrFail()->getKey(),
+        'category' => 'kart',
+        'name' => 'Another kart in the same team',
+    ]);
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'test'])
+        ->assertSessionHasNoErrors();
+    $draft = Session::query()->firstOrFail();
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $draft), ['caster_front_deg' => 6.5])
+        ->assertSuccessful();
+
+    expect(app(InPistaSessionService::class)->latestUsedSettings($kart))->toBeNull()
+        ->and(app(InPistaSessionService::class)->latestUsedSettings($otherKart))->toBeNull();
+
+    $this->post(route('pit-mode.sessions.finish', $draft))->assertSessionHasNoErrors();
+    expect(app(InPistaSessionService::class)->latestUsedSettings($otherKart))->toBeNull();
+
+    $outsider = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($outsider);
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()
+        ->assertDontSee('Ultime regolazioni utilizzate')
+        ->assertDontSee('Another kart in the same team');
 });
 
 test('GPS forecast can be saved from the pit screen through the existing session endpoint', function () {

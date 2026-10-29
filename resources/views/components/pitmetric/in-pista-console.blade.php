@@ -1,7 +1,7 @@
 @props([
     'karts', 'kart', 'trackSession', 'activeSession', 'eventEntry',
     'configurationVersion', 'laps', 'lapCount', 'sessionCaptures', 'coldReading',
-    'hotReading', 'setupValues',
+    'hotReading', 'setupValues', 'lastUsedSettings',
 ])
 
 @php
@@ -15,6 +15,15 @@
         'caster_front_deg' => ['Caster', '°'],
         'track_width_front_mm' => ['Carreggiata ant.', 'mm'],
         'track_width_rear_mm' => ['Carreggiata post.', 'mm'],
+        'final_drive' => ['Rapporto', ''],
+    ];
+    $lastUsedFields = [
+        'camber_front_deg' => ['Camber ant.', '°'],
+        'caster_front_deg' => ['Caster ant.', '°'],
+        'track_width_front_mm' => ['Carreggiata ant.', 'mm'],
+        'track_width_rear_mm' => ['Carreggiata post.', 'mm'],
+        'pinion_teeth' => ['Pignone', 'denti'],
+        'crown_teeth' => ['Corona', 'denti'],
         'final_drive' => ['Rapporto', ''],
     ];
 @endphp
@@ -83,6 +92,30 @@
                     <a href="{{ route('configurations.index') }}" class="in-pista-primary in-pista-link-button">Prepara la configurazione</a>
                 @endif
             </section>
+        @endif
+
+        @if ($lastUsedSettings)
+            <details class="in-pista-recent in-pista-panel" data-in-pista-latest>
+                <summary>
+                    <div>
+                        <span>RIFERIMENTO PER IL KART</span>
+                        <strong>Ultime regolazioni utilizzate</strong>
+                        <small>{{ $lastUsedSettings['session_date'] }} · {{ $lastUsedSettings['setup_name'] }}</small>
+                    </div>
+                    <span class="in-pista-recent-expand" aria-hidden="true">Dettagli</span>
+                </summary>
+                <div class="in-pista-recent-body">
+                    <div class="in-pista-recent-grid">
+                        @foreach ($lastUsedSettings['values'] as $field => $value)
+                            <div>
+                                <span>{{ $lastUsedFields[$field][0] }}</span>
+                                <strong>{{ $value }}{{ $lastUsedFields[$field][1] ? ' '.$lastUsedFields[$field][1] : '' }}</strong>
+                            </div>
+                        @endforeach
+                    </div>
+                    <p>Valori ricavati dall'ultima sessione conclusa, incluse le regolazioni registrate durante la prova. Sono un riferimento, non un nuovo salvataggio.</p>
+                </div>
+            </details>
         @endif
 
         @if ($trackSession)
@@ -192,6 +225,18 @@
             <p class="in-pista-dialog-hint">Compila solo i valori modificati. Verranno registrati nello storico della sessione senza sovrascrivere lo snapshot iniziale.</p>
             <form method="POST" action="{{ route('pit-mode.sessions.adjustments.store', $trackSession) }}" data-in-pista-form>
                 @csrf
+                @if ($lastUsedSettings)
+                    <div class="in-pista-last-fill">
+                        <div><strong>Riparti dall'ultima uscita</strong><span>{{ $lastUsedSettings['session_date'] }} · {{ $lastUsedSettings['setup_name'] }}</span></div>
+                        <button type="button" data-in-pista-apply-last>Riprendi valori</button>
+                        <p>I valori saranno inseriti nei campi sottostanti. Controllali prima di registrarli.</p>
+                        @foreach ($lastUsedSettings['values'] as $field => $value)
+                            @if ($field !== 'final_drive' && (! in_array($field, ['pinion_teeth', 'crown_teeth'], true) || isset($lastUsedSettings['values']['pinion_teeth'], $lastUsedSettings['values']['crown_teeth'])))
+                                <input type="hidden" data-in-pista-recommended-field="{{ $field }}" value="{{ $value }}">
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
                 <div class="in-pista-tyre-grid">
                     <label><span>Camber ant. · °</span><input name="camber_front_deg" type="number" inputmode="decimal" min="-15" max="15" step="0.1" placeholder="{{ $setupValues['camber_front_deg'] ?? '0' }}"></label>
                     <label><span>Caster ant. · °</span><input name="caster_front_deg" type="number" inputmode="decimal" min="-15" max="30" step="0.1" placeholder="{{ $setupValues['caster_front_deg'] ?? '0' }}"></label>
