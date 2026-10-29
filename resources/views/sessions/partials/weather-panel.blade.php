@@ -16,6 +16,13 @@
         default => $it ? 'Nuvoloso / variabile' : 'Cloudy / variable',
     };
     $capturedAt = isset($weather['captured_at']) ? \Illuminate\Support\Carbon::parse($weather['captured_at'])->timezone('Europe/Rome')->format('d/m/Y H:i') : null;
+    $weatherCircuit = $weatherSession?->weatherCircuit();
+    $weatherLocationLabel = match ($weather['location_source'] ?? null) {
+        'circuit' => ($it ? 'Circuito' : 'Circuit').' · '.($weather['circuit_name'] ?? ($it ? 'Posizione salvata' : 'Saved location')),
+        'gps' => $it ? 'GPS del dispositivo' : 'Device GPS',
+        'manual' => $it ? 'Coordinate manuali' : 'Manual coordinates',
+        default => $it ? 'Posizione registrata' : 'Saved location',
+    };
 @endphp
 
 <section id="session-weather" class="pm-weather-dashboard relative isolate scroll-mt-20 overflow-hidden p-5 text-white sm:p-7" data-sky="{{ $sky }}" aria-labelledby="session-weather-title">
@@ -26,9 +33,9 @@
                 <div class="min-w-0">
                     <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">PITMETRIC / {{ $it ? 'METEO PISTA' : 'TRACK WEATHER' }}</p>
                     <h2 id="session-weather-title" class="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">{{ $it ? 'Condizioni in pista' : 'Track conditions' }}</h2>
-                    <p class="mt-1 text-xs text-white/70">{{ $it ? 'Stima meteorologica acquisita tramite posizione GPS' : 'Weather forecast captured from GPS position' }}</p>
+                    <p class="mt-1 text-xs text-white/70">{{ $it ? 'Previsioni riferite al circuito o alla posizione scelta' : 'Weather for the circuit or chosen location' }}</p>
                 </div>
-                <div class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-white/90">GPS · MET NORWAY</div>
+                <div class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-white/90">MET NORWAY</div>
             </div>
 
             @if ($sessions->isNotEmpty())
@@ -53,14 +60,33 @@
                 <div class="min-w-0">
                     <p class="text-lg font-semibold text-white">{{ $weather ? $condition : ($it ? 'Nessuna rilevazione' : 'No forecast saved') }}</p>
                     <p class="mt-1 text-xs leading-5 text-white/75">{{ $weather ? ($it ? 'Ultima acquisizione · ' : 'Captured · ').$capturedAt : ($it ? 'Scegli una sessione e rileva il meteo.' : 'Choose a session and capture its weather.') }}</p>
+                    @if ($weather)
+                        <p class="mt-1 text-xs font-semibold leading-5 text-white/85">{{ $it ? 'Origine posizione:' : 'Location source:' }} {{ $weatherLocationLabel }}</p>
+                    @endif
                 </div>
             </div>
 
             @if ($weatherSession)
                 @can('update', $weatherSession)
                     <div class="flex flex-col gap-3">
+                        @if ($weatherCircuit)
+                            <div class="pm-weather-glass grid gap-3 rounded-2xl p-3.5 sm:p-4">
+                                <div class="min-w-0">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">{{ $it ? 'Posizione consigliata' : 'Recommended location' }}</p>
+                                    <p class="mt-1 break-words text-sm font-bold text-white">{{ $weatherCircuit->name }}</p>
+                                    <p class="mt-1 text-xs text-white/75">{{ number_format((float) $weatherCircuit->latitude, 4, '.', '') }}°, {{ number_format((float) $weatherCircuit->longitude, 4, '.', '') }}°</p>
+                                </div>
+                                <form method="POST" action="{{ route('sessions.weather.store', $weatherSession) }}">
+                                    @csrf
+                                    <input type="hidden" name="source" value="circuit">
+                                    <input type="hidden" name="page" value="{{ $sessions->currentPage() }}">
+                                    <button type="submit" class="pm-weather-action min-h-12 w-full rounded-2xl px-5 py-3 text-sm font-bold sm:w-auto">{{ $weather ? ($it ? 'Aggiorna dal circuito' : 'Update from circuit') : ($it ? 'Rileva meteo del circuito' : 'Get circuit weather') }}</button>
+                                </form>
+                            </div>
+                        @endif
                         <form method="POST" action="{{ route('sessions.weather.store', $weatherSession) }}" data-pm-weather-location class="flex flex-wrap items-start gap-3">
                             @csrf
+                            <input type="hidden" name="source" value="gps">
                             <input type="hidden" name="latitude">
                             <input type="hidden" name="longitude">
                             <input type="hidden" name="page" value="{{ $sessions->currentPage() }}">
@@ -71,9 +97,9 @@
                                 data-weather-denied="{{ $it ? 'Permesso GPS negato. Abilita la posizione per PitMetric nelle impostazioni del dispositivo o inserisci le coordinate.' : 'GPS permission denied. Enable location for PitMetric or enter coordinates.' }}"
                                 data-weather-timeout="{{ $it ? 'Ricerca GPS scaduta. Riprova all’aperto o inserisci le coordinate.' : 'GPS lookup timed out. Retry outdoors or enter coordinates.' }}"
                                 data-weather-unavailable="{{ $it ? 'Posizione non disponibile. Riprova oppure usa le coordinate manuali.' : 'Location unavailable. Retry or enter coordinates manually.' }}"
-                                class="pm-weather-action inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold">
+                                class="{{ $weatherCircuit ? 'pm-weather-glass-button' : 'pm-weather-action' }} inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
-                                {{ $weather ? ($it ? 'Aggiorna da GPS' : 'Update from GPS') : ($it ? 'Rileva meteo con GPS' : 'Get weather from GPS') }}
+                                {{ $weatherCircuit ? ($it ? 'Usa invece il GPS del dispositivo' : 'Use device GPS instead') : ($weather ? ($it ? 'Aggiorna da GPS' : 'Update from GPS') : ($it ? 'Rileva meteo con GPS' : 'Get weather from GPS')) }}
                             </button>
                             <p data-pm-weather-status class="min-w-0 flex-1 basis-full text-xs leading-5 text-white/85" role="status" aria-live="polite"></p>
                         </form>
@@ -81,6 +107,7 @@
                             <summary class="w-fit cursor-pointer py-2 font-semibold underline underline-offset-4">{{ $it ? 'GPS non disponibile? Inserisci le coordinate' : 'No GPS? Enter coordinates manually' }}</summary>
                             <form method="POST" action="{{ route('sessions.weather.store', $weatherSession) }}" class="mt-2 grid max-w-sm gap-3 sm:grid-cols-2">
                                 @csrf
+                                <input type="hidden" name="source" value="manual">
                                 <input type="hidden" name="page" value="{{ $sessions->currentPage() }}">
                                 <label class="grid gap-1"><span>{{ $it ? 'Latitudine' : 'Latitude' }}</span><input type="number" name="latitude" inputmode="decimal" step="any" min="-90" max="90" class="pm-weather-select min-h-11 w-full rounded-xl px-3" required placeholder="44.3910"></label>
                                 <label class="grid gap-1"><span>{{ $it ? 'Longitudine' : 'Longitude' }}</span><input type="number" name="longitude" inputmode="decimal" step="any" min="-180" max="180" class="pm-weather-select min-h-11 w-full rounded-xl px-3" required placeholder="7.5470"></label>
@@ -165,7 +192,7 @@
                 </div>
             @endif
 
-            <p class="text-[11px] leading-5 text-white/65">{{ $it ? 'Dati previsionali, non misure di sensori sulla pista. Le coordinate GPS vengono arrotondate e inviate a MET Norway solo quando richiedi l’importazione.' : 'Forecast model data, not on-track sensor measurements. GPS coordinates are rounded and sent to MET Norway only when you request an import.' }} <a href="https://www.met.no/en" target="_blank" rel="noopener noreferrer" class="font-semibold text-white underline underline-offset-2">MET Norway</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">CC BY 4.0</a></p>
+            <p class="text-[11px] leading-5 text-white/65">{{ $it ? 'Dati previsionali, non misure di sensori sulla pista. Le coordinate del circuito, del GPS o inserite manualmente vengono arrotondate e inviate a MET Norway solo quando richiedi l’importazione.' : 'Forecast model data, not on-track sensor measurements. Circuit, GPS or manually entered coordinates are rounded and sent to MET Norway only when you request an import.' }} <a href="https://www.met.no/en" target="_blank" rel="noopener noreferrer" class="font-semibold text-white underline underline-offset-2">MET Norway</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">CC BY 4.0</a></p>
         </div>
     </div>
 </section>

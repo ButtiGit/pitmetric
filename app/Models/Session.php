@@ -61,6 +61,21 @@ class Session extends Model
         return $this->belongsTo(CircuitLayout::class)->withTrashed();
     }
 
+    public function weatherCircuit(): ?Circuit
+    {
+        $layout = $this->circuitLayout ?? $this->raceEvent?->circuitLayout;
+        $circuit = $layout?->circuit;
+
+        if ($circuit === null
+            || $circuit->latitude === null
+            || $circuit->longitude === null
+            || (string) $circuit->workspace_id !== (string) $this->workspace_id) {
+            return null;
+        }
+
+        return $circuit;
+    }
+
     /** @return HasMany<SessionUsageValue, $this> */
     public function usageValues(): HasMany
     {
