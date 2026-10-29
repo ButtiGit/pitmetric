@@ -28,26 +28,43 @@ class TelemetryImportService
             throw new RuntimeException('Unsupported telemetry format. Use CSV or VBO.');
         }
 
-        $storagePath = $file->storeAs(
-            'telemetry/'.$session->workspace_id,
-            $file->hashName(),
-            'local',
-        );
-
-        if ($storagePath === false) {
-            throw new RuntimeException('Unable to store the telemetry source file.');
-        }
-
         $sha256 = hash_file('sha256', $file->getRealPath());
 
         if ($sha256 === false) {
-            Storage::disk('local')->delete($storagePath);
             throw new RuntimeException('Unable to fingerprint the telemetry source file.');
         }
 
+        $storagePath = null;
         DB::beginTransaction();
 
         try {
+            // Serialize imports for this session so concurrent uploads of the same file cannot duplicate laps.
+            Session::query()->whereKey($session->getKey())->lockForUpdate()->firstOrFail();
+
+            $existing = TelemetryImport::query()
+                ->where('session_id', $session->getKey())
+                ->where('driver_id', $driver?->getKey())
+                ->where('source_format', $format)
+                ->where('sha256', $sha256)
+                ->oldest('id')
+                ->first();
+
+            if ($existing instanceof TelemetryImport) {
+                DB::commit();
+
+                return $existing->load(['session', 'driver', 'vehicle', 'circuitLayout.circuit', 'laps']);
+            }
+
+            $storagePath = $file->storeAs(
+                'telemetry/'.$session->workspace_id,
+                $file->hashName(),
+                'local',
+            );
+
+            if ($storagePath === false) {
+                throw new RuntimeException('Unable to store the telemetry source file.');
+            }
+
             $telemetryImport = TelemetryImport::query()->create([
                 'session_id' => $session->getKey(),
                 'driver_id' => $driver?->getKey(),
@@ -78,10 +95,13 @@ class TelemetryImportService
 
             DB::commit();
 
-            return $telemetryImport->fresh(['session', 'driver', 'vehicle', 'circuitLayout.circuit', 'laps']) ?? $telemetryImport;
+            return $telemetryImport->load(['session', 'driver', 'vehicle', 'circuitLayout.circuit', 'laps']);
         } catch (Throwable $exception) {
             DB::rollBack();
-            Storage::disk('local')->delete($storagePath);
+
+            if (is_string($storagePath)) {
+                Storage::disk('local')->delete($storagePath);
+            }
 
             throw $exception;
         }

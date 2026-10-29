@@ -50,6 +50,21 @@ class TelemetryTimingService
                 continue;
             }
 
+            // A matching session, driver, lap number and exact duration identifies the
+            // same lap across manual entry and subsequent telemetry exports. Keep the
+            // original record (and its correction history) without counting it twice.
+            $alreadyRecorded = TimingLap::query()
+                ->where('session_id', $session->getKey())
+                ->where('driver_id', $driver?->getKey())
+                ->where('lap_number', $lapNumber)
+                ->where('lap_time_ms', $lapTimeMs)
+                ->where('is_valid', true)
+                ->exists();
+
+            if ($alreadyRecorded) {
+                continue;
+            }
+
             TimingLap::query()->create([
                 'session_id' => $session->getKey(),
                 'driver_id' => $driver?->getKey(),

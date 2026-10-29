@@ -195,7 +195,9 @@ class TelemetryController extends Controller
         }
 
         return to_route('telemetry.index', ['compare' => [$telemetryImport->getKey()]])
-            ->with('status', __('Telemetry imported and normalized.'));
+            ->with('status', $telemetryImport->wasRecentlyCreated
+                ? __('Telemetry imported and normalized.')
+                : __('This telemetry file was already imported. The existing recording was reused.'));
     }
 
     /**

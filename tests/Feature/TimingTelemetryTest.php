@@ -94,6 +94,153 @@ it('imports csv telemetry into normalized samples and timing laps', function () 
     Storage::disk('local')->assertExists($import->storage_path);
 });
 
+it('reuses an identical telemetry upload in the same session without creating duplicate samples or laps', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [$workspace, , , $session] = makeTelemetrySession($user);
+    $csv = implode("\n", [
+        'Time,Speed,Lap,Lap Time',
+        '0.000,25.0,1,60.000',
+        '1.000,30.0,1,60.000',
+    ]);
+
+    for ($attempt = 0; $attempt < 2; $attempt++) {
+        $response = $this->post(route('telemetry.store'), [
+            'session_id' => $session->id,
+            'source_vendor' => 'generic',
+            'telemetry_file' => UploadedFile::fake()->createWithContent('session.csv', $csv),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+    }
+
+    $response->assertSessionHas('status', __('This telemetry file was already imported. The existing recording was reused.'));
+
+    expect(TelemetryImport::query()->count())->toBe(1)
+        ->and(TelemetrySample::query()->count())->toBe(2)
+        ->and(TimingLap::query()->count())->toBe(1)
+        ->and(Storage::disk('local')->allFiles('telemetry/'.$workspace->id))->toHaveCount(1);
+
+    $anotherSession = $session->replicate();
+    $anotherSession->started_at = now();
+    $anotherSession->save();
+
+    $this->post(route('telemetry.store'), [
+        'session_id' => $anotherSession->id,
+        'source_vendor' => 'generic',
+        'telemetry_file' => UploadedFile::fake()->createWithContent('session.csv', $csv),
+    ])->assertSessionHasNoErrors();
+
+    expect(TelemetryImport::query()->count())->toBe(2)
+        ->and(TimingLap::query()->count())->toBe(2);
+});
+
+it('keeps an existing manual lap when an import has the same lap number and exact time', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, $vehicle, $layout, $session] = makeTelemetrySession($user);
+    $manual = TimingLap::query()->create([
+        'session_id' => $session->id,
+        'vehicle_id' => $vehicle->id,
+        'circuit_layout_id' => $layout->id,
+        'lap_number' => 1,
+        'lap_time_ms' => 60000,
+        'is_valid' => true,
+        'source' => 'manual',
+    ]);
+
+    $this->post(route('telemetry.store'), [
+        'session_id' => $session->id,
+        'source_vendor' => 'generic',
+        'telemetry_file' => UploadedFile::fake()->createWithContent('overlap.csv', implode("\n", [
+            'Time,Speed,Lap,Lap Time',
+            '0.000,25.0,1,60.000',
+            '1.000,30.0,1,60.000',
+            '2.000,30.0,2,59.500',
+            '3.000,32.0,2,59.500',
+        ])),
+    ])->assertSessionHasNoErrors();
+
+    $import = TelemetryImport::query()->sole();
+
+    expect($import->sample_count)->toBe(4)
+        ->and($import->lap_count)->toBe(1)
+        ->and($manual->fresh()->source)->toBe('manual')
+        ->and($manual->fresh()->telemetry_import_id)->toBeNull()
+        ->and(TimingLap::query()->count())->toBe(2)
+        ->and(TimingLap::query()->where('source', 'import')->sole()->lap_number)->toBe(2)
+        ->and(TimingLap::query()->where('source', 'import')->sole()->lap_time_ms)->toBe(59500);
+});
+
+it('only deduplicates laps with matching session, driver, lap number and exact duration', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, $vehicle, $layout, $session] = makeTelemetrySession($user);
+    $driver = Driver::query()->create(['display_name' => 'Telemetry Driver', 'status' => 'active']);
+    $otherDriver = Driver::query()->create(['display_name' => 'Other Driver', 'status' => 'active']);
+
+    foreach ([
+        ['lap_number' => 1, 'lap_time_ms' => 60000, 'driver_id' => $otherDriver->id],
+        ['lap_number' => 2, 'lap_time_ms' => 59500, 'driver_id' => $driver->id],
+        ['lap_number' => 3, 'lap_time_ms' => 60000, 'driver_id' => $driver->id],
+    ] as $lap) {
+        TimingLap::query()->create($lap + [
+            'session_id' => $session->id,
+            'vehicle_id' => $vehicle->id,
+            'circuit_layout_id' => $layout->id,
+            'source' => 'manual',
+            'is_valid' => true,
+        ]);
+    }
+
+    $this->post(route('telemetry.store'), [
+        'session_id' => $session->id,
+        'driver_id' => $driver->id,
+        'source_vendor' => 'generic',
+        'telemetry_file' => UploadedFile::fake()->createWithContent('distinct.csv', implode("\n", [
+            'Time,Speed,Lap,Lap Time',
+            '0.000,25.0,1,60.000',
+            '1.000,30.0,1,60.000',
+            '2.000,30.0,2,59.000',
+            '3.000,32.0,2,59.000',
+        ])),
+    ])->assertSessionHasNoErrors();
+
+    expect(TelemetryImport::query()->sole()->lap_count)->toBe(2)
+        ->and(TimingLap::query()->where('source', 'import')->count())->toBe(2)
+        ->and(TimingLap::query()->count())->toBe(5);
+});
+
+it('deduplicates overlapping laps from different telemetry files while retaining both recordings', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    [, , , $session] = makeTelemetrySession($user);
+
+    foreach ([
+        implode("\n", ['Time,Speed,Lap,Lap Time', '0.000,25,1,60.000', '1.000,30,1,60.000']),
+        implode("\n", ['Time,Speed,Lap,Lap Time', '0.000,26,1,60.000', '1.000,31,1,60.000', '2.000,32,2,59.000', '3.000,35,2,59.000']),
+    ] as $csv) {
+        $this->post(route('telemetry.store'), [
+            'session_id' => $session->id,
+            'source_vendor' => 'generic',
+            'telemetry_file' => UploadedFile::fake()->createWithContent('export.csv', $csv),
+        ])->assertSessionHasNoErrors();
+    }
+
+    expect(TelemetryImport::query()->count())->toBe(2)
+        ->and(TelemetrySample::query()->count())->toBe(6)
+        ->and(TimingLap::query()->count())->toBe(2)
+        ->and(TelemetryImport::query()->orderBy('id')->pluck('lap_count')->all())->toBe([1, 1]);
+});
+
 it('imports racelogic vbo coordinates stored as total minutes', function () {
     Storage::fake('local');
 
