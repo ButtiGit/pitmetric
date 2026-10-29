@@ -49,6 +49,77 @@ test('layout corrections protect historical length and support archival', functi
     expect($layout->fresh()->length_meters)->toBe(1100)->and($layout->fresh()->is_active)->toBeFalse()->and($circuit->layouts()->count())->toBe(2);
 });
 
+test('circuit coordinates are optional and can be saved, edited and removed without changing layouts', function () {
+    $this->post(route('circuits.store'), [
+        'name' => 'Circuito PN Rent',
+        'country' => 'Italia',
+        'layout_name' => 'Completo',
+        'length_meters' => 1200,
+        'latitude' => '45.03211458',
+        'longitude' => '7.65984321',
+    ])->assertSessionHasNoErrors();
+
+    $circuit = Circuit::query()->where('name', 'Circuito PN Rent')->sole();
+    expect($circuit->latitude)->toBe('45.03211458')
+        ->and($circuit->longitude)->toBe('7.65984321')
+        ->and($circuit->layouts()->count())->toBe(1);
+
+    $this->get(route('circuits.index'))->assertSuccessful()
+        ->assertSee('name="latitude"', false)
+        ->assertSee('name="longitude"', false)
+        ->assertSee('45.03211458, 7.65984321');
+
+    $this->put(route('circuits.update', $circuit), [
+        'name' => 'Circuito PN Rent',
+        'latitude' => '44.93127000',
+        'longitude' => '-0.83124500',
+    ])->assertSessionHasNoErrors();
+
+    expect($circuit->fresh()->latitude)->toBe('44.93127000')
+        ->and($circuit->fresh()->longitude)->toBe('-0.83124500');
+
+    $this->put(route('circuits.update', $circuit), ['name' => 'Circuito PN Rent aggiornato'])
+        ->assertSessionHasNoErrors();
+    expect($circuit->fresh()->latitude)->toBe('44.93127000');
+
+    $this->put(route('circuits.update', $circuit), [
+        'name' => 'Circuito PN Rent aggiornato',
+        'latitude' => '',
+        'longitude' => '',
+    ])->assertSessionHasNoErrors();
+
+    expect($circuit->fresh()->latitude)->toBeNull()
+        ->and($circuit->fresh()->longitude)->toBeNull()
+        ->and($circuit->layouts()->count())->toBe(1);
+});
+
+test('circuit coordinates require a complete pair and valid geographic ranges', function () {
+    $this->post(route('circuits.store'), [
+        'name' => 'Only latitude',
+        'layout_name' => 'Full',
+        'length_meters' => 1000,
+        'latitude' => '45.12345678',
+    ])->assertSessionHasErrors('longitude');
+
+    $this->post(route('circuits.store'), [
+        'name' => 'Out of range',
+        'layout_name' => 'Full',
+        'length_meters' => 1000,
+        'latitude' => 91,
+        'longitude' => -181,
+    ])->assertSessionHasErrors(['latitude', 'longitude']);
+
+    $circuit = Circuit::create(['name' => 'Existing coordinates', 'latitude' => 45, 'longitude' => 7]);
+    $this->put(route('circuits.update', $circuit), [
+        'name' => 'Existing coordinates',
+        'latitude' => 43,
+        'longitude' => '',
+    ])->assertSessionHasErrors('longitude');
+
+    expect($circuit->fresh()->latitude)->toBe('45.00000000')
+        ->and($circuit->fresh()->longitude)->toBe('7.00000000');
+});
+
 test('edit endpoints reject foreign workspaces and read only roles', function () {
     $vehicle = Vehicle::factory()->create(['workspace_id' => $this->operator->workspaces()->firstOrFail()->id]);
     $type = ComponentType::create(['name' => 'Engine']);

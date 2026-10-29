@@ -11,6 +11,14 @@
                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Paese' : 'Country' }}</span><input class="pm-input" name="country" maxlength="80"></label>
                         <label class="grid gap-2"><span class="pm-label">Layout</span><input class="pm-input" name="layout_name" required maxlength="120" placeholder="{{ $it ? 'Completo' : 'Full track' }}"></label>
                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Lunghezza (m)' : 'Length (m)' }}</span><input class="pm-input" name="length_meters" type="number" required min="1" max="100000" step="1"></label>
+                        <fieldset class="grid gap-3 sm:col-span-2">
+                            <legend class="pm-label mb-2">{{ $it ? 'Posizione del circuito per il meteo' : 'Circuit location for weather' }}</legend>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Latitudine' : 'Latitude' }}</span><input class="pm-input" name="latitude" type="number" inputmode="decimal" min="-90" max="90" step="any" placeholder="45.00000000" value="{{ old('latitude') }}"></label>
+                                <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Longitudine' : 'Longitude' }}</span><input class="pm-input" name="longitude" type="number" inputmode="decimal" min="-180" max="180" step="any" placeholder="7.00000000" value="{{ old('longitude') }}"></label>
+                            </div>
+                            <p class="text-xs text-pm-muted">{{ $it ? 'Facoltativo. Se inserisci una coordinata, compila anche l’altra. In seguito potrai rilevarle con il GPS.' : 'Optional. Enter both coordinates together. GPS capture will be available in a later step.' }}</p>
+                        </fieldset>
                         <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input" name="notes" maxlength="2000"></textarea></label>
                         <div class="sm:col-span-2 flex justify-end"><button class="pm-race-button" type="submit">{{ $it ? 'Aggiungi circuito' : 'Add circuit' }}</button></div>
                     </form>
@@ -23,11 +31,25 @@
                 @forelse ($circuits->reject(fn ($circuit) => $circuit->trashed()) as $circuit)
                     <section class="pm-panel" aria-labelledby="circuit-{{ $circuit->id }}">
                         <div class="pm-record-heading">
-                            <div class="min-w-0"><h2 id="circuit-{{ $circuit->id }}" class="text-lg font-semibold text-pm-text break-words">{{ $circuit->name }}</h2>@if ($circuit->country)<p class="mt-1 text-sm text-pm-muted">{{ $circuit->country }}</p>@endif</div>
+                            <div class="min-w-0">
+                                <h2 id="circuit-{{ $circuit->id }}" class="text-lg font-semibold text-pm-text break-words">{{ $circuit->name }}</h2>
+                                @if ($circuit->country)<p class="mt-1 text-sm text-pm-muted">{{ $circuit->country }}</p>@endif
+                                @if ($circuit->latitude !== null && $circuit->longitude !== null)
+                                    <p class="mt-1 text-xs text-pm-muted">{{ $it ? 'Coordinate meteo:' : 'Weather coordinates:' }} {{ $circuit->latitude }}, {{ $circuit->longitude }}</p>
+                                @endif
+                            </div>
                             <div class="pm-record-actions">
                                 <x-pitmetric.record-editor id="edit-circuit-{{ $circuit->id }}" :title="$it ? 'Modifica circuito' : 'Edit circuit'" :action="route('circuits.update', $circuit)">
                                     <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Nome circuito' : 'Circuit name' }}</span><input class="pm-input" name="name" required maxlength="120" value="{{ $circuit->name }}"></label>
                                     <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Paese' : 'Country' }}</span><input class="pm-input" name="country" maxlength="80" value="{{ $circuit->country }}"></label>
+                                    <fieldset class="grid gap-3 sm:col-span-2">
+                                        <legend class="pm-label mb-2">{{ $it ? 'Posizione del circuito per il meteo' : 'Circuit location for weather' }}</legend>
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Latitudine' : 'Latitude' }}</span><input class="pm-input" name="latitude" type="number" inputmode="decimal" min="-90" max="90" step="any" value="{{ $circuit->latitude }}"></label>
+                                            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Longitudine' : 'Longitude' }}</span><input class="pm-input" name="longitude" type="number" inputmode="decimal" min="-180" max="180" step="any" value="{{ $circuit->longitude }}"></label>
+                                        </div>
+                                        <p class="text-xs text-pm-muted">{{ $it ? 'Facoltativo. Inserisci entrambe le coordinate oppure lasciale vuote per rimuovere la posizione.' : 'Optional. Enter both coordinates or clear both to remove the location.' }}</p>
+                                    </fieldset>
                                     <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input" name="notes" maxlength="2000">{{ $circuit->notes }}</textarea></label>
                                 </x-pitmetric.record-editor>
                                 <x-pitmetric.record-delete :action="route('circuits.destroy', $circuit)" :label="$it ? 'Elimina circuito' : 'Delete circuit'" :message="$it ? 'Eliminare il circuito dalla lista? Le sessioni e i weekend già registrati resteranno disponibili. Puoi ripristinarlo in seguito.' : 'Remove this circuit from the list? Existing sessions and weekends will remain available. You can restore it later.'" />
