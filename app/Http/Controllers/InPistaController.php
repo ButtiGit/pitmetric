@@ -60,6 +60,7 @@ class InPistaController extends Controller
                     'time' => $label,
                     'edit_url' => route('pit-mode.sessions.laps.update', [$session, $lap]),
                 ],
+                'best_lap' => $this->bestLapData($service->bestLap($session)),
             ]);
         }
 
@@ -85,7 +86,7 @@ class InPistaController extends Controller
         );
 
         if ($request->expectsJson()) {
-            $bestMilliseconds = $session->timingLaps()->where('is_valid', true)->min('lap_time_ms');
+            $bestLap = $service->bestLap($session);
             $previous = $this->formatLapTime((int) $validated['expected_lap_time_ms']);
             $corrected = $this->formatLapTime((int) $lap->lap_time_ms);
 
@@ -97,11 +98,12 @@ class InPistaController extends Controller
                     'lap_time_ms' => (int) $lap->lap_time_ms,
                     'previous_time' => $previous,
                     'corrected_time' => $corrected,
-                    'best_time' => $bestMilliseconds === null ? '—' : $this->formatLapTime((int) $bestMilliseconds),
+                    'best_time' => $bestLap === null ? '—' : $this->formatLapTime((int) $bestLap->lap_time_ms),
                     'reason' => $validated['reason'] ?? '',
                     'operator' => $this->user($request)->name,
                     'corrected_at' => now()->format('d/m H:i'),
                 ],
+                'best_lap' => $this->bestLapData($bestLap),
             ]);
         }
 
@@ -177,6 +179,21 @@ class InPistaController extends Controller
     private function formatLapTime(int $milliseconds): string
     {
         return sprintf('%d:%02d.%03d', intdiv($milliseconds, 60000), intdiv($milliseconds % 60000, 1000), $milliseconds % 1000);
+    }
+
+    /** @return array{id: int, number: int, time: string, source: string}|null */
+    private function bestLapData(?TimingLap $lap): ?array
+    {
+        if ($lap === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $lap->getKey(),
+            'number' => (int) $lap->lap_number,
+            'time' => $this->formatLapTime((int) $lap->lap_time_ms),
+            'source' => $lap->source,
+        ];
     }
 
     private function saved(Request $request, Session $session, string $message, string $kind, string $summary, ?string $time = null): JsonResponse|RedirectResponse

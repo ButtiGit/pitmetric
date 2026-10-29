@@ -1,7 +1,7 @@
 @props([
     'karts', 'kart', 'trackSession', 'activeSession', 'eventEntry',
-    'configurationVersion', 'laps', 'lapCount', 'bestLap', 'lapCorrections', 'sessionCaptures', 'coldReading',
-    'hotReading', 'setupValues', 'lastUsedSettings',
+    'configurationVersion', 'laps', 'lapCount', 'bestLap', 'bestLapRecord', 'lapCorrections', 'sessionCaptures', 'coldReading',
+    'hotReading', 'setupValues', 'adjustmentCount', 'lastUsedSettings',
 ])
 
 @php
@@ -67,6 +67,31 @@
             </div>
             <span class="in-pista-status {{ $isLive ? 'is-live' : '' }}">{{ $isLive ? 'IN CORSO' : ($trackSession ? 'CONCLUSA' : 'PRONTA') }}</span>
         </div>
+
+        @if ($trackSession)
+            <section class="in-pista-overview in-pista-panel" aria-label="Prestazione e setup della sessione">
+                <div class="in-pista-overview-heading"><span>SESSIONE #{{ $trackSession->id }}</span><span>PRESTAZIONE / ASSETTO</span></div>
+                <div class="in-pista-overview-grid">
+                    <div class="in-pista-overview-lap">
+                        <span>MIGLIOR GIRO</span>
+                        <strong data-in-pista-best-lap>{{ $bestLap === null ? '—' : $formatLap((int) $bestLap) }}</strong>
+                        <p data-in-pista-best-lap-detail>{{ $bestLapRecord ? 'Giro #'.$bestLapRecord->lap_number.' · '.($bestLapRecord->source === 'manual' ? 'Manuale' : 'Importato') : 'Nessun tempo valido registrato' }}</p>
+                    </div>
+                    <div class="in-pista-overview-setup">
+                        <span>SETUP UTILIZZATO</span>
+                        <strong>{{ $trackSession->setupSnapshot?->name ?? 'Setup non disponibile' }}</strong>
+                        <p>{{ $trackSession->setupSnapshot ? 'Snapshot iniziale conservato nello storico' : 'Nessuno snapshot per questa sessione' }}</p>
+                        <div class="in-pista-overview-setup-values">
+                            @foreach (['camber_front_deg' => ['Camber', '°'], 'caster_front_deg' => ['Caster', '°'], 'track_width_rear_mm' => ['Post.', 'mm'], 'final_drive' => ['Rapporto', '']] as $field => [$label, $unit])
+                                <div><span>{{ $label }}</span><strong data-in-pista-setup-field="{{ $field }}">{{ isset($setupValues[$field]) ? $setupValues[$field].($unit ? ' '.$unit : '') : '—' }}</strong></div>
+                            @endforeach
+                        </div>
+                        <small data-in-pista-adjustment-count data-count="{{ $adjustmentCount }}">{{ $adjustmentCount === 0 ? 'Nessuna regolazione registrata' : $adjustmentCount.' '.($adjustmentCount === 1 ? 'regolazione registrata' : 'regolazioni registrate') }}</small>
+                    </div>
+                </div>
+                <p class="in-pista-overview-note">I valori mostrati comprendono le regolazioni più recenti della sessione; non sono associati automaticamente a un singolo giro.</p>
+            </section>
+        @endif
 
         @if (!$isLive)
             <section class="in-pista-start in-pista-panel">
@@ -170,7 +195,7 @@
                 <div class="in-pista-summary-title"><h2 id="in-pista-summary-title">Quello che è cambiato</h2><span>{{ $trackSession->started_at?->format('d/m/Y') }}</span></div>
                 <div class="in-pista-summary-stats">
                     <div><span>GIRI REGISTRATI</span><strong data-in-pista-lap-count>{{ $lapCount }}</strong></div>
-                    <div><span>MIGLIOR GIRO</span><strong data-in-pista-best-lap>{{ $bestLap === null ? '—' : $formatLap((int) $bestLap) }}</strong></div>
+                    <div><span>REGOLAZIONI</span><strong data-in-pista-adjustment-stat>{{ $adjustmentCount }}</strong></div>
                     <div><span>SETUP DI PARTENZA</span><strong>{{ $trackSession->setupSnapshot?->name ?? '—' }}</strong></div>
                 </div>
                 <section class="in-pista-laps" aria-label="Tempi della sessione">
@@ -178,7 +203,7 @@
                     <div class="in-pista-laps-list" data-in-pista-laps>
                         @forelse ($laps as $lap)
                             @php($corrections = $lapCorrections->get($lap->getKey(), collect()))
-                            <article class="in-pista-lap-row" data-in-pista-lap-row="{{ $lap->getKey() }}">
+                            <article @class(['in-pista-lap-row', 'is-best' => $bestLapRecord?->getKey() === $lap->getKey()]) data-in-pista-lap-row="{{ $lap->getKey() }}">
                                 <div class="in-pista-lap-row-main">
                                     <span class="in-pista-lap-number">#{{ $lap->lap_number }}</span>
                                     <div class="in-pista-lap-time-wrap"><strong data-in-pista-lap-time>{{ $formatLap((int) $lap->lap_time_ms) }}</strong><small>{{ $lap->source === 'manual' ? 'Manuale' : 'Import' }}</small></div>
@@ -209,7 +234,7 @@
                 </section>
                 <div class="in-pista-setup-summary">
                     @foreach ($setupFields as $field => [$label, $unit])
-                        <div><span>{{ $label }}</span><strong data-in-pista-setup-field="{{ $field }}">{{ isset($setupValues[$field]) ? $setupValues[$field].' '.$unit : '—' }}</strong></div>
+                        <div><span>{{ $label }}</span><strong data-in-pista-setup-field="{{ $field }}">{{ isset($setupValues[$field]) ? $setupValues[$field].($unit ? ' '.$unit : '') : '—' }}</strong></div>
                     @endforeach
                 </div>
                 <div class="in-pista-reading-row"><span>Pressioni fredde</span><strong data-in-pista-reading-cold>{{ $coldReading ? implode(' / ', $coldReading->pressures).' bar' : 'Non rilevate' }}</strong></div>

@@ -99,7 +99,8 @@ test('the mechanic records a session without leaving the pit screen or changing 
         ->and($session->setupSnapshot?->name)->toBe('Dry baseline');
 
     $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '0:52.345'])
-        ->assertSuccessful()->assertJsonPath('entry.summary', '0:52.345');
+        ->assertSuccessful()->assertJsonPath('entry.summary', '0:52.345')
+        ->assertJsonPath('best_lap.number', 1);
     $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '52,123'])
         ->assertSuccessful();
 
@@ -153,7 +154,8 @@ test('manual lap corrections preserve both original values and operator history 
     ])->assertSuccessful()
         ->assertJsonPath('correction.previous_time', '0:49.000')
         ->assertJsonPath('correction.corrected_time', '0:53.100')
-        ->assertJsonPath('correction.best_time', '0:52.000');
+        ->assertJsonPath('correction.best_time', '0:52.000')
+        ->assertJsonPath('best_lap.number', 2);
 
     expect($firstLap->fresh()->lap_time_ms)->toBe(53100);
 
@@ -171,7 +173,8 @@ test('manual lap corrections preserve both original values and operator history 
 
     $this->post(route('pit-mode.sessions.finish', $session))->assertSessionHasNoErrors();
     $this->patchJson($route, ['lap_time' => '0:51.200', 'expected_lap_time_ms' => 53100])
-        ->assertSuccessful()->assertJsonPath('correction.best_time', '0:51.200');
+        ->assertSuccessful()->assertJsonPath('correction.best_time', '0:51.200')
+        ->assertJsonPath('best_lap.number', 1);
 
     expect($session->fresh()->status)->toBe('finalized')
         ->and($firstLap->fresh()->lap_time_ms)->toBe(51200)
@@ -179,6 +182,68 @@ test('manual lap corrections preserve both original values and operator history 
 
     $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
         ->assertOk()->assertSee('Storico correzioni (2)')->assertSee('0:51.200');
+});
+
+test('the session overview displays the fastest valid lap and setup with all recorded adjustments', function () {
+    $operator = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($operator);
+    ['kart' => $kart, 'setup' => $setup] = setUpInPistaKart($operator);
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+    $session = Session::query()->firstOrFail();
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()->assertSee('Nessun tempo valido registrato')
+        ->assertSee('SETUP UTILIZZATO')->assertSee($setup->name);
+
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '52.000'])
+        ->assertSuccessful()->assertJsonPath('best_lap.number', 1)->assertJsonPath('best_lap.source', 'manual');
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '51.000'])
+        ->assertSuccessful()->assertJsonPath('best_lap.number', 2);
+
+    TimingLap::query()->create([
+        'session_id' => $session->getKey(), 'vehicle_id' => $kart->getKey(),
+        'lap_number' => 3, 'lap_time_ms' => 49000, 'source' => 'import', 'is_valid' => false,
+    ]);
+    $imported = TimingLap::query()->create([
+        'session_id' => $session->getKey(), 'vehicle_id' => $kart->getKey(),
+        'lap_number' => 4, 'lap_time_ms' => 50000, 'source' => 'import', 'is_valid' => true,
+    ]);
+
+    $this->postJson(route('pit-mode.sessions.adjustments.store', $session), [
+        'camber_front_deg' => -1.7, 'pinion_teeth' => 12, 'crown_teeth' => 73,
+    ])->assertSuccessful();
+
+    for ($i = 0; $i < 31; $i++) {
+        TrackCapture::query()->create([
+            'session_id' => $session->getKey(), 'kind' => 'note',
+            'notes' => 'Nota #'.$i, 'occurred_at' => now(), 'created_by' => $operator->getKey(),
+        ]);
+    }
+
+    expect(app(InPistaSessionService::class)->bestLap($session)?->getKey())->toBe($imported->getKey())
+        ->and($session->setupSnapshot->fresh()->values['camber_front_deg'])->toEqual(-1.0);
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()
+        ->assertSee('data-in-pista-best-lap>0:50.000</strong>', false)
+        ->assertSee('Giro #4 · Importato')
+        ->assertSee('data-in-pista-setup-field="camber_front_deg">-1.7 °</strong>', false)
+        ->assertSee('data-in-pista-setup-field="final_drive">12/73</strong>', false)
+        ->assertSee('1 regolazione registrata')
+        ->assertSee('non sono associati automaticamente a un singolo giro');
+
+    $firstLap = TimingLap::query()->where('session_id', $session->getKey())->where('lap_number', 1)->firstOrFail();
+    $this->patchJson(route('pit-mode.sessions.laps.update', [$session, $firstLap]), [
+        'lap_time' => '49.500', 'expected_lap_time_ms' => 52000,
+    ])->assertSuccessful()->assertJsonPath('best_lap.number', 1)
+        ->assertJsonPath('best_lap.source', 'manual')->assertJsonPath('best_lap.time', '0:49.500');
+
+    $this->patchJson(route('pit-mode.sessions.laps.update', [$session, $firstLap]), [
+        'lap_time' => '53.500', 'expected_lap_time_ms' => 49500,
+    ])->assertSuccessful()->assertJsonPath('best_lap.number', 4)
+        ->assertJsonPath('best_lap.source', 'import')->assertJsonPath('best_lap.time', '0:50.000');
 });
 
 test('lap correction rejects imported times, conflicting values, cross-session ids and other workspaces', function () {
