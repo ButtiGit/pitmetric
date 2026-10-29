@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Session;
+use App\Models\TimingLap;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\InPistaSessionService;
@@ -46,9 +47,66 @@ class InPistaController extends Controller
         Gate::authorize('update', $session);
         $validated = $request->validate(['lap_time' => ['required', 'string', 'max:20']]);
         $lap = $service->addLap($session, $validated['lap_time'], $parser);
-        $label = sprintf('%d:%02d.%03d', intdiv($lap->lap_time_ms, 60000), intdiv($lap->lap_time_ms % 60000, 1000), $lap->lap_time_ms % 1000);
+        $label = $this->formatLapTime((int) $lap->lap_time_ms);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => __('Lap recorded.'),
+                'entry' => ['kind' => 'Tempo #'.$lap->lap_number, 'summary' => $label, 'time' => now()->format('H:i')],
+                'lap' => [
+                    'id' => (int) $lap->getKey(),
+                    'number' => (int) $lap->lap_number,
+                    'milliseconds' => (int) $lap->lap_time_ms,
+                    'time' => $label,
+                    'edit_url' => route('pit-mode.sessions.laps.update', [$session, $lap]),
+                ],
+            ]);
+        }
 
         return $this->saved($request, $session, __('Lap recorded.'), 'Tempo #'.$lap->lap_number, $label);
+    }
+
+    public function correctLap(Request $request, Session $session, TimingLap $timingLap, InPistaSessionService $service, LapTimeParser $parser): JsonResponse|RedirectResponse
+    {
+        Gate::authorize('update', $session);
+        $validated = $request->validate([
+            'lap_time' => ['required', 'string', 'max:20'],
+            'expected_lap_time_ms' => ['required', 'integer', 'between:1000,3600000'],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $lap = $service->correctManualLap(
+            $session,
+            $timingLap,
+            $validated['lap_time'],
+            (int) $validated['expected_lap_time_ms'],
+            $validated['reason'] ?? null,
+            $parser,
+        );
+
+        if ($request->expectsJson()) {
+            $bestMilliseconds = $session->timingLaps()->where('is_valid', true)->min('lap_time_ms');
+            $previous = $this->formatLapTime((int) $validated['expected_lap_time_ms']);
+            $corrected = $this->formatLapTime((int) $lap->lap_time_ms);
+
+            return response()->json([
+                'message' => __('Manual lap time corrected. The original value remains in the audit history.'),
+                'entry' => ['kind' => 'Tempo corretto #'.$lap->lap_number, 'summary' => $previous.' → '.$corrected, 'time' => now()->format('H:i')],
+                'correction' => [
+                    'lap_id' => (int) $lap->getKey(),
+                    'lap_time_ms' => (int) $lap->lap_time_ms,
+                    'previous_time' => $previous,
+                    'corrected_time' => $corrected,
+                    'best_time' => $bestMilliseconds === null ? '—' : $this->formatLapTime((int) $bestMilliseconds),
+                    'reason' => $validated['reason'] ?? '',
+                    'operator' => $this->user($request)->name,
+                    'corrected_at' => now()->format('d/m H:i'),
+                ],
+            ]);
+        }
+
+        return to_route('pit-mode.index', ['kart' => $session->vehicle_id])
+            ->with('status', __('Manual lap time corrected. The original value remains in the audit history.'));
     }
 
     public function adjustment(Request $request, Session $session, InPistaSessionService $service): JsonResponse|RedirectResponse
@@ -114,6 +172,11 @@ class InPistaController extends Controller
         abort_unless($user instanceof User, 401);
 
         return $user;
+    }
+
+    private function formatLapTime(int $milliseconds): string
+    {
+        return sprintf('%d:%02d.%03d', intdiv($milliseconds, 60000), intdiv($milliseconds % 60000, 1000), $milliseconds % 1000);
     }
 
     private function saved(Request $request, Session $session, string $message, string $kind, string $summary, ?string $time = null): JsonResponse|RedirectResponse

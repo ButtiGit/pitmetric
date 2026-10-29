@@ -32,6 +32,7 @@ class InPistaSessionService
         private readonly SetupSnapshotService $snapshotService,
         private readonly FinalizeSessionService $finalizeSessionService,
         private readonly TrackCaptureService $captureService,
+        private readonly AuditTrailService $auditTrail,
     ) {}
 
     public function currentEventEntry(Vehicle $kart): ?EventEntry
@@ -193,6 +194,55 @@ class InPistaSessionService
                 'source' => 'manual',
                 'is_valid' => true,
             ]);
+        });
+    }
+
+    public function correctManualLap(
+        Session $session,
+        TimingLap $selectedLap,
+        string $input,
+        int $expectedMilliseconds,
+        ?string $reason,
+        LapTimeParser $parser,
+    ): TimingLap {
+        $correctedMilliseconds = $parser->parse($input);
+
+        return DB::transaction(function () use ($session, $selectedLap, $correctedMilliseconds, $expectedMilliseconds, $reason): TimingLap {
+            $current = Session::query()->whereKey($session->getKey())->lockForUpdate()->firstOrFail();
+            $lap = TimingLap::query()->where('session_id', $current->getKey())
+                ->whereKey($selectedLap->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($lap->source !== 'manual' || $lap->telemetry_import_id !== null) {
+                throw ValidationException::withMessages(['lap_time' => __('Only manually recorded laps can be corrected here.')]);
+            }
+
+            $previousMilliseconds = (int) $lap->lap_time_ms;
+
+            if ($previousMilliseconds !== $expectedMilliseconds) {
+                throw ValidationException::withMessages(['lap_time' => __('This lap was already changed. Refresh to see the latest time.')]);
+            }
+
+            if ($previousMilliseconds === $correctedMilliseconds) {
+                throw ValidationException::withMessages(['lap_time' => __('The corrected time must be different from the current one.')]);
+            }
+
+            $lap->updateQuietly(['lap_time_ms' => $correctedMilliseconds]);
+            $this->auditTrail->custom(
+                (int) $current->workspace_id,
+                'lap_time_corrected',
+                TimingLap::class,
+                (int) $lap->getKey(),
+                'Giro #'.$lap->lap_number,
+                ['lap_time_ms' => $previousMilliseconds],
+                [
+                    'lap_time_ms' => $correctedMilliseconds,
+                    'session_id' => (int) $current->getKey(),
+                    'lap_number' => (int) $lap->lap_number,
+                    'reason' => $reason,
+                ],
+            );
+
+            return $lap;
         });
     }
 

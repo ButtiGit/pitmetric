@@ -39,6 +39,22 @@ test('a mechanic can recall last used kart settings without automatically saving
     await dialog.getByRole('button', { name: 'Registra regolazioni' }).click();
     await expect(dialog).toBeHidden();
 
+    await page.locator('#in-pista-lap-input').fill('0:52.345');
+    await page.getByRole('button', { name: '+ Salva tempo' }).click();
+    const lapRow = page.locator('[data-in-pista-lap-row]').first();
+    await expect(lapRow).toContainText('0:52.345');
+    await lapRow.getByRole('button', { name: 'Correggi' }).click();
+    const correctionDialog = page.locator('#in-pista-lap-correction');
+    await expect(correctionDialog).toBeVisible();
+    await correctionDialog.locator('input[name="lap_time"]').fill('0:51.123');
+    await correctionDialog.locator('textarea[name="reason"]').fill('Errore manuale');
+    await correctionDialog.getByRole('button', { name: 'Salva correzione' }).click();
+    await expect(correctionDialog).toBeHidden();
+    await expect(lapRow).toContainText('0:51.123');
+    await expect(lapRow).toContainText('Storico correzioni (1)');
+    await expect(page.locator('[data-in-pista-best-lap]')).toHaveText('0:51.123');
+    await expect(page.locator('[data-in-pista-lap-count]')).toHaveText('1');
+
     page.once('dialog', confirmation => confirmation.accept());
     await page.locator('[data-in-pista-finish] button[type="submit"]').click();
     await expect(page.locator('[data-in-pista-latest]')).toBeVisible();

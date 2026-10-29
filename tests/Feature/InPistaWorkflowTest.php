@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\Component;
 use App\Models\ComponentInstallation;
 use App\Models\ComponentType;
@@ -129,6 +130,94 @@ test('the mechanic records a session without leaving the pit screen or changing 
     $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '51.123'])
         ->assertUnprocessable();
     expect(TimingLap::query()->where('session_id', $session->getKey())->count())->toBe(2);
+});
+
+test('manual lap corrections preserve both original values and operator history even after session closure', function () {
+    $operator = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($operator);
+    $kart = setUpInPistaKart($operator)['kart'];
+
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'practice'])
+        ->assertSessionHasNoErrors();
+    $session = Session::query()->firstOrFail();
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '0:49.000'])
+        ->assertSuccessful()->assertJsonPath('lap.time', '0:49.000');
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '0:52.000'])
+        ->assertSuccessful();
+
+    $firstLap = TimingLap::query()->where('session_id', $session->getKey())->orderBy('lap_number')->firstOrFail();
+    $route = route('pit-mode.sessions.laps.update', [$session, $firstLap]);
+
+    $this->patchJson($route, [
+        'lap_time' => '0:53.100', 'expected_lap_time_ms' => 49000, 'reason' => 'Errore cronometro',
+    ])->assertSuccessful()
+        ->assertJsonPath('correction.previous_time', '0:49.000')
+        ->assertJsonPath('correction.corrected_time', '0:53.100')
+        ->assertJsonPath('correction.best_time', '0:52.000');
+
+    expect($firstLap->fresh()->lap_time_ms)->toBe(53100);
+
+    $history = AuditLog::query()->where('workspace_id', $session->workspace_id)
+        ->where('action', 'lap_time_corrected')->where('subject_type', TimingLap::class)
+        ->where('subject_id', $firstLap->getKey())->sole();
+    expect($history->user_id)->toBe($operator->getKey())
+        ->and($history->before_values['lap_time_ms'])->toBe(49000)
+        ->and($history->after_values['lap_time_ms'])->toBe(53100)
+        ->and($history->after_values['reason'])->toBe('Errore cronometro');
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()->assertSee('Storico correzioni (1)')->assertSee('Errore cronometro')
+        ->assertSee('0:49.000')->assertSee('0:53.100');
+
+    $this->post(route('pit-mode.sessions.finish', $session))->assertSessionHasNoErrors();
+    $this->patchJson($route, ['lap_time' => '0:51.200', 'expected_lap_time_ms' => 53100])
+        ->assertSuccessful()->assertJsonPath('correction.best_time', '0:51.200');
+
+    expect($session->fresh()->status)->toBe('finalized')
+        ->and($firstLap->fresh()->lap_time_ms)->toBe(51200)
+        ->and(AuditLog::query()->where('action', 'lap_time_corrected')->where('subject_id', $firstLap->getKey())->count())->toBe(2);
+
+    $this->get(route('pit-mode.index', ['kart' => $kart->getKey()]))
+        ->assertOk()->assertSee('Storico correzioni (2)')->assertSee('0:51.200');
+});
+
+test('lap correction rejects imported times, conflicting values, cross-session ids and other workspaces', function () {
+    $operator = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($operator);
+    $kart = setUpInPistaKart($operator)['kart'];
+    $this->post(route('pit-mode.sessions.start'), ['kart_id' => $kart->getKey(), 'session_type' => 'test']);
+    $session = Session::query()->firstOrFail();
+    $this->postJson(route('pit-mode.sessions.laps.store', $session), ['lap_time' => '52.123'])->assertSuccessful();
+    $manual = TimingLap::query()->where('session_id', $session->getKey())->sole();
+    $route = route('pit-mode.sessions.laps.update', [$session, $manual]);
+
+    $this->patchJson($route, ['lap_time' => '52.200', 'expected_lap_time_ms' => 52000])->assertUnprocessable();
+    $this->patchJson($route, ['lap_time' => '52.123', 'expected_lap_time_ms' => 52123])->assertUnprocessable();
+    $this->patchJson($route, ['lap_time' => 'broken', 'expected_lap_time_ms' => 52123])->assertUnprocessable();
+
+    $imported = TimingLap::query()->create([
+        'session_id' => $session->getKey(), 'vehicle_id' => $kart->getKey(),
+        'lap_number' => 2, 'lap_time_ms' => 51000, 'source' => 'import', 'is_valid' => true,
+    ]);
+    $this->patchJson(route('pit-mode.sessions.laps.update', [$session, $imported]), [
+        'lap_time' => '50.000', 'expected_lap_time_ms' => 51000,
+    ])->assertUnprocessable();
+
+    $otherSession = Session::query()->create([
+        'vehicle_id' => $kart->getKey(), 'configuration_version_id' => $session->configuration_version_id,
+        'session_type' => 'test', 'started_at' => now(), 'status' => 'draft', 'created_by' => $operator->getKey(),
+    ]);
+    $this->patchJson(route('pit-mode.sessions.laps.update', [$otherSession, $manual]), [
+        'lap_time' => '50.000', 'expected_lap_time_ms' => 52123,
+    ])->assertNotFound();
+
+    $outsider = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($outsider);
+    $this->patchJson($route, ['lap_time' => '50.000', 'expected_lap_time_ms' => 52123])->assertNotFound();
+
+    expect($manual->fresh()->lap_time_ms)->toBe(52123)
+        ->and($imported->fresh()->lap_time_ms)->toBe(51000)
+        ->and(AuditLog::query()->where('action', 'lap_time_corrected')->count())->toBe(0);
 });
 
 test('the pit screen suggests the finalized kart setup including its last recorded adjustments', function () {
