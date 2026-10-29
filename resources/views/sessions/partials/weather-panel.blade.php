@@ -136,7 +136,9 @@
                 </svg>
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <div>
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-[0.13em] text-white/70">{{ $it ? 'PREVISIONE MET NORWAY' : 'MET NORWAY FORECAST' }}</p>
+                <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 @foreach ([
                     [$it ? 'Umidità' : 'Humidity', isset($weather['humidity_pct']) ? round((float) $weather['humidity_pct']).'%' : '—'],
                     [$it ? 'Vento' : 'Wind', isset($weather['wind_speed_kmh']) ? number_format((float) $weather['wind_speed_kmh'], 1, ',', '.').' km/h' : '—'],
@@ -150,6 +152,7 @@
                         <p class="mt-2 break-words text-sm font-semibold leading-5 text-white sm:text-base">{{ $value }}</p>
                     </div>
                 @endforeach
+                </div>
             </div>
 
             @if (! empty($weather['hourly']))
@@ -195,4 +198,7 @@
             <p class="text-[11px] leading-5 text-white/65">{{ $it ? 'Dati previsionali, non misure di sensori sulla pista. Le coordinate del circuito, del GPS o inserite manualmente vengono arrotondate e inviate a MET Norway solo quando richiedi l’importazione.' : 'Forecast model data, not on-track sensor measurements. Circuit, GPS or manually entered coordinates are rounded and sent to MET Norway only when you request an import.' }} <a href="https://www.met.no/en" target="_blank" rel="noopener noreferrer" class="font-semibold text-white underline underline-offset-2">MET Norway</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2">CC BY 4.0</a></p>
         </div>
     </div>
+    @if ($weatherSession)
+        <x-pitmetric.weather-observations :session="$weatherSession" :history="$weatherObservationHistory" :ready="$weatherObservationsReady" :page="$sessions->currentPage()" :it="$it" />
+    @endif
 </section>

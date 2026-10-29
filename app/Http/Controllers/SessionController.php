@@ -176,6 +176,64 @@ class SessionController extends Controller
             ->with('status', __('Weather forecast saved to the session without changing its setup or recorded laps.'));
     }
 
+    public function storeWeatherObservation(Request $request, Session $session): RedirectResponse
+    {
+        Gate::authorize('update', $session);
+
+        abort_unless(Schema::hasTable('session_weather_observations'), 503, __('Weather observations are not available until the database has been updated.'));
+
+        $validated = $request->validate([
+            'air_temperature_c' => ['nullable', 'numeric', 'between:-70,70'],
+            'track_temperature_c' => ['nullable', 'numeric', 'between:-50,100'],
+            'humidity_pct' => ['nullable', 'numeric', 'between:0,100'],
+            'wind_speed_kmh' => ['nullable', 'numeric', 'between:0,350'],
+            'pressure_hpa' => ['nullable', 'numeric', 'between:500,1200'],
+            'cloud_cover_pct' => ['nullable', 'numeric', 'between:0,100'],
+            'precipitation_next_hour_mm' => ['nullable', 'numeric', 'between:0,500'],
+            'condition' => ['nullable', 'in:clear,partly_cloudy,cloudy,rain,storm,snow,other'],
+            'measured_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'reset' => ['nullable', 'boolean'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:10000'],
+        ]);
+
+        $isReset = (bool) ($validated['reset'] ?? false);
+        $values = [];
+
+        if (! $isReset) {
+            foreach (['air_temperature_c', 'track_temperature_c', 'humidity_pct', 'wind_speed_kmh', 'pressure_hpa', 'cloud_cover_pct', 'precipitation_next_hour_mm'] as $field) {
+                if (isset($validated[$field])) {
+                    $values[$field] = round((float) $validated[$field], 1);
+                }
+            }
+
+            if (isset($validated['condition'])) {
+                $values['condition'] = $validated['condition'];
+            }
+
+            if ($values === [] && blank($validated['notes'] ?? null)) {
+                throw ValidationException::withMessages(['observations' => __('Enter at least one measurement or a note.')]);
+            }
+        }
+
+        $session->weatherObservations()->create([
+            'values' => $values,
+            'is_reset' => $isReset,
+            'measured_at' => isset($validated['measured_at'])
+                ? Carbon::parse($validated['measured_at'], 'Europe/Rome')->utc()
+                : now(),
+            'notes' => $isReset ? null : ($validated['notes'] ?? null),
+            'created_by' => $request->user()?->getAuthIdentifier(),
+        ]);
+
+        return to_route('sessions.index', [
+            'weather_session' => $session->getKey(),
+            'page' => $validated['page'] ?? 1,
+        ])->with('status', $isReset
+            ? __('Manual weather readings cleared. The history and MET Norway forecast were preserved.')
+            : __('Operator weather observations saved without changing the MET Norway forecast.'));
+    }
+
     public function store(
         Request $request,
         WorkspaceContext $workspaceContext,

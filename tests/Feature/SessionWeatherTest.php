@@ -339,3 +339,124 @@ it('blocks GPS weather updates from another workspace and read-only team members
     Http::assertNothingSent();
     expect($session->fresh()->weather_snapshot)->toBeNull();
 });
+
+it('stores operator weather corrections separately from the provider forecast and preserves each revision', function () {
+    app()->setLocale('it');
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+    $session->weather_snapshot = ['provider' => 'met_norway', 'air_temperature_c' => 18.7, 'captured_at' => now()->toIso8601String()];
+    $session->save();
+    $originalForecast = $session->fresh()->weather_snapshot;
+
+    $this->post(route('sessions.weather-observations.store', $session), [
+        'air_temperature_c' => 20.5,
+        'track_temperature_c' => 37.8,
+        'humidity_pct' => 61,
+        'condition' => 'partly_cloudy',
+        'measured_at' => '2026-10-29T11:45',
+        'notes' => 'Asfalto misurato con termometro IR',
+    ])->assertSessionHasNoErrors();
+
+    $first = $session->weatherObservations()->firstOrFail();
+    expect($first->values['air_temperature_c'])->toBe(20.5)
+        ->and($first->values['track_temperature_c'])->toBe(37.8)
+        ->and($first->values['humidity_pct'])->toBe(61)
+        ->and($first->values['condition'])->toBe('partly_cloudy')
+        ->and($first->notes)->toBe('Asfalto misurato con termometro IR')
+        ->and($first->created_by)->toBe($user->id)
+        ->and($first->workspace_id)->toBe($user->workspaces()->firstOrFail()->id)
+        ->and($first->measured_at->timezone('Europe/Rome')->format('Y-m-d H:i'))->toBe('2026-10-29 11:45')
+        ->and($session->fresh()->weather_snapshot)->toBe($originalForecast);
+
+    $this->post(route('sessions.weather-observations.store', $session), [
+        'track_temperature_c' => 39.2,
+        'notes' => 'Seconda misurazione dopo la manche',
+    ])->assertSessionHasNoErrors();
+
+    expect($session->weatherObservations()->count())->toBe(2)
+        ->and($session->weatherObservations()->firstOrFail()->values)->toBe(['track_temperature_c' => 39.2])
+        ->and($first->fresh()->values['track_temperature_c'])->toBe(37.8)
+        ->and($session->fresh()->weather_snapshot)->toBe($originalForecast);
+
+    $this->get(route('sessions.index', ['weather_session' => $session->id]))
+        ->assertSuccessful()
+        ->assertSee('PREVISIONE MET NORWAY')
+        ->assertSee('MISURAZIONI IN PISTA')
+        ->assertSee('Temperatura asfalto')
+        ->assertSee('39,2 °C')
+        ->assertSee('Asfalto misurato con termometro IR')
+        ->assertSee('Seconda misurazione dopo la manche');
+
+    $this->post(route('sessions.weather-observations.store', $session), ['reset' => '1'])
+        ->assertSessionHasNoErrors();
+
+    expect($session->weatherObservations()->count())->toBe(3)
+        ->and($session->weatherObservations()->firstOrFail()->is_reset)->toBeTrue()
+        ->and($session->weatherObservations()->firstOrFail()->values)->toBe([])
+        ->and($session->fresh()->weather_snapshot)->toBe($originalForecast);
+
+    $this->get(route('sessions.index', ['weather_session' => $session->id]))
+        ->assertSee('Nessuna misurazione manuale attiva')
+        ->assertSee('Ripristino valori manuali');
+});
+
+it('accepts operator notes without inventing weather measurements when no provider forecast exists', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+
+    $this->post(route('sessions.weather-observations.store', $session), [
+        'notes' => 'Track damp, no sensor measurement taken',
+    ])->assertSessionHasNoErrors();
+
+    expect($session->weatherObservations()->firstOrFail()->values)->toBe([])
+        ->and($session->fresh()->weather_snapshot)->toBeNull();
+});
+
+it('rejects invalid operator weather values without changing the saved forecast', function (array $payload) {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $session = weatherTestSession($user);
+
+    $this->post(route('sessions.weather-observations.store', $session), $payload)
+        ->assertSessionHasErrors();
+
+    expect($session->weatherObservations()->count())->toBe(0);
+})->with([
+    [['track_temperature_c' => 120]],
+    [['air_temperature_c' => -90]],
+    [['humidity_pct' => 105]],
+    [['condition' => 'sunny_and_warm']],
+    [['notes' => '']],
+]);
+
+it('protects manual weather observations from other workspaces and read-only users', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($owner);
+    $session = weatherTestSession($owner);
+    $workspace = $owner->workspaces()->firstOrFail();
+
+    $otherUser = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($otherUser)->post(route('sessions.weather-observations.store', $session), [
+        'track_temperature_c' => 37,
+    ])->assertNotFound();
+
+    $viewer = User::factory()->create();
+    $viewer->forceFill(['database_access_enabled' => true])->save();
+    DB::table('workspace_user')->insert([
+        'workspace_id' => $workspace->id,
+        'user_id' => $viewer->id,
+        'role' => 'viewer',
+        'status' => 'active',
+        'joined_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($viewer)->post(route('sessions.weather-observations.store', $session), [
+        'track_temperature_c' => 35,
+    ])->assertForbidden();
+
+    expect($session->weatherObservations()->count())->toBe(0);
+});
