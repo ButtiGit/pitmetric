@@ -1,6 +1,6 @@
 @props([
     'karts', 'kart', 'trackSession', 'activeSession', 'eventEntry',
-    'configurationVersion', 'laps', 'lapCount', 'sessionCaptures', 'coldReading',
+    'configurationVersion', 'laps', 'lapCount', 'bestLap', 'lapCorrections', 'sessionCaptures', 'coldReading',
     'hotReading', 'setupValues', 'lastUsedSettings',
 ])
 
@@ -9,7 +9,7 @@
     $eventName = $eventEntry?->raceEvent?->name ?? $trackSession?->raceEvent?->name;
     $driverName = $eventEntry?->driver?->display_name ?? $trackSession?->eventEntry?->driver?->display_name;
     $weather = $trackSession?->weather_snapshot;
-    $bestLap = $laps->min('lap_time_ms');
+    $formatLap = static fn (int $ms): string => sprintf('%d:%02d.%03d', intdiv($ms, 60000), intdiv($ms % 60000, 1000), $ms % 1000);
     $setupFields = [
         'camber_front_deg' => ['Camber', '°'],
         'caster_front_deg' => ['Caster', '°'],
@@ -170,9 +170,43 @@
                 <div class="in-pista-summary-title"><h2 id="in-pista-summary-title">Quello che è cambiato</h2><span>{{ $trackSession->started_at?->format('d/m/Y') }}</span></div>
                 <div class="in-pista-summary-stats">
                     <div><span>GIRI REGISTRATI</span><strong data-in-pista-lap-count>{{ $lapCount }}</strong></div>
-                    <div><span>MIGLIOR GIRO</span><strong data-in-pista-best-lap>{{ $bestLap === null ? '—' : sprintf('%d:%02d.%03d', intdiv($bestLap, 60000), intdiv($bestLap % 60000, 1000), $bestLap % 1000) }}</strong></div>
+                    <div><span>MIGLIOR GIRO</span><strong data-in-pista-best-lap>{{ $bestLap === null ? '—' : $formatLap((int) $bestLap) }}</strong></div>
                     <div><span>SETUP DI PARTENZA</span><strong>{{ $trackSession->setupSnapshot?->name ?? '—' }}</strong></div>
                 </div>
+                <section class="in-pista-laps" aria-label="Tempi della sessione">
+                    <div class="in-pista-laps-heading"><h3>Tempi registrati</h3><span>Ultimi 20 giri · modifica solo tempi manuali</span></div>
+                    <div class="in-pista-laps-list" data-in-pista-laps>
+                        @forelse ($laps as $lap)
+                            @php($corrections = $lapCorrections->get($lap->getKey(), collect()))
+                            <article class="in-pista-lap-row" data-in-pista-lap-row="{{ $lap->getKey() }}">
+                                <div class="in-pista-lap-row-main">
+                                    <span class="in-pista-lap-number">#{{ $lap->lap_number }}</span>
+                                    <div class="in-pista-lap-time-wrap"><strong data-in-pista-lap-time>{{ $formatLap((int) $lap->lap_time_ms) }}</strong><small>{{ $lap->source === 'manual' ? 'Manuale' : 'Import' }}</small></div>
+                                    <span class="in-pista-lap-edited" data-in-pista-lap-edited @if ($corrections->isEmpty()) hidden @endif>Corretto</span>
+                                    @if ($lap->source === 'manual' && $lap->telemetry_import_id === null)
+                                        <button type="button" data-in-pista-edit-lap
+                                            data-in-pista-lap-action="{{ route('pit-mode.sessions.laps.update', [$trackSession, $lap]) }}"
+                                            data-in-pista-lap-number="{{ $lap->lap_number }}"
+                                            data-in-pista-lap-ms="{{ $lap->lap_time_ms }}"
+                                            data-in-pista-lap-label="{{ $formatLap((int) $lap->lap_time_ms) }}">Correggi</button>
+                                    @endif
+                                </div>
+                                @if ($corrections->isNotEmpty())
+                                    <details class="in-pista-lap-history" data-in-pista-lap-history>
+                                        <summary>Storico correzioni ({{ $corrections->count() }})</summary>
+                                        <ul>
+                                            @foreach ($corrections as $correction)
+                                                <li><strong>{{ $formatLap((int) ($correction->before_values['lap_time_ms'] ?? 0)) }} a {{ $formatLap((int) ($correction->after_values['lap_time_ms'] ?? 0)) }}</strong><span>{{ $correction->user?->name ?? 'Operatore' }} · {{ $correction->created_at?->format('d/m H:i') }}</span>@if (! empty($correction->after_values['reason']))<p>{{ $correction->after_values['reason'] }}</p>@endif</li>
+                                            @endforeach
+                                        </ul>
+                                    </details>
+                                @endif
+                            </article>
+                        @empty
+                            <p class="in-pista-laps-empty" data-in-pista-empty-laps>Nessun tempo ancora registrato.</p>
+                        @endforelse
+                    </div>
+                </section>
                 <div class="in-pista-setup-summary">
                     @foreach ($setupFields as $field => [$label, $unit])
                         <div><span>{{ $label }}</span><strong data-in-pista-setup-field="{{ $field }}">{{ isset($setupValues[$field]) ? $setupValues[$field].' '.$unit : '—' }}</strong></div>
@@ -201,6 +235,21 @@
     @endif
 
     <div class="in-pista-toast" data-in-pista-toast role="status" aria-live="polite" hidden></div>
+
+    @if ($trackSession)
+        <dialog class="in-pista-dialog" id="in-pista-lap-correction" aria-label="Correggi un tempo manuale">
+            <div class="in-pista-dialog-head"><div><span>REGISTRO TEMPI</span><h2>Correggi giro <span data-in-pista-edit-lap-title></span></h2></div><button type="button" data-in-pista-dialog-close aria-label="Chiudi">×</button></div>
+            <p class="in-pista-dialog-hint">Il tempo precedente non viene cancellato: ogni modifica mantiene valore originale, operatore, data e motivo.</p>
+            <form method="POST" action="{{ route('pit-mode.sessions.laps.update', [$trackSession, $laps->firstWhere('source', 'manual')?->getKey() ?? 0]) }}" data-in-pista-form data-in-pista-correction>
+                @csrf
+                @method('PATCH')
+                <input name="expected_lap_time_ms" type="hidden">
+                <label class="in-pista-dialog-field">Tempo corretto <input name="lap_time" type="text" required maxlength="20" inputmode="decimal" autocomplete="off" placeholder="0:52.340"></label>
+                <label class="in-pista-dialog-field">Motivo <textarea name="reason" rows="2" maxlength="500" placeholder="Es. errore di trascrizione (facoltativo)"></textarea></label>
+                <button class="in-pista-primary" type="submit">Salva correzione</button>
+            </form>
+        </dialog>
+    @endif
 
     @if ($isLive)
         @foreach (['cold' => 'Pressioni fredde', 'hot' => 'Pressioni calde'] as $phase => $label)

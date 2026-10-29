@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified', 'database.access'])->group(function () {
         Route::post('/pit/notes', [PitModeController::class, 'storeNote'])->name('pit-mode.notes.store');
         Route::post('/pit/sessions', [InPistaController::class, 'start'])->name('pit-mode.sessions.start');
         Route::post('/pit/sessions/{session}/laps', [InPistaController::class, 'lap'])->name('pit-mode.sessions.laps.store');
+        Route::patch('/pit/sessions/{session}/laps/{timingLap}', [InPistaController::class, 'correctLap'])->name('pit-mode.sessions.laps.update');
         Route::post('/pit/sessions/{session}/adjustments', [InPistaController::class, 'adjustment'])->name('pit-mode.sessions.adjustments.store');
         Route::post('/pit/sessions/{session}/notes', [InPistaController::class, 'note'])->name('pit-mode.sessions.notes.store');
         Route::post('/pit/sessions/{session}/finish', [InPistaController::class, 'finish'])->name('pit-mode.sessions.finish');

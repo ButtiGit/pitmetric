@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Session;
+use App\Models\TimingLap;
 use App\Models\TrackCapture;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -62,6 +64,14 @@ class PitModeController extends Controller
 
         $laps = $trackSession instanceof Session ? $trackSession->timingLaps()->orderByDesc('lap_number')->limit(20)->get() : collect();
         $lapCount = $trackSession instanceof Session ? $trackSession->timingLaps()->count() : 0;
+        $bestLap = $trackSession instanceof Session ? $trackSession->timingLaps()->where('is_valid', true)->min('lap_time_ms') : null;
+        $lapCorrections = $laps->isEmpty() ? collect() : AuditLog::query()
+            ->with('user')
+            ->where('workspace_id', $workspace->getKey())
+            ->where('action', 'lap_time_corrected')
+            ->where('subject_type', TimingLap::class)
+            ->whereIn('subject_id', $laps->pluck('id'))
+            ->latest('id')->limit(100)->get()->groupBy('subject_id');
         $sessionCaptures = $trackSession instanceof Session ? $trackSession->trackCaptures()->orderByDesc('occurred_at')->orderByDesc('id')->limit(30)->get() : collect();
         $coldReading = $trackSession?->tyreReadings()->where('phase', 'cold')->first();
         $hotReading = $trackSession?->tyreReadings()->where('phase', 'hot')->first();
@@ -82,7 +92,7 @@ class PitModeController extends Controller
 
         return view('pit-mode.index', compact(
             'context', 'captures', 'karts', 'kart', 'trackSession', 'activeSession',
-            'eventEntry', 'configurationVersion', 'laps', 'lapCount', 'sessionCaptures',
+            'eventEntry', 'configurationVersion', 'laps', 'lapCount', 'bestLap', 'lapCorrections', 'sessionCaptures',
             'coldReading', 'hotReading', 'setupValues', 'lastUsedSettings',
         ));
     }

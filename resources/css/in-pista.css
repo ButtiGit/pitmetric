@@ -99,6 +99,27 @@
 .in-pista-summary-stats>div{display:flex;flex-direction:column;gap:7px;min-width:0;min-height:70px;padding:10px;border:1px solid #383f4a;border-radius:11px;background:#242933}
 .in-pista-summary-stats span{color:#a3acb8;font-size:9px;font-weight:850;letter-spacing:.04em}
 .in-pista-summary-stats strong{overflow:hidden;color:#fff;font-size:17px;letter-spacing:-.04em;text-overflow:ellipsis}
+.in-pista-laps{margin:0 0 18px}
+.in-pista-laps-heading{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:3px 10px;margin-bottom:10px}
+.in-pista-summary .in-pista-laps-heading h3{margin:0;font-size:13px;font-weight:900}
+.in-pista-laps-heading>span{color:#a8b2c0;font-size:10px}
+.in-pista-laps-list{display:grid;gap:7px}
+.in-pista-lap-row{min-width:0;border:1px solid #39414f;border-radius:12px;background:#202631;padding:9px 11px}
+.in-pista-lap-row-main{display:flex;align-items:center;gap:9px;min-width:0}
+.in-pista-lap-number{min-width:30px;color:#aeb9c9;font-size:11px;font-weight:900}
+.in-pista-lap-time-wrap{display:grid;gap:1px;flex:1;min-width:0}
+.in-pista-lap-time-wrap strong{color:#f7f8fa;font-size:18px;font-variant-numeric:tabular-nums;letter-spacing:-.035em}
+.in-pista-lap-time-wrap small{color:#9eacba;font-size:10px}
+.in-pista-lap-edited{color:#9ee1c2;font-size:10px;font-weight:850}
+.in-pista-lap-edited[hidden]{display:none}
+.in-pista-lap-row-main button{flex:none;min-height:43px;border:1px solid #9d6354;border-radius:9px;background:#3d2928;padding:7px 11px;color:#ffc3b0;font-size:11px;font-weight:900;cursor:pointer}
+.in-pista-laps-empty{margin:0;border:1px dashed #3d4753;border-radius:11px;padding:15px;color:#a6b0bd;font-size:12px}
+.in-pista-lap-history{margin-top:8px;border-top:1px solid #3e4652;padding-top:8px}
+.in-pista-lap-history summary{color:#ffb29e;font-size:11px;font-weight:800;cursor:pointer;min-height:27px}
+.in-pista-lap-history ul{display:grid;gap:7px;margin:5px 0 0;padding:0;list-style:none}
+.in-pista-lap-history li{display:grid;gap:3px;border-radius:9px;background:#171c23;padding:9px}
+.in-pista-lap-history li strong{font-size:12px;font-variant-numeric:tabular-nums}
+.in-pista-lap-history li span,.in-pista-lap-history li p{margin:0;color:#adb9c7;font-size:10px;overflow-wrap:anywhere}
 .in-pista-setup-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:14px}
 .in-pista-setup-summary>div{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #343d48;padding:10px 4px}
 .in-pista-setup-summary span,.in-pista-reading-row span{color:#a5afbc;font-size:11px}
@@ -125,6 +146,7 @@
 .in-pista-tyre-grid label{display:grid;gap:7px;min-width:0}
 .in-pista-tyre-grid label span,.in-pista-dialog-field{color:#b6c0ce;font-size:11px;font-weight:750}
 .in-pista-dialog-field{display:grid;gap:8px}
+.in-pista-dialog-field input,.in-pista-dialog-field textarea{width:100%;min-height:47px;border:1px solid #49515f;border-radius:11px;background:#10151d;padding:11px 12px;color:#fff;font-size:15px}
 .in-pista-dialog textarea{resize:vertical;min-height:105px}
 .in-pista-dialog-hint{margin:-9px 0 14px;color:#aeb9c8;font-size:12px;line-height:1.6}
 .in-pista-last-fill{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;border:1px solid #695043;border-radius:13px;background:linear-gradient(115deg,#392d2a,#28252b);padding:12px}

@@ -54,6 +54,23 @@ function initializeInPista() {
         showMessage('Ultimi valori inseriti. Controllali e premi Registra regolazioni per salvarli.');
     });
 
+    root.addEventListener('click', event => {
+        const button = event.target instanceof Element ? event.target.closest('[data-in-pista-edit-lap]') : null;
+        if (!button) return;
+
+        const dialog = root.querySelector('#in-pista-lap-correction');
+        const form = dialog?.querySelector('form');
+        if (!(dialog instanceof HTMLDialogElement) || !form) return;
+
+        form.action = button.dataset.inPistaLapAction;
+        form.elements.namedItem('lap_time').value = button.dataset.inPistaLapLabel;
+        form.elements.namedItem('expected_lap_time_ms').value = button.dataset.inPistaLapMs;
+        form.elements.namedItem('reason').value = '';
+        form.querySelector('[data-in-pista-form-error]')?.remove();
+        dialog.querySelector('[data-in-pista-edit-lap-title]').textContent = `#${button.dataset.inPistaLapNumber}`;
+        dialog.showModal();
+    });
+
     root.querySelector('[data-in-pista-finish]')?.addEventListener('submit', event => {
         if (!window.confirm('Concludere la sessione? I dati saranno consolidati e lo storico resterà disponibile.')) event.preventDefault();
     });
@@ -76,9 +93,96 @@ function initializeInPista() {
         list.prepend(article);
     };
 
+    const addLapRow = lap => {
+        const list = root.querySelector('[data-in-pista-laps]');
+        if (!list || !lap) return;
+        list.querySelector('[data-in-pista-empty-laps]')?.remove();
+
+        const row = document.createElement('article');
+        row.className = 'in-pista-lap-row';
+        row.dataset.inPistaLapRow = String(lap.id);
+        const main = document.createElement('div');
+        main.className = 'in-pista-lap-row-main';
+        const number = document.createElement('span');
+        number.className = 'in-pista-lap-number';
+        number.textContent = `#${lap.number}`;
+        const timeWrap = document.createElement('div');
+        timeWrap.className = 'in-pista-lap-time-wrap';
+        const time = document.createElement('strong');
+        time.dataset.inPistaLapTime = '';
+        time.textContent = lap.time;
+        const source = document.createElement('small');
+        source.textContent = 'Manuale';
+        timeWrap.append(time, source);
+        const edited = document.createElement('span');
+        edited.className = 'in-pista-lap-edited';
+        edited.dataset.inPistaLapEdited = '';
+        edited.textContent = 'Corretto';
+        edited.hidden = true;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.inPistaEditLap = '';
+        button.dataset.inPistaLapAction = lap.edit_url;
+        button.dataset.inPistaLapNumber = String(lap.number);
+        button.dataset.inPistaLapMs = String(lap.milliseconds);
+        button.dataset.inPistaLapLabel = lap.time;
+        button.textContent = 'Correggi';
+        main.append(number, timeWrap, edited, button);
+        row.append(main);
+        list.prepend(row);
+
+        while (list.querySelectorAll('[data-in-pista-lap-row]').length > 20) {
+            list.querySelector('[data-in-pista-lap-row]:last-of-type')?.remove();
+        }
+    };
+
+    const applyLapCorrection = correction => {
+        const row = root.querySelector(`[data-in-pista-lap-row="${correction.lap_id}"]`);
+        if (!row) return;
+
+        row.querySelector('[data-in-pista-lap-time]').textContent = correction.corrected_time;
+        row.querySelector('[data-in-pista-lap-edited]').hidden = false;
+        const button = row.querySelector('[data-in-pista-edit-lap]');
+        button.dataset.inPistaLapMs = String(correction.lap_time_ms);
+        button.dataset.inPistaLapLabel = correction.corrected_time;
+
+        let history = row.querySelector('[data-in-pista-lap-history]');
+        if (!history) {
+            history = document.createElement('details');
+            history.className = 'in-pista-lap-history';
+            history.dataset.inPistaLapHistory = '';
+            history.append(document.createElement('summary'), document.createElement('ul'));
+            row.append(history);
+        }
+
+        const item = document.createElement('li');
+        const times = document.createElement('strong');
+        times.textContent = `${correction.previous_time} a ${correction.corrected_time}`;
+        const operator = document.createElement('span');
+        operator.textContent = `${correction.operator} · ${correction.corrected_at}`;
+        item.append(times, operator);
+        if (correction.reason) {
+            const reason = document.createElement('p');
+            reason.textContent = correction.reason;
+            item.append(reason);
+        }
+        history.querySelector('ul').prepend(item);
+        history.querySelector('summary').textContent = `Storico correzioni (${history.querySelectorAll('li').length})`;
+    };
+
     const updateSummary = (form, response) => {
         const entry = response.entry;
         if (!entry) return;
+
+        if (response.correction) {
+            applyLapCorrection(response.correction);
+            const best = root.querySelector('[data-in-pista-best-lap]');
+            if (best) best.textContent = response.correction.best_time;
+            form.reset();
+            form.closest('dialog')?.close();
+            addActivity(entry);
+            return;
+        }
 
         const lapInput = form.querySelector('input[name="lap_time"]');
         if (lapInput) {
@@ -93,6 +197,7 @@ function initializeInPista() {
                 return (Number.isFinite(seconds) && Number.isFinite(minutes)) ? Math.round((minutes * 60 + seconds) * 1000) : Infinity;
             };
             if (best && toMilliseconds(entry.summary) < toMilliseconds(best.textContent.trim())) best.textContent = entry.summary;
+            addLapRow(response.lap);
             lapInput.value = '';
             lapInput.focus({ preventScroll: true });
         }

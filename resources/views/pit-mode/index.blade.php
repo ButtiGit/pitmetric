@@ -30,7 +30,7 @@
 
             <x-pitmetric.in-pista-console
                 :karts="$karts" :kart="$kart" :track-session="$trackSession" :active-session="$activeSession"
-                :event-entry="$eventEntry" :configuration-version="$configurationVersion" :laps="$laps" :lap-count="$lapCount"
+                :event-entry="$eventEntry" :configuration-version="$configurationVersion" :laps="$laps" :lap-count="$lapCount" :best-lap="$bestLap" :lap-corrections="$lapCorrections"
                 :session-captures="$sessionCaptures" :cold-reading="$coldReading" :hot-reading="$hotReading"
                 :setup-values="$setupValues" :last-used-settings="$lastUsedSettings"
             />
