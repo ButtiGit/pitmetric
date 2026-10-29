@@ -64,7 +64,8 @@ class PitModeController extends Controller
 
         $laps = $trackSession instanceof Session ? $trackSession->timingLaps()->orderByDesc('lap_number')->limit(20)->get() : collect();
         $lapCount = $trackSession instanceof Session ? $trackSession->timingLaps()->count() : 0;
-        $bestLap = $trackSession instanceof Session ? $trackSession->timingLaps()->where('is_valid', true)->min('lap_time_ms') : null;
+        $bestLapRecord = $trackSession instanceof Session ? $inPista->bestLap($trackSession) : null;
+        $bestLap = $bestLapRecord?->lap_time_ms;
         $lapCorrections = $laps->isEmpty() ? collect() : AuditLog::query()
             ->with('user')
             ->where('workspace_id', $workspace->getKey())
@@ -73,16 +74,15 @@ class PitModeController extends Controller
             ->whereIn('subject_id', $laps->pluck('id'))
             ->latest('id')->limit(100)->get()->groupBy('subject_id');
         $sessionCaptures = $trackSession instanceof Session ? $trackSession->trackCaptures()->orderByDesc('occurred_at')->orderByDesc('id')->limit(30)->get() : collect();
+        $setupAdjustments = $trackSession instanceof Session ? $trackSession->trackCaptures()
+            ->where('kind', 'setup_adjustment')->orderBy('occurred_at')->orderBy('id')->get(['id', 'payload']) : collect();
+        $adjustmentCount = $setupAdjustments->count();
         $coldReading = $trackSession?->tyreReadings()->where('phase', 'cold')->first();
         $hotReading = $trackSession?->tyreReadings()->where('phase', 'hot')->first();
         $setupValues = $trackSession instanceof Session && $trackSession->setupSnapshot !== null
             ? $trackSession->setupSnapshot->values : [];
 
-        foreach ($sessionCaptures->reverse() as $capture) {
-            if ($capture->kind !== 'setup_adjustment') {
-                continue;
-            }
-
+        foreach ($setupAdjustments as $capture) {
             foreach ((array) data_get($capture->payload, 'values', []) as $field => $value) {
                 $setupValues[$field] = $value;
             }
@@ -92,8 +92,8 @@ class PitModeController extends Controller
 
         return view('pit-mode.index', compact(
             'context', 'captures', 'karts', 'kart', 'trackSession', 'activeSession',
-            'eventEntry', 'configurationVersion', 'laps', 'lapCount', 'bestLap', 'lapCorrections', 'sessionCaptures',
-            'coldReading', 'hotReading', 'setupValues', 'lastUsedSettings',
+            'eventEntry', 'configurationVersion', 'laps', 'lapCount', 'bestLap', 'bestLapRecord', 'lapCorrections', 'sessionCaptures',
+            'coldReading', 'hotReading', 'setupValues', 'adjustmentCount', 'lastUsedSettings',
         ));
     }
 

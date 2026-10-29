@@ -136,6 +136,19 @@ function initializeInPista() {
         }
     };
 
+    const updateBestLap = lap => {
+        const time = root.querySelector('[data-in-pista-best-lap]');
+        const detail = root.querySelector('[data-in-pista-best-lap-detail]');
+        if (time) time.textContent = lap?.time ?? '—';
+        if (detail) detail.textContent = lap
+            ? `Giro #${lap.number} · ${lap.source === 'manual' ? 'Manuale' : 'Importato'}`
+            : 'Nessun tempo valido registrato';
+
+        for (const row of root.querySelectorAll('[data-in-pista-lap-row]')) {
+            row.classList.toggle('is-best', String(lap?.id ?? '') === row.dataset.inPistaLapRow);
+        }
+    };
+
     const applyLapCorrection = correction => {
         const row = root.querySelector(`[data-in-pista-lap-row="${correction.lap_id}"]`);
         if (!row) return;
@@ -176,8 +189,7 @@ function initializeInPista() {
 
         if (response.correction) {
             applyLapCorrection(response.correction);
-            const best = root.querySelector('[data-in-pista-best-lap]');
-            if (best) best.textContent = response.correction.best_time;
+            if ('best_lap' in response) updateBestLap(response.best_lap);
             form.reset();
             form.closest('dialog')?.close();
             addActivity(entry);
@@ -188,16 +200,8 @@ function initializeInPista() {
         if (lapInput) {
             const count = root.querySelector('[data-in-pista-lap-count]');
             if (count) count.textContent = String(Number(count.textContent || 0) + 1);
-
-            const best = root.querySelector('[data-in-pista-best-lap]');
-            const toMilliseconds = value => {
-                const pieces = value.split(':');
-                const seconds = Number(pieces.pop());
-                const minutes = pieces.length ? Number(pieces.pop()) : 0;
-                return (Number.isFinite(seconds) && Number.isFinite(minutes)) ? Math.round((minutes * 60 + seconds) * 1000) : Infinity;
-            };
-            if (best && toMilliseconds(entry.summary) < toMilliseconds(best.textContent.trim())) best.textContent = entry.summary;
             addLapRow(response.lap);
+            if ('best_lap' in response) updateBestLap(response.best_lap);
             lapInput.value = '';
             lapInput.focus({ preventScroll: true });
         }
@@ -212,13 +216,23 @@ function initializeInPista() {
             const fields = new FormData(form);
             for (const [key, value] of fields.entries()) {
                 if (!value || key === '_token' || key === 'notes') continue;
-                const field = root.querySelector(`[data-in-pista-setup-field="${key}"]`);
-                if (field) field.textContent = `${value}${key.endsWith('_deg') ? ' °' : key.endsWith('_mm') ? ' mm' : ''}`;
+                for (const field of root.querySelectorAll(`[data-in-pista-setup-field="${key}"]`)) {
+                    field.textContent = `${value}${key.endsWith('_deg') ? ' °' : key.endsWith('_mm') ? ' mm' : ''}`;
+                }
             }
             const pinion = fields.get('pinion_teeth');
             const crown = fields.get('crown_teeth');
-            const ratio = root.querySelector('[data-in-pista-setup-field="final_drive"]');
-            if (ratio && pinion && crown) ratio.textContent = `${pinion}/${crown}`;
+            if (pinion && crown) {
+                for (const ratio of root.querySelectorAll('[data-in-pista-setup-field="final_drive"]')) ratio.textContent = `${pinion}/${crown}`;
+            }
+            const adjustmentCount = root.querySelector('[data-in-pista-adjustment-count]');
+            if (adjustmentCount) {
+                const next = Number(adjustmentCount.dataset.count || 0) + 1;
+                adjustmentCount.dataset.count = String(next);
+                adjustmentCount.textContent = `${next} ${next === 1 ? 'regolazione registrata' : 'regolazioni registrate'}`;
+                const adjustmentStat = root.querySelector('[data-in-pista-adjustment-stat]');
+                if (adjustmentStat) adjustmentStat.textContent = String(next);
+            }
             form.reset();
         }
 

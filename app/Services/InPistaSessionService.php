@@ -197,6 +197,16 @@ class InPistaSessionService
         });
     }
 
+    public function bestLap(Session $session): ?TimingLap
+    {
+        return $session->timingLaps()
+            ->where('is_valid', true)
+            ->orderBy('lap_time_ms')
+            ->orderBy('lap_number')
+            ->orderBy('id')
+            ->first();
+    }
+
     public function correctManualLap(
         Session $session,
         TimingLap $selectedLap,

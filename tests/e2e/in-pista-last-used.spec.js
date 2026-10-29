@@ -30,6 +30,8 @@ test('a mechanic can recall last used kart settings without automatically saving
     await page.goto(`/pit?kart=${kartOption}`);
     await page.getByRole('button', { name: /Avvia sessione/i }).click();
     await expect(page.locator('[data-in-pista]')).toContainText('Sessione in corso');
+    await expect(page.locator('.in-pista-overview-setup')).toContainText(setupName);
+    await expect(page.locator('[data-in-pista-best-lap-detail]')).toHaveText('Nessun tempo valido registrato');
 
     await page.locator('[data-in-pista-dialog-open="in-pista-adjust"]').click();
     const dialog = page.locator('#in-pista-adjust');
@@ -38,11 +40,15 @@ test('a mechanic can recall last used kart settings without automatically saving
     await dialog.locator('input[name="caster_front_deg"]').fill('10.5');
     await dialog.getByRole('button', { name: 'Registra regolazioni' }).click();
     await expect(dialog).toBeHidden();
+    await expect(page.locator('[data-in-pista-adjustment-count]')).toHaveText('1 regolazione registrata');
+    await expect(page.locator('.in-pista-overview-setup [data-in-pista-setup-field="camber_front_deg"]')).toHaveText('-1.7 °');
 
     await page.locator('#in-pista-lap-input').fill('0:52.345');
     await page.getByRole('button', { name: '+ Salva tempo' }).click();
     const lapRow = page.locator('[data-in-pista-lap-row]').first();
     await expect(lapRow).toContainText('0:52.345');
+    await expect(page.locator('[data-in-pista-best-lap-detail]')).toHaveText('Giro #1 · Manuale');
+    await expect(lapRow).toHaveClass(/is-best/);
     await lapRow.getByRole('button', { name: 'Correggi' }).click();
     const correctionDialog = page.locator('#in-pista-lap-correction');
     await expect(correctionDialog).toBeVisible();
@@ -53,6 +59,7 @@ test('a mechanic can recall last used kart settings without automatically saving
     await expect(lapRow).toContainText('0:51.123');
     await expect(lapRow).toContainText('Storico correzioni (1)');
     await expect(page.locator('[data-in-pista-best-lap]')).toHaveText('0:51.123');
+    await expect(page.locator('[data-in-pista-best-lap-detail]')).toHaveText('Giro #1 · Manuale');
     await expect(page.locator('[data-in-pista-lap-count]')).toHaveText('1');
 
     page.once('dialog', confirmation => confirmation.accept());
