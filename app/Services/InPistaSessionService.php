@@ -17,6 +17,16 @@ use Illuminate\Validation\ValidationException;
 
 class InPistaSessionService
 {
+    private const LAST_USED_FIELDS = [
+        'camber_front_deg',
+        'caster_front_deg',
+        'track_width_front_mm',
+        'track_width_rear_mm',
+        'pinion_teeth',
+        'crown_teeth',
+        'final_drive',
+    ];
+
     public function __construct(
         private readonly ConfigurationPhysicalStateService $physicalState,
         private readonly SetupSnapshotService $snapshotService,
@@ -50,6 +60,67 @@ class InPistaSessionService
             ->with('configuration')
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * @return array{session_id: int, session_date: string, setup_name: string, values: array<string, int|float|string>}|null
+     */
+    public function latestUsedSettings(Vehicle $kart): ?array
+    {
+        $lastSession = Session::query()
+            ->where('workspace_id', $kart->workspace_id)
+            ->where('vehicle_id', $kart->getKey())
+            ->where('status', 'finalized')
+            ->with([
+                'setupSnapshot',
+                'trackCaptures' => fn ($query) => $query->where('kind', 'setup_adjustment')
+                    ->orderBy('occurred_at')->orderBy('id'),
+            ])
+            ->latest('started_at')
+            ->latest('id')
+            ->first();
+
+        if (! $lastSession instanceof Session) {
+            return null;
+        }
+
+        $snapshotValues = $lastSession->setupSnapshot->values ?? [];
+        $values = is_array($snapshotValues) ? $snapshotValues : [];
+
+        foreach ($lastSession->trackCaptures as $capture) {
+            $adjustments = data_get($capture->payload, 'values', []);
+
+            if (! is_array($adjustments)) {
+                continue;
+            }
+
+            foreach ($adjustments as $field => $value) {
+                if (is_string($field) && array_key_exists($field, TechnicalSetup::FIELD_DEFINITIONS) && is_scalar($value)) {
+                    $values[$field] = $value;
+                }
+            }
+        }
+
+        $recentValues = [];
+
+        foreach (self::LAST_USED_FIELDS as $field) {
+            $value = $values[$field] ?? null;
+
+            if ((is_int($value) || is_float($value) || is_string($value)) && $value !== '') {
+                $recentValues[$field] = $value;
+            }
+        }
+
+        if ($recentValues === []) {
+            return null;
+        }
+
+        return [
+            'session_id' => (int) $lastSession->getKey(),
+            'session_date' => Carbon::parse($lastSession->started_at)->format('d/m/Y H:i'),
+            'setup_name' => $lastSession->setupSnapshot->name ?? __('Unspecified setup'),
+            'values' => $recentValues,
+        ];
     }
 
     public function start(User $user, Vehicle $kart, ConfigurationVersion $version, ?EventEntry $entry, string $type): Session

@@ -39,6 +39,8 @@ class PitModeController extends Controller
             $request->session()->put($selectionKey, $kart->getKey());
         }
 
+        $lastUsedSettings = $kart instanceof Vehicle ? $inPista->latestUsedSettings($kart) : null;
+
         $activeSession = $kart instanceof Vehicle ? Session::query()
             ->where('vehicle_id', $kart->getKey())->where('status', 'draft')
             ->latest('id')->first() : null;
@@ -81,7 +83,7 @@ class PitModeController extends Controller
         return view('pit-mode.index', compact(
             'context', 'captures', 'karts', 'kart', 'trackSession', 'activeSession',
             'eventEntry', 'configurationVersion', 'laps', 'lapCount', 'sessionCaptures',
-            'coldReading', 'hotReading', 'setupValues',
+            'coldReading', 'hotReading', 'setupValues', 'lastUsedSettings',
         ));
     }
 

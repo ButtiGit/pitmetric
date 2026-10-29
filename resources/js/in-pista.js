@@ -37,6 +37,23 @@ function initializeInPista() {
         });
     }
 
+    const applyLast = root.querySelector('[data-in-pista-apply-last]');
+    applyLast?.addEventListener('click', () => {
+        const form = applyLast.closest('form');
+        if (!form) return;
+
+        const suggestions = [...form.querySelectorAll('[data-in-pista-recommended-field]')]
+            .map(source => [form.elements.namedItem(source.dataset.inPistaRecommendedField), source.value])
+            .filter(([field]) => field instanceof HTMLInputElement);
+        if (!suggestions.length) return;
+
+        const hasChanges = suggestions.some(([field, value]) => field.value !== '' && field.value !== value);
+        if (hasChanges && !window.confirm('Sostituire i valori già inseriti con quelli dell’ultima sessione conclusa?')) return;
+
+        for (const [field, value] of suggestions) field.value = value;
+        showMessage('Ultimi valori inseriti. Controllali e premi Registra regolazioni per salvarli.');
+    });
+
     root.querySelector('[data-in-pista-finish]')?.addEventListener('submit', event => {
         if (!window.confirm('Concludere la sessione? I dati saranno consolidati e lo storico resterà disponibile.')) event.preventDefault();
     });

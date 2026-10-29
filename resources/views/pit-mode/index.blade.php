@@ -32,7 +32,7 @@
                 :karts="$karts" :kart="$kart" :track-session="$trackSession" :active-session="$activeSession"
                 :event-entry="$eventEntry" :configuration-version="$configurationVersion" :laps="$laps" :lap-count="$lapCount"
                 :session-captures="$sessionCaptures" :cold-reading="$coldReading" :hot-reading="$hotReading"
-                :setup-values="$setupValues"
+                :setup-values="$setupValues" :last-used-settings="$lastUsedSettings"
             />
 
             <details class="in-pista-legacy rounded-2xl border border-pm-border bg-pm-panel p-4">
