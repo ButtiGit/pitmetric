@@ -26,7 +26,7 @@ async function selectOptionContaining(select, text) {
     await select.selectOption(value);
 }
 
-test('five vital workflows', async ({ page }, testInfo) => {
+test('five vital workflows', async ({ page, context }, testInfo) => {
     test.setTimeout(180_000);
     const suffix = surfaceName(testInfo);
     const vehicleName = `E2E ${suffix} Vehicle`;
@@ -38,6 +38,49 @@ test('five vital workflows', async ({ page }, testInfo) => {
     await test.step('login', async () => {
         await login(page);
         await expect(page.locator('body')).toContainText(/PitMetric/i);
+    });
+
+    await test.step('circuit GPS proposes coordinates and keeps manual values when permission is denied', async () => {
+        await context.grantPermissions(['geolocation']);
+        await context.setGeolocation({ latitude: 45.08291027, longitude: 7.68734942, accuracy: 12 });
+
+        await page.goto('/circuits');
+        await page.getByRole('button', { name: /add circuit|aggiungi circuito/i }).first().click();
+        const form = page.locator('#create-circuit form');
+        await expect(form).toBeVisible();
+
+        const circuitName = `E2E ${suffix} GPS circuit`;
+        await form.locator('input[name="name"]').fill(circuitName);
+        await form.locator('input[name="layout_name"]').fill('Full');
+        await form.locator('input[name="length_meters"]').fill('1250');
+        await form.locator('[data-pm-circuit-gps]').click();
+
+        await expect(form.locator('input[name="latitude"]')).toHaveValue('45.08291027');
+        await expect(form.locator('input[name="longitude"]')).toHaveValue('7.68734942');
+        await expect(form.locator('[data-pm-circuit-gps-status]')).toContainText(/coordinate/i);
+        await expect(form).toBeVisible();
+
+        await form.locator('button[type="submit"]').click();
+        await expect(page).toHaveURL(/\/circuits$/);
+        await expect(page.getByText(circuitName, { exact: true })).toBeVisible();
+        await expect(page.locator('section.pm-panel').filter({ hasText: circuitName })).toContainText('45.08291027, 7.68734942');
+
+        await page.getByRole('button', { name: /add circuit|aggiungi circuito/i }).first().click();
+        const manualForm = page.locator('#create-circuit form');
+        await expect(manualForm).toBeVisible();
+        await manualForm.locator('input[name="latitude"]').fill('44.00000000');
+        await manualForm.locator('input[name="longitude"]').fill('8.00000000');
+        await page.evaluate(() => {
+            Object.defineProperty(navigator, 'geolocation', {
+                configurable: true,
+                value: { getCurrentPosition(_success, error) { error({ code: 1 }); } },
+            });
+        });
+        await manualForm.locator('[data-pm-circuit-gps]').click();
+        await expect(manualForm.locator('[data-pm-circuit-gps-status]')).toContainText(/permesso|permission/i);
+        await expect(manualForm.locator('[data-pm-circuit-gps]')).toBeEnabled();
+        await expect(manualForm.locator('input[name="latitude"]')).toHaveValue('44.00000000');
+        await expect(manualForm.locator('input[name="longitude"]')).toHaveValue('8.00000000');
     });
 
     await test.step('workflow stages stay fully readable at every width', async () => {
