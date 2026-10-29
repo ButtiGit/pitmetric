@@ -16,6 +16,8 @@
         default => $it ? 'Nuvoloso / variabile' : 'Cloudy / variable',
     };
     $capturedAt = isset($weather['captured_at']) ? \Illuminate\Support\Carbon::parse($weather['captured_at'])->timezone('Europe/Rome')->format('d/m/Y H:i') : null;
+    $forecastAt = isset($weather['forecast_at']) ? \Illuminate\Support\Carbon::parse($weather['forecast_at']) : null;
+    $forecastMatchesSession = $forecastAt && $weatherSession?->started_at && abs($forecastAt->diffInMinutes($weatherSession->started_at)) <= 90;
     $weatherCircuit = $weatherSession?->weatherCircuit();
     $weatherLocationLabel = match ($weather['location_source'] ?? null) {
         'circuit' => ($it ? 'Circuito' : 'Circuit').' · '.($weather['circuit_name'] ?? ($it ? 'Posizione salvata' : 'Saved location')),
@@ -62,6 +64,10 @@
                     <p class="mt-1 text-xs leading-5 text-white/75">{{ $weather ? ($it ? 'Ultima acquisizione · ' : 'Captured · ').$capturedAt : ($it ? 'Scegli una sessione e rileva il meteo.' : 'Choose a session and capture its weather.') }}</p>
                     @if ($weather)
                         <p class="mt-1 text-xs font-semibold leading-5 text-white/85">{{ $it ? 'Origine posizione:' : 'Location source:' }} {{ $weatherLocationLabel }}</p>
+                        <p class="mt-1 text-xs leading-5 text-white/80">{{ $it ? 'Previsione valida per:' : 'Forecast valid for:' }} {{ $forecastAt?->timezone('Europe/Rome')->format('d/m/Y H:i') ?? ($it ? 'orario non indicato' : 'time unavailable') }}</p>
+                        @if ($weatherSession && ! $forecastMatchesSession)
+                            <p class="mt-2 rounded-xl border border-amber-200/40 bg-amber-500/15 p-3 text-xs font-semibold text-amber-50">{{ $it ? 'Questo bollettino non è riferito all’ora della sessione. Per conoscere il meteo di quel momento, consulta lo storico orario qui sotto.' : 'This forecast does not match the session time. See the hourly history below for conditions at that time.' }}</p>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -199,6 +205,7 @@
         </div>
     </div>
     @if ($weatherSession)
+        <x-pitmetric.weather-session-history :session="$weatherSession" :ready="$historicalWeatherReady" :page="$sessions->currentPage()" :it="$it" :circuit="$weatherCircuit" />
         <x-pitmetric.weather-observations :session="$weatherSession" :history="$weatherObservationHistory" :ready="$weatherObservationsReady" :page="$sessions->currentPage()" :it="$it" />
     @endif
 </section>

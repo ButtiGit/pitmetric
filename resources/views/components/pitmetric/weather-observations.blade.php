@@ -72,6 +72,9 @@
 
         @if ($current)
             <p class="mt-3 text-xs text-white/75">{{ $it ? 'Rilevata' : 'Measured' }} {{ $current->measured_at->timezone('Europe/Rome')->format('d/m/Y H:i') }} · {{ $current->creator?->name ?? ($it ? 'Operatore' : 'Operator') }}</p>
+            @if ($session->started_at && abs($current->measured_at->diffInMinutes($session->started_at)) > 90)
+                <p class="mt-2 rounded-xl border border-amber-200/35 bg-amber-500/15 p-3 text-xs font-semibold text-amber-50">{{ $it ? 'Questa misurazione è stata registrata a oltre 90 minuti dall’inizio della sessione: potrebbe non descrivere le condizioni al via.' : 'This observation was recorded over 90 minutes from the session start, so it may not represent conditions at the start.' }}</p>
+            @endif
         @endif
 
         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

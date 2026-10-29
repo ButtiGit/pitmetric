@@ -23,6 +23,7 @@ class SessionPageService
     {
         $tyreReadingsReady = Schema::hasTable('session_tyre_readings');
         $weatherReady = Schema::hasColumn('track_sessions', 'weather_snapshot');
+        $historicalWeatherReady = Schema::hasColumn('track_sessions', 'historical_weather_snapshot');
         $weatherObservationsReady = Schema::hasTable('session_weather_observations');
         $relations = [
             'vehicle',
@@ -91,6 +92,7 @@ class SessionPageService
             'sessions' => $sessions,
             'tyreReadingsReady' => $tyreReadingsReady,
             'weatherReady' => $weatherReady,
+            'historicalWeatherReady' => $historicalWeatherReady,
             'weatherSession' => $weatherSession,
             'weatherObservationsReady' => $weatherObservationsReady,
             'weatherObservationHistory' => $weatherObservationHistory,
