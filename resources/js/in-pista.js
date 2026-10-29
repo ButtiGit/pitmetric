@@ -44,13 +44,17 @@ function initializeInPista() {
 
         const suggestions = [...form.querySelectorAll('[data-in-pista-recommended-field]')]
             .map(source => [form.elements.namedItem(source.dataset.inPistaRecommendedField), source.value])
-            .filter(([field]) => field instanceof HTMLInputElement);
+            .filter(([field]) => field instanceof HTMLInputElement || field instanceof HTMLSelectElement)
+            .sort(([first], [second]) => Number(second instanceof HTMLSelectElement) - Number(first instanceof HTMLSelectElement));
         if (!suggestions.length) return;
 
         const hasChanges = suggestions.some(([field, value]) => field.value !== '' && field.value !== value);
         if (hasChanges && !window.confirm('Sostituire i valori già inseriti con quelli dell’ultima sessione conclusa?')) return;
 
-        for (const [field, value] of suggestions) field.value = value;
+        for (const [field, value] of suggestions) {
+            field.value = value;
+            if (field instanceof HTMLSelectElement) field.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         showMessage('Ultimi valori inseriti. Controllali e premi Registra regolazioni per salvarli.');
     });
 
@@ -225,6 +229,13 @@ function initializeInPista() {
             if (pinion && crown) {
                 for (const ratio of root.querySelectorAll('[data-in-pista-setup-field="final_drive"]')) ratio.textContent = `${pinion}/${crown}`;
             }
+            if (response.geometry_summary) {
+                for (const [key, value] of Object.entries(response.geometry_summary)) {
+                    for (const field of root.querySelectorAll(`[data-in-pista-geometry-summary="${key}"]`)) {
+                        field.textContent = value;
+                    }
+                }
+            }
             const adjustmentCount = root.querySelector('[data-in-pista-adjustment-count]');
             if (adjustmentCount) {
                 const next = Number(adjustmentCount.dataset.count || 0) + 1;
@@ -233,7 +244,11 @@ function initializeInPista() {
                 const adjustmentStat = root.querySelector('[data-in-pista-adjustment-stat]');
                 if (adjustmentStat) adjustmentStat.textContent = String(next);
             }
-            form.reset();
+            if (form.matches('[data-in-pista-geometry-form]')) {
+                for (const input of form.querySelectorAll('input:not([type="hidden"])')) input.value = '';
+            } else {
+                form.reset();
+            }
         }
 
         if (form.querySelector('[name="kind"]')) form.reset();

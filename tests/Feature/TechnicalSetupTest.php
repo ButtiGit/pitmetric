@@ -177,6 +177,111 @@ it('validates kart caster limits before saving geometry', function () {
     expect(TechnicalSetup::query()->where('name', 'Invalid caster')->exists())->toBeFalse();
 });
 
+it('stores independent mechanical units and both rear axle measurements in the existing setup snapshot', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = Vehicle::factory()->create(['workspace_id' => $user->workspaces()->firstOrFail()->id, 'category' => 'kart']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'PN Rent mechanical markers',
+        'camber_mode' => 'notches',
+        'caster_mode' => 'holes',
+        'geometry_side_mode' => 'combined',
+        'rear_width_mode' => 'both',
+        'camber_front_position' => 'tacca 2',
+        'caster_front_position' => 'foro C',
+        'track_width_rear_mm' => 1380,
+        'rear_axle_length_mm' => 1030,
+        'camber_front_deg' => -2,
+    ])->assertSessionHasNoErrors();
+
+    $setup = TechnicalSetup::query()->where('name', 'PN Rent mechanical markers')->sole();
+    expect($setup->values)->toMatchArray([
+        'camber_mode' => 'notches',
+        'caster_mode' => 'holes',
+        'geometry_side_mode' => 'combined',
+        'rear_width_mode' => 'both',
+        'camber_front_position' => 'tacca 2',
+        'caster_front_position' => 'foro C',
+        'track_width_rear_mm' => 1380,
+        'rear_axle_length_mm' => 1030,
+    ])->not->toHaveKey('camber_front_deg');
+
+    $version = createTechnicalSetupPhysicalVersion($user, $kart, 'Mechanical setup snapshot');
+    $this->post(route('sessions.store'), [
+        'configuration_version_id' => $version->id,
+        'technical_setup_id' => $setup->id,
+        'session_type' => 'practice',
+        'started_at' => '2026-10-29 13:00:00',
+    ])->assertSessionHasNoErrors();
+
+    expect(Session::query()->sole()->setupSnapshot->values)->toMatchArray($setup->values)
+        ->and(TechnicalSetup::kartGeometrySummary($setup->values))->toMatchArray([
+            'camber' => 'tacca 2',
+            'caster' => 'foro C',
+            'rear_width' => 'Carreggiata 1380 mm · Assale 1030 mm',
+        ]);
+});
+
+it('allows different left and right units and keeps unrelated geometry fields out of the saved setup', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = Vehicle::factory()->create(['workspace_id' => $user->workspaces()->firstOrFail()->id, 'category' => 'kart']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Asymmetric kart',
+        'camber_mode' => 'degrees',
+        'caster_mode' => 'position',
+        'geometry_side_mode' => 'separate',
+        'rear_width_mode' => 'axle',
+        'camber_front_left_deg' => -1.25,
+        'camber_front_right_deg' => -1.50,
+        'caster_front_left_position' => 'A2',
+        'caster_front_right_position' => 'B1',
+        'rear_axle_length_mm' => 1040,
+        'track_width_rear_mm' => 1400,
+        'caster_front_deg' => 12,
+    ])->assertSessionHasNoErrors();
+
+    $setup = TechnicalSetup::query()->where('name', 'Asymmetric kart')->sole();
+    expect($setup->values)->toMatchArray([
+        'camber_front_left_deg' => -1.25,
+        'camber_front_right_deg' => -1.50,
+        'caster_front_left_position' => 'A2',
+        'caster_front_right_position' => 'B1',
+        'rear_axle_length_mm' => 1040,
+    ])->not->toHaveKey('track_width_rear_mm')
+        ->not->toHaveKey('caster_front_deg')
+        ->and(TechnicalSetup::kartGeometrySummary($setup->values))->toMatchArray([
+            'camber' => 'SX -1.25 ° · DX -1.5 °',
+            'caster' => 'SX A2 · DX B1',
+            'rear_width' => 'Assale 1040 mm',
+        ]);
+
+    $this->get(route('setups.index'))->assertOk()
+        ->assertSee('name="camber_mode"', false)
+        ->assertSee('name="rear_axle_length_mm"', false)
+        ->assertSee('name="caster_front_left_position"', false);
+});
+
+it('rejects unknown geometry units and out of range axle measurements', function () {
+    $user = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($user);
+    $kart = Vehicle::factory()->create(['workspace_id' => $user->workspaces()->firstOrFail()->id, 'category' => 'kart']);
+
+    $this->post(route('setups.store'), [
+        'vehicle_id' => $kart->id,
+        'name' => 'Invalid geometry selector',
+        'camber_mode' => 'inches',
+        'rear_width_mode' => 'axle',
+        'rear_axle_length_mm' => 2600,
+    ])->assertSessionHasErrors(['camber_mode', 'rear_axle_length_mm']);
+
+    expect(TechnicalSetup::query()->where('name', 'Invalid geometry selector')->exists())->toBeFalse();
+});
+
 it('records kart track widths and retains their original measurements in session snapshots', function () {
     $user = User::factory()->withDatabaseAccess()->create();
     $workspace = $user->workspaces()->firstOrFail();

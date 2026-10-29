@@ -141,10 +141,7 @@ class TechnicalSetupController extends Controller
             'tyre_pressure_rr' => ['nullable', 'numeric', 'min:0', 'max:10'],
             'ride_height_front_mm' => ['nullable', 'numeric', 'min:0', 'max:500'],
             'ride_height_rear_mm' => ['nullable', 'numeric', 'min:0', 'max:500'],
-            'camber_front_deg' => ['nullable', 'numeric', 'min:-15', 'max:15'],
-            'caster_front_deg' => ['nullable', 'numeric', 'min:-15', 'max:30'],
-            'track_width_front_mm' => ['nullable', 'integer', 'min:500', 'max:3000'],
-            'track_width_rear_mm' => ['nullable', 'integer', 'min:500', 'max:3000'],
+            ...TechnicalSetup::kartGeometryRules(),
             'camber_rear_deg' => ['nullable', 'numeric', 'min:-15', 'max:15'],
             'toe_front_mm' => ['nullable', 'numeric', 'min:-20', 'max:20'],
             'toe_rear_mm' => ['nullable', 'numeric', 'min:-20', 'max:20'],
@@ -176,9 +173,10 @@ class TechnicalSetupController extends Controller
     private function valuesFrom(array $validated): array
     {
         $values = [];
+        $geometryFields = array_keys(TechnicalSetup::kartGeometryRules());
 
         foreach (array_keys(TechnicalSetup::FIELD_DEFINITIONS) as $key) {
-            if (! array_key_exists($key, $validated) || $validated[$key] === null || $validated[$key] === '') {
+            if (in_array($key, $geometryFields, true) || ! array_key_exists($key, $validated) || $validated[$key] === null || $validated[$key] === '') {
                 continue;
             }
 
@@ -192,7 +190,7 @@ class TechnicalSetupController extends Controller
             $values['gear_ratio'] = round($crownTeeth / $pinionTeeth, 3);
         }
 
-        return $values;
+        return [...$values, ...TechnicalSetup::selectedKartGeometry($validated)];
     }
 
     private function hasDatabaseAccess(User $user): bool

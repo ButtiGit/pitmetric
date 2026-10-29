@@ -10,7 +10,7 @@
     $crownValue = old('crown_teeth', $setupValues['crown_teeth'] ?? ($legacyGearParts[2] ?? ''));
 @endphp
 
-<div class="grid gap-5" x-data="{ isKart: @js($initialIsKart), advanced: false }">
+<div class="grid gap-5" x-data="{ isKart: @js($initialIsKart), advanced: false, camberMode: @js((string) ($fieldValue('camber_mode') ?: 'degrees')), casterMode: @js((string) ($fieldValue('caster_mode') ?: 'degrees')), geometrySides: @js((string) ($fieldValue('geometry_side_mode') ?: 'combined')), rearWidthMode: @js((string) ($fieldValue('rear_width_mode') ?: 'track')) }">
     <div class="grid gap-4 md:grid-cols-2">
         @if (! $technicalSetup)
             <label class="grid gap-2">
@@ -52,12 +52,41 @@
 
     <section class="rounded-xl border border-pm-border bg-pm-subtle p-4">
         <p class="text-[11px] font-black uppercase tracking-[0.12em] text-pm-accent">{{ $it ? 'Telaio e geometria' : 'Chassis & geometry' }}</p>
-        <p x-show="isKart" class="mt-2 text-xs text-pm-muted">{{ $it ? 'Registra camber e caster anteriori in gradi. I valori rimangono nello snapshot della sessione, anche se modifichi il setup in seguito.' : 'Record front camber and caster in degrees. The values stay in the session snapshot even if the setup changes later.' }}</p>
+        <p x-show="isKart" class="mt-2 text-xs text-pm-muted">{{ $it ? 'Scegli come misuri ogni regolazione. Gradi, tacche, fori e riferimenti non vengono convertiti tra loro; lo snapshot conserva il valore originale.' : 'Choose how you measure each adjustment. Degrees, notches, holes and references are never automatically converted; the snapshot preserves the original reading.' }}</p>
+        <div x-show="isKart" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Misura camber' : 'Camber measurement' }}</span>
+                <select class="pm-input" name="camber_mode" x-model="camberMode" x-bind:disabled="!isKart">
+                    <option value="degrees">{{ $it ? 'Gradi (°)' : 'Degrees (°)' }}</option><option value="notches">{{ $it ? 'Tacche' : 'Notches' }}</option><option value="holes">{{ $it ? 'Fori' : 'Holes' }}</option><option value="position">{{ $it ? 'Posizione / riferimento' : 'Position / reference' }}</option>
+                </select>
+            </label>
+            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Misura caster' : 'Caster measurement' }}</span>
+                <select class="pm-input" name="caster_mode" x-model="casterMode" x-bind:disabled="!isKart">
+                    <option value="degrees">{{ $it ? 'Gradi (°)' : 'Degrees (°)' }}</option><option value="notches">{{ $it ? 'Tacche' : 'Notches' }}</option><option value="holes">{{ $it ? 'Fori' : 'Holes' }}</option><option value="position">{{ $it ? 'Posizione / riferimento' : 'Position / reference' }}</option>
+                </select>
+            </label>
+            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Lati anteriori' : 'Front sides' }}</span>
+                <select class="pm-input" name="geometry_side_mode" x-model="geometrySides" x-bind:disabled="!isKart">
+                    <option value="combined">{{ $it ? 'Valore unico' : 'Combined value' }}</option><option value="separate">{{ $it ? 'Sinistra e destra' : 'Left and right' }}</option>
+                </select>
+            </label>
+            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Misura posteriore' : 'Rear measurement' }}</span>
+                <select class="pm-input" name="rear_width_mode" x-model="rearWidthMode" x-bind:disabled="!isKart">
+                    <option value="track">{{ $it ? 'Carreggiata' : 'Track width' }}</option><option value="axle">{{ $it ? 'Lunghezza assale' : 'Axle length' }}</option><option value="both">{{ $it ? 'Entrambe' : 'Both' }}</option>
+                </select>
+            </label>
+        </div>
         <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Camber ant. (°)' : 'Front camber (°)' }}</span><input class="pm-input" name="camber_front_deg" type="number" inputmode="decimal" min="-15" max="15" step="0.01" value="{{ $fieldValue('camber_front_deg') }}"></label>
-            <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Caster ant. (°)' : 'Front caster (°)' }}</span><input class="pm-input" name="caster_front_deg" type="number" inputmode="decimal" min="-15" max="30" step="0.01" value="{{ $fieldValue('caster_front_deg') }}"></label>
+            @foreach (['camber' => ['Camber', '-15', '15', 'camberMode'], 'caster' => ['Caster', '-15', '30', 'casterMode']] as $kind => [$label, $min, $max, $modeVar])
+                <label class="grid gap-2" x-show="!isKart || (geometrySides === 'combined' && {{ $modeVar }} === 'degrees')"><span class="pm-label">{{ $label }} {{ $it ? 'ant. (°)' : 'front (°)' }}</span><input class="pm-input" name="{{ $kind }}_front_deg" type="number" inputmode="decimal" min="{{ $min }}" max="{{ $max }}" step="0.01" value="{{ $fieldValue($kind.'_front_deg') }}" x-bind:disabled="isKart && (geometrySides !== 'combined' || {{ $modeVar }} !== 'degrees')"></label>
+                <label class="grid gap-2" x-show="isKart && geometrySides === 'combined' && {{ $modeVar }} !== 'degrees'" x-cloak><span class="pm-label">{{ $label }} · {{ $it ? 'riferimento' : 'reference' }}</span><input class="pm-input" name="{{ $kind }}_front_position" maxlength="40" value="{{ $fieldValue($kind.'_front_position') }}" placeholder="{{ $it ? 'Es. tacca 2, foro A' : 'E.g. notch 2, hole A' }}" x-bind:disabled="!isKart || geometrySides !== 'combined' || {{ $modeVar }} === 'degrees'"></label>
+                @foreach (['left' => ($it ? 'SX' : 'Left'), 'right' => ($it ? 'DX' : 'Right')] as $side => $sideLabel)
+                    <label class="grid gap-2" x-show="isKart && geometrySides === 'separate' && {{ $modeVar }} === 'degrees'" x-cloak><span class="pm-label">{{ $label }} {{ $sideLabel }} (°)</span><input class="pm-input" name="{{ $kind }}_front_{{ $side }}_deg" type="number" inputmode="decimal" min="{{ $min }}" max="{{ $max }}" step="0.01" value="{{ $fieldValue($kind.'_front_'.$side.'_deg') }}" x-bind:disabled="!isKart || geometrySides !== 'separate' || {{ $modeVar }} !== 'degrees'"></label>
+                    <label class="grid gap-2" x-show="isKart && geometrySides === 'separate' && {{ $modeVar }} !== 'degrees'" x-cloak><span class="pm-label">{{ $label }} {{ $sideLabel }} · {{ $it ? 'riferimento' : 'reference' }}</span><input class="pm-input" name="{{ $kind }}_front_{{ $side }}_position" maxlength="40" value="{{ $fieldValue($kind.'_front_'.$side.'_position') }}" placeholder="A / 2" x-bind:disabled="!isKart || geometrySides !== 'separate' || {{ $modeVar }} === 'degrees'"></label>
+                @endforeach
+            @endforeach
             <label class="grid gap-2" x-show="isKart"><span class="pm-label">{{ $it ? 'Carreggiata ant. (mm)' : 'Front track width (mm)' }}</span><input class="pm-input" name="track_width_front_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" value="{{ $fieldValue('track_width_front_mm') }}"></label>
-            <label class="grid gap-2" x-show="isKart"><span class="pm-label">{{ $it ? 'Carreggiata post. (mm)' : 'Rear track width (mm)' }}</span><input class="pm-input" name="track_width_rear_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" value="{{ $fieldValue('track_width_rear_mm') }}"></label>
+            <label class="grid gap-2" x-show="isKart && rearWidthMode !== 'axle'"><span class="pm-label">{{ $it ? 'Carreggiata post. (mm)' : 'Rear track width (mm)' }}</span><input class="pm-input" name="track_width_rear_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" value="{{ $fieldValue('track_width_rear_mm') }}" x-bind:disabled="!isKart || rearWidthMode === 'axle'"></label>
+            <label class="grid gap-2" x-show="isKart && rearWidthMode !== 'track'" x-cloak><span class="pm-label">{{ $it ? 'Lunghezza assale post. (mm)' : 'Rear axle length (mm)' }}</span><input class="pm-input" name="rear_axle_length_mm" type="number" inputmode="numeric" min="300" max="2000" step="1" value="{{ $fieldValue('rear_axle_length_mm') }}" x-bind:disabled="!isKart || rearWidthMode === 'track'"></label>
             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Altezza ant. (mm)' : 'Front ride height (mm)' }}</span><input class="pm-input" name="ride_height_front_mm" type="number" min="0" max="500" step="0.1" value="{{ $fieldValue('ride_height_front_mm') }}"></label>
             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Altezza post. (mm)' : 'Rear ride height (mm)' }}</span><input class="pm-input" name="ride_height_rear_mm" type="number" min="0" max="500" step="0.1" value="{{ $fieldValue('ride_height_rear_mm') }}"></label>
             <label class="grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Camber post. (°)' : 'Rear camber (°)' }}</span><input class="pm-input" name="camber_rear_deg" type="number" min="-15" max="15" step="0.01" value="{{ $fieldValue('camber_rear_deg') }}"></label>
@@ -66,7 +95,7 @@
             <label class="grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Barra ant.' : 'Front anti-roll' }}</span><input class="pm-input" name="anti_roll_front" type="number" min="0" max="100" step="0.1" value="{{ $fieldValue('anti_roll_front') }}"></label>
             <label class="grid gap-2" x-show="!isKart || advanced"><span class="pm-label">{{ $it ? 'Barra post.' : 'Rear anti-roll' }}</span><input class="pm-input" name="anti_roll_rear" type="number" min="0" max="100" step="0.1" value="{{ $fieldValue('anti_roll_rear') }}"></label>
         </div>
-        <p x-show="isKart" class="mt-3 text-xs text-pm-muted">{{ $it ? 'Misura sempre la carreggiata con lo stesso riferimento: potrai confrontare i setup fra una sessione e l’altra.' : 'Always measure track width using the same reference points to compare setups across sessions.' }}</p>
+        <p x-show="isKart" class="mt-3 text-xs text-pm-muted">{{ $it ? 'La carreggiata è la larghezza del kart; la lunghezza dell’assale è una misura diversa. Salvale entrambe solo se le rilevi entrambe.' : 'Track width is the vehicle width; axle length is a different measurement. Save both only if you measure both.' }}</p>
     </section>
 
     <section class="rounded-xl border border-pm-border bg-pm-subtle p-4">

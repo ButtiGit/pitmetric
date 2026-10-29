@@ -10,11 +10,12 @@
     $driverName = $eventEntry?->driver?->display_name ?? $trackSession?->eventEntry?->driver?->display_name;
     $weather = $trackSession?->weather_snapshot;
     $formatLap = static fn (int $ms): string => sprintf('%d:%02d.%03d', intdiv($ms, 60000), intdiv($ms % 60000, 1000), $ms % 1000);
+    $geometrySummary = \App\Models\TechnicalSetup::kartGeometrySummary($setupValues);
     $setupFields = [
-        'camber_front_deg' => ['Camber', '°'],
-        'caster_front_deg' => ['Caster', '°'],
+        'camber' => ['Camber', ''],
+        'caster' => ['Caster', ''],
         'track_width_front_mm' => ['Carreggiata ant.', 'mm'],
-        'track_width_rear_mm' => ['Carreggiata post.', 'mm'],
+        'rear_width' => ['Misura post.', ''],
         'final_drive' => ['Rapporto', ''],
     ];
     $lastUsedFields = [
@@ -22,10 +23,22 @@
         'caster_front_deg' => ['Caster ant.', '°'],
         'track_width_front_mm' => ['Carreggiata ant.', 'mm'],
         'track_width_rear_mm' => ['Carreggiata post.', 'mm'],
+        'rear_axle_length_mm' => ['Lunghezza assale', 'mm'],
+        'camber_mode' => ['Camber · misura', ''],
+        'caster_mode' => ['Caster · misura', ''],
+        'geometry_side_mode' => ['Lati geometria', ''],
+        'rear_width_mode' => ['Misura posteriore', ''],
         'pinion_teeth' => ['Pignone', 'denti'],
         'crown_teeth' => ['Corona', 'denti'],
         'final_drive' => ['Rapporto', ''],
     ];
+    foreach (['camber' => 'Camber', 'caster' => 'Caster'] as $kind => $label) {
+        $lastUsedFields[$kind.'_front_position'] = [$label.' · riferimento', ''];
+        foreach (['left' => 'SX', 'right' => 'DX'] as $side => $sideLabel) {
+            $lastUsedFields[$kind.'_front_'.$side.'_deg'] = [$label.' '.$sideLabel, '°'];
+            $lastUsedFields[$kind.'_front_'.$side.'_position'] = [$label.' '.$sideLabel.' · rif.', ''];
+        }
+    }
 @endphp
 
 <section class="in-pista" data-in-pista>
@@ -82,9 +95,10 @@
                         <strong>{{ $trackSession->setupSnapshot?->name ?? 'Setup non disponibile' }}</strong>
                         <p>{{ $trackSession->setupSnapshot ? 'Snapshot iniziale conservato nello storico' : 'Nessuno snapshot per questa sessione' }}</p>
                         <div class="in-pista-overview-setup-values">
-                            @foreach (['camber_front_deg' => ['Camber', '°'], 'caster_front_deg' => ['Caster', '°'], 'track_width_rear_mm' => ['Post.', 'mm'], 'final_drive' => ['Rapporto', '']] as $field => [$label, $unit])
-                                <div><span>{{ $label }}</span><strong data-in-pista-setup-field="{{ $field }}">{{ isset($setupValues[$field]) ? $setupValues[$field].($unit ? ' '.$unit : '') : '—' }}</strong></div>
+                            @foreach (['camber' => 'Camber', 'caster' => 'Caster', 'rear_width' => 'Misura post.'] as $field => $label)
+                                <div><span>{{ $label }}</span><strong data-in-pista-geometry-summary="{{ $field }}">{{ $geometrySummary[$field] }}</strong></div>
                             @endforeach
+                            <div><span>Rapporto</span><strong data-in-pista-setup-field="final_drive">{{ $setupValues['final_drive'] ?? '—' }}</strong></div>
                         </div>
                         <small data-in-pista-adjustment-count data-count="{{ $adjustmentCount }}">{{ $adjustmentCount === 0 ? 'Nessuna regolazione registrata' : $adjustmentCount.' '.($adjustmentCount === 1 ? 'regolazione registrata' : 'regolazioni registrate') }}</small>
                     </div>
@@ -234,7 +248,7 @@
                 </section>
                 <div class="in-pista-setup-summary">
                     @foreach ($setupFields as $field => [$label, $unit])
-                        <div><span>{{ $label }}</span><strong data-in-pista-setup-field="{{ $field }}">{{ isset($setupValues[$field]) ? $setupValues[$field].($unit ? ' '.$unit : '') : '—' }}</strong></div>
+                        <div><span>{{ $label }}</span><strong @if(array_key_exists($field, $geometrySummary)) data-in-pista-geometry-summary="{{ $field }}" @else data-in-pista-setup-field="{{ $field }}" @endif>{{ $geometrySummary[$field] ?? (isset($setupValues[$field]) ? $setupValues[$field].($unit ? ' '.$unit : '') : '—') }}</strong></div>
                     @endforeach
                 </div>
                 <div class="in-pista-reading-row"><span>Pressioni fredde</span><strong data-in-pista-reading-cold>{{ $coldReading ? implode(' / ', $coldReading->pressures).' bar' : 'Non rilevate' }}</strong></div>
@@ -297,7 +311,7 @@
         <dialog class="in-pista-dialog" id="in-pista-adjust" aria-label="Regolazioni del kart">
             <div class="in-pista-dialog-head"><div><span>ASSETTO CORRENTE</span><h2>Regolazioni</h2></div><button type="button" data-in-pista-dialog-close aria-label="Chiudi">×</button></div>
             <p class="in-pista-dialog-hint">Compila solo i valori modificati. Verranno registrati nello storico della sessione senza sovrascrivere lo snapshot iniziale.</p>
-            <form method="POST" action="{{ route('pit-mode.sessions.adjustments.store', $trackSession) }}" data-in-pista-form>
+            <form method="POST" action="{{ route('pit-mode.sessions.adjustments.store', $trackSession) }}" data-in-pista-form data-in-pista-geometry-form x-data="{ camberMode: @js($setupValues['camber_mode'] ?? 'degrees'), casterMode: @js($setupValues['caster_mode'] ?? 'degrees'), geometrySides: @js($setupValues['geometry_side_mode'] ?? 'combined'), rearWidthMode: @js($setupValues['rear_width_mode'] ?? 'track') }">
                 @csrf
                 @if ($lastUsedSettings)
                     <div class="in-pista-last-fill">
@@ -312,10 +326,24 @@
                     </div>
                 @endif
                 <div class="in-pista-tyre-grid">
-                    <label><span>Camber ant. · °</span><input name="camber_front_deg" type="number" inputmode="decimal" min="-15" max="15" step="0.1" placeholder="{{ $setupValues['camber_front_deg'] ?? '0' }}"></label>
-                    <label><span>Caster ant. · °</span><input name="caster_front_deg" type="number" inputmode="decimal" min="-15" max="30" step="0.1" placeholder="{{ $setupValues['caster_front_deg'] ?? '0' }}"></label>
+                    <label><span>Misura camber</span><select name="camber_mode" x-model="camberMode"><option value="degrees">Gradi (°)</option><option value="notches">Tacche</option><option value="holes">Fori</option><option value="position">Posizione / riferimento</option></select></label>
+                    <label><span>Misura caster</span><select name="caster_mode" x-model="casterMode"><option value="degrees">Gradi (°)</option><option value="notches">Tacche</option><option value="holes">Fori</option><option value="position">Posizione / riferimento</option></select></label>
+                    <label><span>Lati anteriori</span><select name="geometry_side_mode" x-model="geometrySides"><option value="combined">Valore unico</option><option value="separate">Sinistra e destra</option></select></label>
+                    <label><span>Misura posteriore</span><select name="rear_width_mode" x-model="rearWidthMode"><option value="track">Carreggiata</option><option value="axle">Lunghezza assale</option><option value="both">Entrambe</option></select></label>
+                </div>
+                <p class="in-pista-dialog-hint">Misure diverse restano distinte: nessuna conversione automatica tra gradi, tacche o fori.</p>
+                <div class="in-pista-tyre-grid">
+                    @foreach (['camber' => ['Camber', '-15', '15', 'camberMode'], 'caster' => ['Caster', '-15', '30', 'casterMode']] as $kind => [$label, $min, $max, $modeVar])
+                        <label x-show="geometrySides === 'combined' && {{ $modeVar }} === 'degrees'"><span>{{ $label }} ant. · °</span><input name="{{ $kind }}_front_deg" type="number" inputmode="decimal" min="{{ $min }}" max="{{ $max }}" step="0.01" placeholder="{{ $setupValues[$kind.'_front_deg'] ?? '—' }}" x-bind:disabled="geometrySides !== 'combined' || {{ $modeVar }} !== 'degrees'"></label>
+                        <label x-show="geometrySides === 'combined' && {{ $modeVar }} !== 'degrees'" x-cloak><span>{{ $label }} · riferimento</span><input name="{{ $kind }}_front_position" maxlength="40" placeholder="{{ $setupValues[$kind.'_front_position'] ?? 'Es. tacca 2 / foro A' }}" x-bind:disabled="geometrySides !== 'combined' || {{ $modeVar }} === 'degrees'"></label>
+                        @foreach (['left' => 'SX', 'right' => 'DX'] as $side => $sideLabel)
+                            <label x-show="geometrySides === 'separate' && {{ $modeVar }} === 'degrees'" x-cloak><span>{{ $label }} {{ $sideLabel }} · °</span><input name="{{ $kind }}_front_{{ $side }}_deg" type="number" inputmode="decimal" min="{{ $min }}" max="{{ $max }}" step="0.01" placeholder="{{ $setupValues[$kind.'_front_'.$side.'_deg'] ?? '—' }}" x-bind:disabled="geometrySides !== 'separate' || {{ $modeVar }} !== 'degrees'"></label>
+                            <label x-show="geometrySides === 'separate' && {{ $modeVar }} !== 'degrees'" x-cloak><span>{{ $label }} {{ $sideLabel }} · riferimento</span><input name="{{ $kind }}_front_{{ $side }}_position" maxlength="40" placeholder="{{ $setupValues[$kind.'_front_'.$side.'_position'] ?? 'A / 2' }}" x-bind:disabled="geometrySides !== 'separate' || {{ $modeVar }} === 'degrees'"></label>
+                        @endforeach
+                    @endforeach
                     <label><span>Carreggiata ant. · mm</span><input name="track_width_front_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" placeholder="{{ $setupValues['track_width_front_mm'] ?? '—' }}"></label>
-                    <label><span>Carreggiata post. · mm</span><input name="track_width_rear_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" placeholder="{{ $setupValues['track_width_rear_mm'] ?? '—' }}"></label>
+                    <label x-show="rearWidthMode !== 'axle'"><span>Carreggiata post. · mm</span><input name="track_width_rear_mm" type="number" inputmode="numeric" min="500" max="3000" step="1" placeholder="{{ $setupValues['track_width_rear_mm'] ?? '—' }}" x-bind:disabled="rearWidthMode === 'axle'"></label>
+                    <label x-show="rearWidthMode !== 'track'" x-cloak><span>Lunghezza assale post. · mm</span><input name="rear_axle_length_mm" type="number" inputmode="numeric" min="300" max="2000" step="1" placeholder="{{ $setupValues['rear_axle_length_mm'] ?? '—' }}" x-bind:disabled="rearWidthMode === 'track'"></label>
                     <label><span>Pignone · denti</span><input name="pinion_teeth" type="number" inputmode="numeric" min="1" max="200" step="1" placeholder="{{ $setupValues['pinion_teeth'] ?? '—' }}"></label>
                     <label><span>Corona · denti</span><input name="crown_teeth" type="number" inputmode="numeric" min="1" max="200" step="1" placeholder="{{ $setupValues['crown_teeth'] ?? '—' }}"></label>
                 </div>

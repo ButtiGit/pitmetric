@@ -41,7 +41,7 @@ test('a mechanic can recall last used kart settings without automatically saving
     await dialog.getByRole('button', { name: 'Registra regolazioni' }).click();
     await expect(dialog).toBeHidden();
     await expect(page.locator('[data-in-pista-adjustment-count]')).toHaveText('1 regolazione registrata');
-    await expect(page.locator('.in-pista-overview-setup [data-in-pista-setup-field="camber_front_deg"]')).toHaveText('-1.7 °');
+    await expect(page.locator('.in-pista-overview-setup [data-in-pista-geometry-summary="camber"]')).toHaveText('-1.7 °');
 
     await page.locator('#in-pista-lap-input').fill('0:52.345');
     await page.getByRole('button', { name: '+ Salva tempo' }).click();
