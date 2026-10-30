@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('PWA restores records offline and sends the same UUID only on explicit sync or login', async ({ page, context, request }) => {
+test('PWA restores records offline and sends the same UUID only on explicit sync or login', async ({ page, context, request, browserName }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {
@@ -25,17 +25,22 @@ test('PWA restores records offline and sends the same UUID only on explicit sync
   await page.locator('ion-select').filter({ hasText: 'Sessione a cui inviare' }).click();
   await page.getByRole('radio', { name: /Kart PN/ }).click();
   await page.getByRole('button', { name: 'OK', exact: true }).click();
-  await context.setOffline(true);
+  // WebKit 2359 rejects SW navigation before cache lookup when setOffline is used.
+  // Exercise real socket failures instead: https://github.com/microsoft/playwright/issues/42775
+  if (browserName === 'webkit') await request.post('/__test/offline');
+  else await context.setOffline(true);
   await page.getByLabel('Tempo manuale', { exact: true }).fill('51.234');
   await page.locator('.manual-card').getByRole('button', { name: 'Salva', exact: true }).click();
   await expect(page.locator('.lap-list-row').getByText('Da inviare', { exact: false })).toBeVisible();
   expect(await sent()).toHaveLength(0);
 
-  await page.reload();
+  const reopened = await page.reload();
+  expect(reopened.fromServiceWorker()).toBe(true);
   await page.getByRole('tab', { name: 'Timer' }).click();
   await expect(page.getByText('0:51.234', { exact: true }).first()).toBeVisible();
   expect(await sent()).toHaveLength(0);
-  await context.setOffline(false);
+  if (browserName === 'webkit') await request.post('/__test/online');
+  else await context.setOffline(false);
   await page.getByRole('tab', { name: 'Altro' }).click();
   await page.getByRole('button', { name: 'Account', exact: false }).click();
   await expect(page.getByText('1 da inviare', { exact: false }).last()).toBeVisible();

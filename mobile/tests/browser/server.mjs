@@ -9,12 +9,16 @@ import { session, snapshot } from './fixtures.mjs';
 const root = fileURLToPath(new URL('../../../public/', import.meta.url));
 const processed = new Map();
 const received = [];
+let originUnavailable = false;
 const mime = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://127.0.0.1:4174').pathname;
   const json = body => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); };
-  if (pathname === '/__test/reset') { processed.clear(); received.length = 0; return json({ ok: true }); }
+  if (pathname === '/__test/reset') { processed.clear(); received.length = 0; originUnavailable = false; return json({ ok: true }); }
+  if (pathname === '/__test/offline') { originUnavailable = true; return json({ ok: true }); }
+  if (pathname === '/__test/online') { originUnavailable = false; return json({ ok: true }); }
   if (pathname === '/__test/operations') return json(received);
+  if (originUnavailable) { req.socket.destroy(); return; }
   if (pathname.startsWith('/api/mobile/')) {
     let raw = '';
     for await (const chunk of req) raw += chunk;
