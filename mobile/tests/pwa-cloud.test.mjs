@@ -89,6 +89,14 @@ test('lost responses and malformed confirmations retain the same operation UUID 
   assert.equal((await pendingWebOperations(scope)).length, 0);
 });
 
+test('a synchronous outbox failure rolls back the record in the same transaction', async () => {
+  globalThis.indexedDB = memoryIndexedDB({ throwOnAddStore: 'outbox' });
+  const record = { id: uuid(), kind: 'note', title: 'Nota', payload: {}, occurred_at: new Date().toISOString() };
+  await assert.rejects(saveWebRecord(scope, record, 'event.note.create'));
+  assert.equal((await readWebRecords(scope)).length, 0);
+  assert.equal((await pendingWebOperations(scope)).length, 0);
+});
+
 test('expired authentication, forbidden permissions and changed workspace never drain the queue', async () => {
   await queueWebOperation(scope, 'vehicle.create', { name: 'Kart' });
   for (const status of [401, 403]) {

@@ -3,7 +3,7 @@ export function memoryStorage() {
   return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
 }
 
-export function memoryIndexedDB() {
+export function memoryIndexedDB(options = {}) {
   const databases = new Map();
   return {
     open(name) {
@@ -54,7 +54,10 @@ export function memoryIndexedDB() {
                   get: id => enqueue(() => structuredClone(store.data.get(id))),
                   getAll: () => enqueue(() => structuredClone([...store.data.values()])),
                   count: () => enqueue(() => store.data.size),
-                  add: entry => write(entry, false), put: entry => write(entry, true),
+                  add: entry => {
+                    if (options.throwOnAddStore === name) throw new Error('QuotaExceededError');
+                    return write(entry, false);
+                  }, put: entry => write(entry, true),
                   delete: id => enqueue(() => store.data.delete(id)),
                 };
               };

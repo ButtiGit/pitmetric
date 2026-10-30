@@ -144,10 +144,15 @@ export async function saveWebRecord(scope: WebStorageScope, record: QuickRecord,
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error || new Error('Salvataggio offline non riuscito.'));
       tx.onabort = () => reject(tx.error || new Error('Salvataggio offline annullato.'));
-      tx.objectStore(RECORDS_STORE).add({ ...record, sync_state: operation ? 'pending' : 'local' });
-      if (operation) tx.objectStore(OUTBOX_STORE).add({
-        local_id: record.id, operation, payload: record.payload, created_at: record.occurred_at, attempts: 0,
-      });
+      try {
+        tx.objectStore(RECORDS_STORE).add({ ...record, sync_state: operation ? 'pending' : 'local' });
+        if (operation) tx.objectStore(OUTBOX_STORE).add({
+          local_id: record.id, operation, payload: record.payload, created_at: record.occurred_at, attempts: 0,
+        });
+      } catch (error) {
+        tx.abort();
+        reject(error);
+      }
     });
   } finally {
     database.close();

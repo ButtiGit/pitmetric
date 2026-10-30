@@ -341,18 +341,19 @@ function pauseTimer() {
 }
 function resetTimer() { pauseTimer(); timerElapsed.value = 0; }
 
-async function storeLap(value: number, source: 'stopwatch' | 'manual') {
+async function storeLap(value: number, source: 'stopwatch' | 'manual'): Promise<boolean> {
   const [targetKind, targetId] = timingSession.value.split(':');
   if (!(await saveLocalRecord(() => addQuickRecord('lap_time', timingLabel.value || 'Tempo sul giro', {
     vehicle: timingVehicle.value || null,
     notes: timingNotes.value || null,
     source,
     ...(targetKind === 'remote' ? { session_id: Number(targetId) } : targetKind === 'local' ? { session_client_id: targetId } : {}),
-  }, value)))) return;
+  }, value)))) return false;
   quick.value = await quickRecords();
   pending.value = await pendingCount();
   pendingOps.value = await pendingOperations();
   actionMessage.value = `Tempo salvato: ${formatLapTime(value)}. ${timingSession.value && webPreview ? 'Da inviare al prossimo login o con Sincronizza ora.' : 'Salvato sul dispositivo.'}`;
+  return true;
 }
 
 async function saveTyres(): Promise<void> {
@@ -379,7 +380,11 @@ async function saveTyres(): Promise<void> {
 async function saveTimedLap(continueTiming = false) {
   if (timerElapsed.value < 100) return;
   const value = timerElapsed.value;
-  await storeLap(value, 'stopwatch');
+  if (!(await storeLap(value, 'stopwatch'))) {
+    pauseTimer();
+    timerElapsed.value = value;
+    return;
+  }
   if (continueTiming) {
     timerStartedAt = Date.now();
     timerElapsed.value = 0;
@@ -392,7 +397,7 @@ async function saveManualLap() {
     actionMessage.value = 'Inserisci un tempo come 1:23.456 oppure 83.456.';
     return;
   }
-  await storeLap(value, 'manual');
+  if (!(await storeLap(value, 'manual'))) return;
   manualLap.value = '';
 }
 

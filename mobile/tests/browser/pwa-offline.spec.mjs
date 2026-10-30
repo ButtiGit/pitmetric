@@ -44,7 +44,15 @@ test('PWA restores records offline and sends the same UUID only on explicit sync
   // Exercise real socket failures instead: https://github.com/microsoft/playwright/issues/42775
   if (browserName === 'webkit') await request.post('/__test/offline');
   else await context.setOffline(true);
+  await page.evaluate(() => {
+    window.pitmetricOriginalAdd = IDBObjectStore.prototype.add;
+    IDBObjectStore.prototype.add = function () { throw new DOMException('Test quota failure', 'QuotaExceededError'); };
+  });
   await page.getByLabel('Tempo manuale', { exact: true }).fill('51.234');
+  await page.locator('.manual-card').getByRole('button', { name: 'Salva', exact: true }).click();
+  await expect(page.getByLabel('Tempo manuale', { exact: true })).toHaveValue('51.234');
+  await expect(page.getByText('Salvataggio offline non riuscito:', { exact: false })).toBeVisible();
+  await page.evaluate(() => { IDBObjectStore.prototype.add = window.pitmetricOriginalAdd; delete window.pitmetricOriginalAdd; });
   await page.locator('.manual-card').getByRole('button', { name: 'Salva', exact: true }).click();
   await expect(page.locator('.lap-list-row').getByText('Da inviare', { exact: false })).toBeVisible();
   expect(await sent()).toHaveLength(0);
