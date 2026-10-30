@@ -1,4 +1,19 @@
-import { expect, test } from '@playwright/test';
+import { expect, test as base, devices, webkit } from '@playwright/test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const test = base.extend({
+  context: async ({ context, browserName }, use) => {
+    if (browserName !== 'webkit') return use(context);
+    // WebKit's ephemeral/private contexts do not preserve CacheStorage across reload.
+    // An installed PWA uses a persistent profile: microsoft/playwright#41618.
+    const profile = await mkdtemp(join(tmpdir(), 'pitmetric-webkit-'));
+    const persistent = await webkit.launchPersistentContext(profile, { ...devices['iPhone 13'], headless: true });
+    try { await use(persistent); }
+    finally { await persistent.close(); await rm(profile, { recursive: true, force: true }); }
+  },
+});
 
 test('PWA restores records offline and sends the same UUID only on explicit sync or login', async ({ page, context, request, browserName }) => {
   const errors = [];
