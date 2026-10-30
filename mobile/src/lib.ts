@@ -6,6 +6,8 @@ import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacito
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { BiometricAuth, AndroidBiometryStrength } from '@aparajita/capacitor-biometric-auth';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
+import type { MobileWeatherSnapshot } from './mobile-weather';
+import { isWeatherSnapshot } from './mobile-weather';
 
 export type SessionState = {
   authenticated: boolean;
@@ -199,6 +201,11 @@ async function database(): Promise<SQLiteDBConnection> {
       payload TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS mobile_weather (
+      id INTEGER PRIMARY KEY,
+      payload TEXT NOT NULL,
+      saved_at TEXT NOT NULL
+    );
   `);
 
   await db.execute("ALTER TABLE gallery_items ADD COLUMN media_type TEXT NOT NULL DEFAULT 'image'").catch(() => undefined);
@@ -211,6 +218,27 @@ async function database(): Promise<SQLiteDBConnection> {
 
 export async function bootLocalStore(): Promise<void> {
   await database();
+}
+
+export async function readNativeWeather(): Promise<MobileWeatherSnapshot | null> {
+  const conn = await database();
+  const rows = (await conn.query('SELECT payload FROM mobile_weather WHERE id=1')).values || [];
+  if (!rows.length) return null;
+  try {
+    const snapshot: unknown = JSON.parse(String(rows[0].payload));
+    return isWeatherSnapshot(snapshot) ? snapshot : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveNativeWeather(snapshot: MobileWeatherSnapshot): Promise<void> {
+  if (!isWeatherSnapshot(snapshot)) throw new Error('Previsione non valida.');
+  const conn = await database();
+  await conn.run(
+    'INSERT INTO mobile_weather (id,payload,saved_at) VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, saved_at=excluded.saved_at',
+    [JSON.stringify(snapshot), new Date().toISOString()],
+  );
 }
 
 async function token(): Promise<string | null> {

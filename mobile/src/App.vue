@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Capacitor } from '@capacitor/core';
+import { Network } from '@capacitor/network';
 import {
   IonApp, IonPage, IonContent, IonButton, IonInput, IonTextarea, IonIcon, IonBadge,
   IonTabBar, IonTabButton, IonSelect, IonSelectOption, IonLabel, IonSpinner
@@ -16,7 +17,7 @@ import {
 import {
   addGalleryMedia, addGalleryPhoto, biometricAvailable, biometricUnlock, bootLocalStore,
   cachedSnapshot, galleryItems, login, logout, pendingCount, pendingOperations, queueOperation,
-  refreshSnapshotFromCloud, register, restoreSession, startAutoSync, syncNow,
+  readNativeWeather, refreshSnapshotFromCloud, register, restoreSession, saveNativeWeather, startAutoSync, syncNow,
   type EventItem, type GalleryItem, type MobileSnapshot, type PendingOperation,
   type SessionState
 } from './lib';
@@ -28,6 +29,7 @@ import {
   loadDeviceWeather, readDeviceCoordinates, weatherDescription, weatherHour, weatherSky,
   windDirection, type MobileWeatherSnapshot
 } from './mobile-weather';
+import { readWebWeather, saveWebWeather } from './web-weather-store';
 
 type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weekend' | 'maintenance' | 'setup' | 'gallery' | 'account' | 'weather';
 
@@ -40,9 +42,15 @@ const weather = ref<MobileWeatherSnapshot | null>(null);
 const weatherLoading = ref(false);
 const weatherStage = ref('');
 const weatherError = ref('');
+const weatherStorageError = ref('');
+const weatherOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
+const weatherCacheState = ref<'none' | 'cached' | 'saved' | 'volatile'>('none');
+const weatherStored = computed(() => weatherCacheState.value === 'cached' || weatherCacheState.value === 'saved');
+const weatherShowingSaved = computed(() => weatherStored.value && (!weatherOnline.value || weatherCacheState.value === 'cached'));
 const syncing = ref(false);
 const biometric = ref(false);
 let stopAutoSync: (() => Promise<void>) | null = null;
+let stopWeatherNetwork: (() => Promise<void>) | null = null;
 
 const authMode = ref<'login' | 'register'>('login');
 const name = ref('');
@@ -125,19 +133,50 @@ function weatherIcon(symbolCode: string): string {
 
 async function updateWeatherFromGps(): Promise<void> {
   if (weatherLoading.value) return;
+  if (!weatherOnline.value) {
+    weatherError.value = 'Sei offline. L’ultima previsione salvata rimane consultabile, ma non può essere aggiornata.';
+    return;
+  }
   weatherLoading.value = true;
   weatherError.value = '';
   try {
     weatherStage.value = 'Ricerca posizione GPS…';
     const coordinates = await readDeviceCoordinates();
     weatherStage.value = 'Aggiornamento previsioni…';
-    weather.value = await loadDeviceWeather(coordinates.latitude, coordinates.longitude);
+    const latest = await loadDeviceWeather(coordinates.latitude, coordinates.longitude);
+    weather.value = latest;
+    try {
+      if (webPreview) await saveWebWeather(latest);
+      else await saveNativeWeather(latest);
+      weatherCacheState.value = 'saved';
+      weatherStorageError.value = '';
+    } catch {
+      weatherCacheState.value = 'volatile';
+      weatherStorageError.value = 'Meteo aggiornato, ma non salvato sul dispositivo: potrebbe sparire alla chiusura dell’app.';
+    }
   } catch (error) {
-    weatherError.value = error instanceof Error ? error.message : 'Non è stato possibile aggiornare il meteo.';
+    const message = error instanceof Error ? error.message : 'Non è stato possibile aggiornare il meteo.';
+    weatherError.value = `${message}${weather.value ? ' I dati precedentemente visualizzati rimangono disponibili.' : ''}`;
   } finally {
     weatherStage.value = '';
     weatherLoading.value = false;
   }
+}
+
+async function restoreSavedWeather(): Promise<void> {
+  try {
+    const saved = webPreview ? await readWebWeather() : await readNativeWeather();
+    if (saved) {
+      weather.value = saved;
+      weatherCacheState.value = 'cached';
+    }
+  } catch {
+    weatherStorageError.value = 'Archivio meteo offline non accessibile. I dati potrebbero non essere disponibili alla riapertura.';
+  }
+}
+
+function onBrowserConnectivityChange(event: Event): void {
+  weatherOnline.value = event.type === 'online';
 }
 
 const bestLap = computed(() => {
@@ -420,6 +459,17 @@ async function signOut() {
 
 onMounted(async () => {
   if (webPreview) {
+    window.addEventListener('online', onBrowserConnectivityChange);
+    window.addEventListener('offline', onBrowserConnectivityChange);
+  } else {
+    weatherOnline.value = (await Network.getStatus().catch(() => ({ connected: true }))).connected;
+    const listener = await Network.addListener('networkStatusChange', status => {
+      weatherOnline.value = status.connected;
+    }).catch(() => null);
+    if (listener) stopWeatherNetwork = () => listener.remove();
+  }
+  await restoreSavedWeather();
+  if (webPreview) {
     try {
       quick.value = await quickRecords();
     } catch {
@@ -435,7 +485,13 @@ onMounted(async () => {
   stopAutoSync = await startAutoSync(() => refreshLocal(false));
   ready.value = true;
 });
-onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
+onUnmounted(async () => {
+  pauseTimer();
+  window.removeEventListener('online', onBrowserConnectivityChange);
+  window.removeEventListener('offline', onBrowserConnectivityChange);
+  await stopWeatherNetwork?.();
+  await stopAutoSync?.();
+});
 </script>
 
 <template>
@@ -560,23 +616,34 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
             <span class="pm-weather-gps"><ion-icon :icon="locationOutline" /> GPS</span>
           </section>
 
+          <section v-if="!weatherOnline" class="pm-weather-offline-banner" role="status" aria-live="polite">
+            <ion-icon :icon="cloudOfflineOutline" />
+            <div><strong>Connessione assente</strong><span>{{ weatherStored ? 'Ultimo meteo salvato disponibile. Per aggiornarlo torna online.' : weather ? 'Il meteo visualizzato non è stato archiviato. Per aggiornarlo torna online.' : 'Nessun dato salvato. Il meteo sarà disponibile quando torni online.' }}</span></div>
+          </section>
+
           <section class="pm-weather-sky" :data-sky="sky">
             <div class="pm-weather-sky-light" aria-hidden="true"></div>
-            <div class="pm-weather-sky-top"><span><ion-icon :icon="locationOutline" /> Posizione attuale</span><span v-if="weather">{{ formatDate(weather.captured_at) }}</span></div>
+            <div class="pm-weather-sky-top"><span><ion-icon :icon="locationOutline" /> {{ weatherShowingSaved ? 'Ultima posizione rilevata' : 'Posizione GPS' }}</span><span v-if="weather">{{ formatDate(weather.captured_at) }}</span></div>
             <template v-if="weather">
               <div class="pm-weather-main-reading"><ion-icon :icon="weatherIcon(weather.symbol_code)" class="pm-weather-hero-icon" /><div><strong>{{ Math.round(weather.air_temperature_c) }}<sup>°</sup></strong><span>{{ weatherDescription(weather.symbol_code) }}</span></div></div>
-              <div class="pm-weather-forecast-label">Previsione MET Norway · {{ formatDate(weather.forecast_at) }}</div>
+              <div class="pm-weather-forecast-label">Previsione MET Norway per {{ formatDate(weather.forecast_at) }}</div>
+              <div class="pm-weather-cache-indicator" :data-cache="weatherShowingSaved ? 'cached' : weatherCacheState" role="status">
+                <ion-icon :icon="weatherShowingSaved || !weatherStored ? cloudOfflineOutline : cloudDoneOutline" />
+                {{ weatherShowingSaved ? 'Dati salvati sul dispositivo, non aggiornati' : weatherStored ? 'Aggiornati e salvati sul dispositivo' : 'Dati non salvati sul dispositivo' }}
+              </div>
             </template>
             <template v-else>
               <div class="pm-weather-main-reading pm-weather-empty-reading"><ion-icon :icon="partlySunnyOutline" class="pm-weather-hero-icon" /><div><strong>—<sup>°</sup></strong><span>Meteo pronto quando vuoi</span></div></div>
-              <p class="pm-weather-empty-hint">Consenti la posizione per conoscere temperatura, vento e condizioni della pista.</p>
+              <p class="pm-weather-empty-hint">{{ weatherOnline ? 'Consenti la posizione per conoscere temperatura, vento e condizioni della pista.' : 'Quando torna la connessione potrai rilevare il meteo e salvarlo per l’uso offline.' }}</p>
             </template>
-            <button class="pm-weather-update" type="button" :disabled="weatherLoading" @click="updateWeatherFromGps">
-              <ion-spinner v-if="weatherLoading" name="crescent" /><ion-icon v-else :icon="locationOutline" />
-              {{ weatherLoading ? weatherStage : weather ? 'Aggiorna con GPS' : 'Rileva posizione e meteo' }}
+            <button class="pm-weather-update" type="button" :disabled="weatherLoading || !weatherOnline" @click="updateWeatherFromGps">
+              <ion-spinner v-if="weatherLoading" name="crescent" /><ion-icon v-else :icon="weatherOnline ? locationOutline : cloudOfflineOutline" />
+              {{ !weatherOnline ? 'Aggiornamento non disponibile offline' : weatherLoading ? weatherStage : weather ? 'Aggiorna con GPS' : 'Rileva posizione e meteo' }}
             </button>
             <p v-if="weatherError" class="pm-weather-error" role="alert">{{ weatherError }}</p>
           </section>
+
+          <p v-if="weatherStorageError" class="pm-weather-storage-error" role="alert">{{ weatherStorageError }}</p>
 
           <template v-if="weather">
             <section class="pm-weather-metrics" aria-label="Dettagli meteo">
@@ -588,12 +655,12 @@ onUnmounted(async () => { pauseTimer(); await stopAutoSync?.(); });
               <article><ion-icon :icon="sunnyOutline" /><span>Temperatura</span><strong>{{ weather.air_temperature_c.toFixed(1) }} °C</strong></article>
             </section>
             <section v-if="weather.hourly.length" class="pm-weather-hourly">
-              <div class="pm-weather-section-heading"><h2>Prossime ore</h2><span>Previsione oraria</span></div>
+              <div class="pm-weather-section-heading"><h2>{{ weatherShowingSaved ? 'Previsioni salvate' : 'Prossime ore' }}</h2><span>{{ weatherShowingSaved ? 'Non aggiornate' : 'Previsione oraria' }}</span></div>
               <div class="pm-weather-hours"><article v-for="hour in weather.hourly" :key="hour.at"><span>{{ weatherHour(hour.at) }}</span><ion-icon :icon="weatherIcon(hour.symbol_code)" /><strong>{{ Math.round(hour.temperature_c) }}°</strong></article></div>
             </section>
           </template>
 
-          <p class="pm-weather-disclaimer">La posizione viene richiesta solo quando tocchi il pulsante. Sono previsioni meteorologiche, non misure dei sensori del kart. Dati: <a href="https://www.met.no/en/free-meteorological-data" target="_blank" rel="noopener noreferrer">MET Norway (CC BY 4.0)</a>. Il servizio richiede internet.</p>
+          <p class="pm-weather-disclaimer">La posizione viene richiesta solo quando tocchi il pulsante. Le ultime previsioni vengono conservate sul dispositivo e restano consultabili offline, ma non rappresentano il meteo attuale né misure dei sensori del kart. Dati: <a href="https://www.met.no/en/free-meteorological-data" target="_blank" rel="noopener noreferrer">MET Norway (CC BY 4.0)</a>. Per aggiornarle serve internet.</p>
         </main>
 
         <main v-else-if="webPreview && ['garage', 'gallery', 'account', 'weekend'].includes(active)" class="screen">

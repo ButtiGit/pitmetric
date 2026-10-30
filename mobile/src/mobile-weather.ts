@@ -20,6 +20,23 @@ export type MobileWeatherSnapshot = {
 
 export type WeatherSky = 'clear' | 'clouds' | 'rain' | 'storm' | 'snow';
 
+/** Only validated MET Norway forecasts can be restored from untrusted local storage. */
+export function isWeatherSnapshot(value: unknown): value is MobileWeatherSnapshot {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Partial<MobileWeatherSnapshot>;
+  return record.provider === 'met_norway' &&
+    typeof record.captured_at === 'string' && Number.isFinite(Date.parse(record.captured_at)) &&
+    typeof record.forecast_at === 'string' && Number.isFinite(Date.parse(record.forecast_at)) &&
+    typeof record.symbol_code === 'string' &&
+    typeof record.latitude === 'number' && Number.isFinite(record.latitude) && Math.abs(record.latitude) <= 90 &&
+    typeof record.longitude === 'number' && Number.isFinite(record.longitude) && Math.abs(record.longitude) <= 180 &&
+    typeof record.air_temperature_c === 'number' && Number.isFinite(record.air_temperature_c) &&
+    Array.isArray(record.hourly) && record.hourly.every(hour =>
+      hour && typeof hour.at === 'string' && Number.isFinite(Date.parse(hour.at)) &&
+      typeof hour.temperature_c === 'number' && Number.isFinite(hour.temperature_c) &&
+      typeof hour.symbol_code === 'string');
+}
+
 const API_BASE = (import.meta.env?.VITE_PITMETRIC_API_URL || 'https://pitmetric.it/api/mobile').replace(/\/$/, '');
 
 export function weatherSky(symbolCode: string): WeatherSky {
@@ -113,8 +130,7 @@ export async function loadDeviceWeather(latitude: number, longitude: number): Pr
       ? responseBody.data as MobileWeatherSnapshot
       : null;
 
-    if (!forecast || forecast.provider !== 'met_norway' || !Number.isFinite(forecast.air_temperature_c) ||
-        !Array.isArray(forecast.hourly) || typeof forecast.captured_at !== 'string') {
+    if (!isWeatherSnapshot(forecast)) {
       throw new Error('Il servizio meteo ha restituito dati incompleti.');
     }
 
