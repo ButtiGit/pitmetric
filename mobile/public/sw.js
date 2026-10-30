@@ -44,10 +44,10 @@ self.addEventListener('fetch', (event) => {
       }
       return fresh;
     } catch (error) {
-      const cached = await cache.match(request);
+      const cached = await cache.match(request, { ignoreVary: true });
       if (cached) return cached;
       if (request.mode === 'navigate') {
-        const shell = await cache.match(APP_URL);
+        const shell = await cache.match(APP_URL, { ignoreVary: true });
         if (shell) return shell;
       }
       throw error;

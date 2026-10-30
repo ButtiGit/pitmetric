@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import {
   IonApp, IonPage, IonContent, IonButton, IonInput, IonTextarea, IonIcon, IonBadge,
-  IonTabBar, IonTabButton, IonSelect, IonSelectOption, IonLabel, IonSpinner
+  IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/vue';
 import {
   addOutline, analyticsOutline, buildOutline, cameraOutline, carSportOutline,
@@ -156,6 +156,16 @@ function resetTeamSelection(): void {
 const currentEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === selectedEventId.value) || null);
 const selectedSessionEvent = computed<EventItem | null>(() => snapshot.value.events.find(event => event.id === sessionEventId.value) || null);
 const moreSelected = computed(() => !['home', 'timer', 'sessions', 'garage'].includes(active.value));
+function moveNavigation(event: KeyboardEvent): void {
+  const screens: Screen[] = ['home', 'timer', 'sessions', 'garage', 'more'];
+  const index = moreSelected.value ? 4 : screens.indexOf(active.value);
+  const next = event.key === 'ArrowRight' ? (index + 1) % 5 : event.key === 'ArrowLeft' ? (index + 4) % 5 : event.key === 'Home' ? 0 : event.key === 'End' ? 4 : null;
+  if (next === null) return;
+  event.preventDefault();
+  active.value = screens[next];
+  (event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+}
+
 const sky = computed(() => weatherSky(weather.value?.symbol_code ?? 'cloudy'));
 
 function weatherIcon(symbolCode: string): string {
@@ -819,13 +829,13 @@ onUnmounted(async () => {
         </main>
       </ion-content>
 
-      <ion-tab-bar slot="bottom" class="bottom-nav">
-        <ion-tab-button :selected="active === 'home'" @click="active='home'"><ion-icon :icon="homeOutline"/><ion-label>Home</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'timer'" @click="active='timer'"><ion-icon :icon="stopwatchOutline"/><ion-label>Timer</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'sessions'" @click="active='sessions'"><ion-icon :icon="flagOutline"/><ion-label>Sessioni</ion-label></ion-tab-button>
-        <ion-tab-button :selected="active === 'garage'" @click="active='garage'"><ion-icon :icon="carSportOutline"/><ion-label>Garage</ion-label></ion-tab-button>
-        <ion-tab-button :selected="moreSelected" @click="active='more'"><ion-icon :icon="ellipsisHorizontalOutline"/><ion-label>Altro</ion-label></ion-tab-button>
-      </ion-tab-bar>
+      <nav class="bottom-nav" role="tablist" aria-label="Navigazione principale" @keydown="moveNavigation">
+        <button type="button" role="tab" :aria-selected="active === 'home'" :tabindex="active === 'home' ? 0 : -1" @click="active='home'"><ion-icon :icon="homeOutline"/><span>Home</span></button>
+        <button type="button" role="tab" :aria-selected="active === 'timer'" :tabindex="active === 'timer' ? 0 : -1" @click="active='timer'"><ion-icon :icon="stopwatchOutline"/><span>Timer</span></button>
+        <button type="button" role="tab" :aria-selected="active === 'sessions'" :tabindex="active === 'sessions' ? 0 : -1" @click="active='sessions'"><ion-icon :icon="flagOutline"/><span>Sessioni</span></button>
+        <button type="button" role="tab" :aria-selected="active === 'garage'" :tabindex="active === 'garage' ? 0 : -1" @click="active='garage'"><ion-icon :icon="carSportOutline"/><span>Garage</span></button>
+        <button type="button" role="tab" :aria-selected="moreSelected" :tabindex="moreSelected ? 0 : -1" @click="active='more'"><ion-icon :icon="ellipsisHorizontalOutline"/><span>Altro</span></button>
+      </nav>
     </ion-page>
   </ion-app>
 </template>

@@ -12,7 +12,7 @@ export default defineConfig({
   ],
   webServer: {
     cwd: fileURLToPath(new URL('..', import.meta.url)),
-    command: 'npm --prefix mobile run preview:pwa -- --host 127.0.0.1 --port 4174',
+    command: 'node mobile/tests/browser/server.mjs',
     url: 'http://127.0.0.1:4174/mobile/',
     reuseExistingServer: !process.env.CI,
   },
