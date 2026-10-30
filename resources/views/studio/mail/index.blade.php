@@ -13,7 +13,7 @@
                             Studio / Mail
                         </div>
                         <h1 class="mt-3 text-3xl font-black tracking-[-0.035em] text-pm-text sm:text-4xl">Inbox PitMetric</h1>
-                        <p class="mt-3 max-w-2xl text-sm leading-7 text-pm-text-secondary">Tutte le email ricevute tramite <span class="font-mono text-pm-text">@reply.pitmetric.it</span>, lette direttamente da Resend. Apri un messaggio per leggerlo e rispondere senza uscire da PitMetric.</p>
+                        <p class="mt-3 max-w-2xl text-sm leading-7 text-pm-text-secondary">Messaggi ricevuti e risposte inviate, riuniti in conversazioni. Apri una conversazione per leggere lo scambio completo e rispondere. Lo stato di lettura è personale.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <a href="{{ route('studio.mail.compose') }}" class="pm-race-button">Nuova mail</a>
@@ -31,47 +31,77 @@
             @endif
 
             <section class="pm-panel overflow-hidden">
-                <div class="flex items-center justify-between gap-4 border-b border-pm-border px-5 py-4 sm:px-6">
-                    <div>
-                        <div class="text-xs font-semibold uppercase tracking-[0.14em] text-pm-muted">Ricevute</div>
-                        <div class="mt-1 text-sm text-pm-text-secondary">{{ count($emails) }} messaggi caricati</div>
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-pm-border px-5 py-4 sm:px-6">
+                    <div class="flex flex-wrap gap-2" aria-label="Filtra conversazioni">
+                        <a href="{{ route('studio.mail.index') }}" @class(['pm-ghost-button', 'border-pm-accent text-pm-accent' => $filter !== 'unread']) @if ($filter !== 'unread') aria-current="page" @endif>Tutte</a>
+                        <a href="{{ route('studio.mail.index', ['filter' => 'unread']) }}" @class(['pm-ghost-button', 'border-pm-accent text-pm-accent' => $filter === 'unread']) @if ($filter === 'unread') aria-current="page" @endif>Da leggere · {{ $unreadCount }}</a>
                     </div>
-                    <div class="rounded-full border border-pm-border bg-pm-subtle px-3 py-1.5 font-mono text-[11px] text-pm-muted">reply.pitmetric.it</div>
+                    <a href="{{ route('studio.mail.index', ['filter' => $filter, 'refresh' => 1]) }}" class="pm-ghost-button">Aggiorna posta</a>
                 </div>
-
                 <div class="divide-y divide-pm-border">
-                    @forelse ($emails as $email)
+                    @forelse ($threads as $thread)
                         @php
-                            $emailId = (string) ($email['id'] ?? '');
-                            $from = (string) ($email['from'] ?? 'Mittente sconosciuto');
-                            $subject = trim((string) ($email['subject'] ?? '')) ?: '(senza oggetto)';
-                            $createdAt = (string) ($email['created_at'] ?? '');
+                            $items = $threadMessages->get($thread->thread_key);
+                            $last = $items->last();
+                            $incoming = $items->where('direction', 'received');
+                            $unread = $incoming->where('is_read', false)->count();
+                            $contact = $incoming->first()?->sender ?? implode(', ', $last->recipients);
+                            $link = route('studio.mail.show', ['emailId' => $last->provider_id, 'direction' => $last->direction]);
                         @endphp
-                        @if ($emailId !== '')
-                            <a href="{{ route('studio.mail.show', $emailId) }}" class="group grid gap-3 px-5 py-5 transition hover:bg-white/[0.025] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6">
-                                <div class="min-w-0">
-                                    <div class="flex min-w-0 items-center gap-3">
-                                        <div class="grid size-9 shrink-0 place-items-center rounded-full border border-pm-border bg-pm-subtle text-sm font-black text-pm-accent">{{ strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $from) ?: 'M', 0, 1)) }}</div>
-                                        <div class="min-w-0">
-                                            <div class="truncate text-sm font-bold text-pm-text">{{ $from }}</div>
-                                            <div class="mt-1 truncate text-sm text-pm-text-secondary">{{ $subject }}</div>
-                                        </div>
-                                    </div>
+                        <div @class(['flex flex-col gap-3 px-5 py-5 sm:px-6', 'bg-pm-accent/5' => $unread > 0]) data-mail-thread>
+                            <a href="{{ $link }}" class="min-w-0 space-y-2 rounded-lg focus-visible:outline-2 focus-visible:outline-pm-accent">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="min-w-0 break-words text-sm font-bold text-pm-text [overflow-wrap:anywhere]">{{ $contact }}</span>
+                                    <span class="text-xs text-pm-muted">{{ $last->sent_at->format('d/m/Y H:i') }}</span>
                                 </div>
-                                <div class="flex items-center gap-3 pl-12 sm:pl-0">
-                                    <span class="text-xs text-pm-muted">{{ $createdAt !== '' ? \Illuminate\Support\Carbon::parse($createdAt)->format('d/m/Y H:i') : '' }}</span>
-                                    <span class="text-pm-muted transition group-hover:translate-x-0.5 group-hover:text-pm-text">&gt;</span>
+                                <div class="break-words text-base font-semibold text-pm-text [overflow-wrap:anywhere]">{{ $last->subject ?: '(senza oggetto)' }}</div>
+                                <div class="flex flex-wrap items-center gap-3 text-xs text-pm-text-secondary">
+                                    @if ($unread > 0)
+                                        <span class="rounded-full border border-pm-accent/30 bg-pm-accent/10 px-2.5 py-1 font-bold text-pm-accent">{{ $unread }} da leggere</span>
+                                    @else
+                                        <span>{{ $incoming->isEmpty() ? 'Inviata' : 'Letta' }}</span>
+                                    @endif
+                                    <span>{{ $items->count() }} messaggi · {{ $items->where('direction', 'sent')->count() }} {{ $items->where('direction', 'sent')->count() === 1 ? 'inviato' : 'inviati' }}</span>
+                                    <span>{{ $last->direction === 'sent' ? 'Ultimo messaggio: tu' : 'Ultimo messaggio ricevuto' }}</span>
                                 </div>
                             </a>
-                        @endif
+                            @if ($incoming->isNotEmpty())
+                                <form method="POST" action="{{ route('studio.mail.read', $last->provider_id) }}" class="self-start">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="read" value="{{ $unread > 0 ? '1' : '0' }}">
+                                    <input type="hidden" name="through_id" value="{{ $items->max('id') }}">
+                                    <input type="hidden" name="filter" value="{{ $filter }}">
+                                    <input type="hidden" name="page" value="{{ $threads->currentPage() }}">
+                                    <button type="submit" class="text-xs font-semibold text-pm-text-secondary underline underline-offset-4 hover:text-pm-text" aria-label="{{ $unread > 0 ? 'Segna come letta' : 'Segna come da leggere' }}: {{ $last->subject }}">{{ $unread > 0 ? 'Segna come letta' : 'Segna come da leggere' }}</button>
+                                </form>
+                            @endif
+                        </div>
                     @empty
                         <div class="px-6 py-16 text-center">
-                            <div class="text-lg font-black text-pm-text">Nessuna email ricevuta</div>
-                            <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-pm-text-secondary">Quando qualcuno risponderà a una mail PitMetric, il messaggio comparirà qui.</p>
+                            <div class="text-lg font-black text-pm-text">{{ $filter === 'unread' ? 'Nessun messaggio da leggere' : 'Nessuna conversazione' }}</div>
+                            <p class="mt-2 text-sm text-pm-text-secondary">{{ $filter === 'unread' ? 'Hai letto tutte le email caricate.' : 'Le email ricevute e inviate compariranno qui.' }}</p>
                         </div>
                     @endforelse
                 </div>
+                <div class="border-t border-pm-border px-5 py-4 sm:px-6">{{ $threads->links() }}</div>
             </section>
+            @if (collect($cursors)->filter()->isNotEmpty())
+                <section class="pm-panel space-y-3 p-5">
+                    <p class="text-sm text-pm-text-secondary">Sono disponibili altre email nell’archivio Resend. Caricale per completare le conversazioni più vecchie.</p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($cursors as $direction => $cursor)
+                            @if ($cursor)
+                                <form method="POST" action="{{ route('studio.mail.older') }}">
+                                    @csrf
+                                    <input type="hidden" name="direction" value="{{ $direction }}">
+                                    <button class="pm-ghost-button" type="submit">Carica {{ $direction === 'sent' ? 'inviate' : 'ricevute' }} precedenti</button>
+                                </form>
+                            @endif
+                        @endforeach
+                    </div>
+                </section>
+            @endif
         </div>
     </div>
 </x-layouts::app>
