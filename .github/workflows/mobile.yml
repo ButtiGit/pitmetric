@@ -32,3 +32,16 @@ jobs:
       - run: npm run test:pwa
       - run: npm run build
       - run: npm run build:pwa
+
+  pwa-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm --prefix mobile install
+      - run: npm --prefix mobile run build:pwa
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npx playwright test --config mobile/playwright.config.mjs

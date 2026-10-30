@@ -1,8 +1,10 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { addWebQuickRecord, deleteWebQuickRecord, readWebQuickRecords } from './web-quicklog';
+import { deleteWebRecord, readWebRecords, saveWebRecord } from './web-domain-store';
+import { readWebSession, webScope } from './web-session';
 
-export type QuickRecordKind = 'lap_time' | 'session' | 'note' | 'setup' | 'maintenance';
+export type QuickRecordKind = 'lap_time' | 'session' | 'note' | 'setup' | 'maintenance' | 'tyre_reading';
 
 export type QuickRecord = {
   id: string;
@@ -11,6 +13,8 @@ export type QuickRecord = {
   occurred_at: string;
   value_ms?: number | null;
   payload: Record<string, unknown>;
+  sync_state?: 'local' | 'pending' | 'synced';
+  remote_id?: number;
 };
 
 const FILE_PATH = 'pitmetric/quick-records.json';
@@ -40,6 +44,8 @@ async function writeNative(records: QuickRecord[]): Promise<void> {
 
 export async function quickRecords(): Promise<QuickRecord[]> {
   if (Capacitor.isNativePlatform()) return readNative();
+  const scope = webScope();
+  if (scope) return readWebRecords(scope);
   return readWebQuickRecords();
 }
 
@@ -63,7 +69,19 @@ export async function addQuickRecord(
     records.unshift(record);
     await writeNative(records.slice(0, 1000));
   } else {
-    await addWebQuickRecord(record);
+    const scope = webScope();
+    if (scope) {
+      let operation: string | undefined;
+      if (readWebSession()?.session.cloudEnabled) {
+        if (kind === 'session' && payload.configuration_version_id) operation = 'session.create';
+        if (kind === 'lap_time' && (payload.session_id || payload.session_client_id)) operation = 'timing.lap.create';
+        if (kind === 'note' && payload.event_id) operation = 'event.note.create';
+        if (kind === 'setup' && payload.vehicle_id) operation = 'setup.create';
+        if (kind === 'tyre_reading' && (payload.session_id || payload.session_client_id)) operation = 'session.tyres.create';
+      }
+      record.payload = { ...payload, ...(kind === 'setup' ? { name: record.title } : {}), occurred_at: occurredAt, ...(kind === 'lap_time' ? { lap_time_ms: valueMs } : {}) };
+      await saveWebRecord(scope, record, operation);
+    } else await addWebQuickRecord(record);
   }
   return record;
 }
@@ -72,7 +90,9 @@ export async function deleteQuickRecord(id: string): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     await writeNative((await readNative()).filter(record => record.id !== id));
   } else {
-    await deleteWebQuickRecord(id);
+    const scope = webScope();
+    if (scope) await deleteWebRecord(scope, id);
+    else await deleteWebQuickRecord(id);
   }
 }
 
@@ -107,5 +127,6 @@ function defaultTitle(kind: QuickRecordKind): string {
     note: 'Nota rapida',
     setup: 'Setup libero',
     maintenance: 'Promemoria manutenzione',
+    tyre_reading: 'Pressioni kart',
   }[kind];
 }

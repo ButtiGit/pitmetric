@@ -1,6 +1,8 @@
-/* PitMetric's public, local-only PWA shell. Never cache authenticated API traffic. */
+/* PitMetric's public PWA shell. Never cache authenticated API traffic. */
 const CACHE_PREFIX = 'pitmetric-pwa-shell-';
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const BUILD_VERSION = '__PWA_VERSION__';
+const PRECACHE_ASSETS = '__PWA_ASSETS__';
+const CACHE_NAME = `${CACHE_PREFIX}${BUILD_VERSION}`;
 const APP_URL = self.registration.scope;
 
 self.addEventListener('install', (event) => {
@@ -9,13 +11,13 @@ self.addEventListener('install', (event) => {
     if (!response.ok) throw new Error('PWA shell unavailable');
 
     const html = await response.clone().text();
-    const assets = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
-      .map((match) => new URL(match[1], APP_URL))
+    const assets = (Array.isArray(PRECACHE_ASSETS) ? PRECACHE_ASSETS : [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map(match => match[1]))
+      .map((asset) => new URL(asset, APP_URL))
       .filter((url) => url.origin === self.location.origin && url.pathname.startsWith(`${new URL(APP_URL).pathname}assets/`));
 
     const cache = await caches.open(CACHE_NAME);
     await cache.put(APP_URL, response);
-    await Promise.allSettled(assets.map((asset) => cache.add(asset.href)));
+    await cache.addAll(assets.map(asset => asset.href));
     await self.skipWaiting();
   })());
 });
