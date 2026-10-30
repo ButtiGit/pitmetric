@@ -3,10 +3,14 @@
 use App\Mail\OutreachMail;
 use App\Mail\StudioReplyMail;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
 beforeEach(function () {
+    Cache::flush();
+    Http::preventStrayRequests();
+    Http::fake(['https://api.resend.com/emails' => Http::response(['data' => []])]);
     config()->set('pitmetric.update_editor_emails', ['editor@pitmetric.test']);
     config()->set('services.resend.studio_key', 're_test_studio');
     config()->set('services.resend.studio_from_address', 'hello@pitmetric.it');

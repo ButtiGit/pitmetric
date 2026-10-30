@@ -1,0 +1,36 @@
+import { expect, test } from '@playwright/test';
+
+test('mail conversations show our replies and persist read and unread states', async ({ page }, testInfo) => {
+    const device = testInfo.project.name.includes('mobile') ? 'mobile' : 'desktop';
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/login');
+    await page.locator('input[name="email"]').fill('e2e@pitmetric.test');
+    await page.locator('input[name="password"]').fill('PitMetric-E2E-2026!');
+    await page.locator('form').filter({ has: page.locator('input[name="email"]') }).locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    await page.goto('/studio/mail');
+    const thread = page.locator('[data-mail-thread]').filter({ hasText: `E2E conversazione ${device}` });
+    await expect(thread).toContainText('2 da leggere');
+    await expect(thread).toContainText('3 messaggi · 1 inviato');
+    if (device === 'mobile') await page.setViewportSize({ width: 320, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+    await thread.getByRole('link').click();
+    const messages = page.locator('[data-mail-message]');
+    await expect(messages).toHaveCount(3);
+    await expect(messages.nth(0)).toContainText('Richiesta del team');
+    await expect(messages.nth(1)).toContainText('La mia risposta');
+    await expect(messages.nth(1)).toContainText('Tu · Inviata');
+    await expect(messages.nth(2)).toContainText('Nuovo messaggio del team');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath('studio-conversation.png'), fullPage: true });
+    await page.getByRole('link', { name: "Indietro all'Inbox" }).click();
+    await expect(thread).toContainText('Letta');
+    await thread.getByRole('button', { name: /Segna come da leggere:/ }).click();
+    await expect(thread).toContainText('2 da leggere');
+    await page.reload();
+    await expect(thread).toContainText('2 da leggere');
+    await thread.getByRole('button', { name: /Segna come letta:/ }).click();
+    await expect(thread).toContainText('Letta');
+    expect(errors).toEqual([]);
+});

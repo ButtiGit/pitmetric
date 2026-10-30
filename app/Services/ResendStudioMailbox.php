@@ -9,10 +9,22 @@ use RuntimeException;
 final class ResendStudioMailbox
 {
     /** @return array{data: list<array<string, mixed>>, has_more?: bool} */
-    public function received(int $limit = 50): array
+    public function received(int $limit = 50, ?string $after = null): array
+    {
+        return $this->listing('/emails/receiving', $limit, $after);
+    }
+
+    /** @return array{data: list<array<string, mixed>>, has_more?: bool} */
+    public function sent(int $limit = 100, ?string $after = null): array
+    {
+        return $this->listing('/emails', $limit, $after);
+    }
+
+    /** @return array{data: list<array<string, mixed>>, has_more?: bool} */
+    private function listing(string $path, int $limit, ?string $after): array
     {
         $payload = $this->request()
-            ->get('/emails/receiving', ['limit' => max(1, min($limit, 100))])
+            ->get($path, array_filter(['limit' => max(1, min($limit, 100)), 'after' => $after]))
             ->throw()
             ->json();
 
@@ -40,8 +52,20 @@ final class ResendStudioMailbox
     /** @return array<string, mixed> */
     public function receivedEmail(string $emailId): array
     {
+        return $this->email('/emails/receiving/', $emailId);
+    }
+
+    /** @return array<string, mixed> */
+    public function sentEmail(string $emailId): array
+    {
+        return $this->email('/emails/', $emailId);
+    }
+
+    /** @return array<string, mixed> */
+    private function email(string $path, string $emailId): array
+    {
         $payload = $this->request()
-            ->get('/emails/receiving/'.rawurlencode($emailId))
+            ->get($path.rawurlencode($emailId))
             ->throw()
             ->json();
 
@@ -64,7 +88,8 @@ final class ResendStudioMailbox
         return Http::baseUrl('https://api.resend.com')
             ->acceptJson()
             ->withToken($key)
+            ->connectTimeout(5)
             ->timeout(15)
-            ->retry(2, 250, throw: false);
+            ->retry([500, 1000], throw: false);
     }
 }

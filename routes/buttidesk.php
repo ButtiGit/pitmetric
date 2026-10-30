@@ -23,6 +23,8 @@ Route::middleware(['auth', 'verified', 'can:manage-updates'])
         Route::get('/', [StudioMailboxController::class, 'index'])->name('index');
         Route::get('/compose', [StudioMailboxController::class, 'compose'])->name('compose');
         Route::post('/send', [StudioMailboxController::class, 'send'])->name('send');
+        Route::post('/older', [StudioMailboxController::class, 'older'])->name('older');
+        Route::patch('/{emailId}/read', [StudioMailboxController::class, 'read'])->where('emailId', '[A-Za-z0-9_-]+')->name('read');
         Route::get('/{emailId}', [StudioMailboxController::class, 'show'])->name('show');
         Route::post('/{emailId}/reply', [StudioMailboxController::class, 'reply'])->name('reply');
     });

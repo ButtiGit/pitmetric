@@ -10,6 +10,7 @@ use App\Models\UsageMetricType;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Workspace;
+use App\Services\StudioMailConversations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -89,6 +90,19 @@ class E2EBrowserSeeder extends Seeder
             ]);
         } finally {
             Auth::logout();
+        }
+
+        foreach (['desktop', 'mobile'] as $device) {
+            foreach (['received', 'sent', 'received'] as $index => $direction) {
+                app(StudioMailConversations::class)->store([
+                    'id' => 'e2e-mail-'.$device.'-'.$index,
+                    'from' => $direction === 'sent' ? 'hello@pitmetric.it' : $device.'@example.test',
+                    'to' => [$direction === 'sent' ? $device.'@example.test' : 'outreach@reply.pitmetric.it'],
+                    'subject' => 'Re: E2E conversazione '.$device,
+                    'text' => ['Richiesta del team', 'La mia risposta', 'Nuovo messaggio del team'][$index].' · '.$device,
+                    'created_at' => now()->subMinutes(10 - $index)->toIso8601String(),
+                ], $direction);
+            }
         }
     }
 }
