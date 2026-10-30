@@ -1,4 +1,5 @@
 import type { MobileSnapshot, PendingOperation } from './lib';
+import type { QuickRecord } from './quicklog';
 
 export type WebStorageScope = Readonly<{ userId: number; workspaceId: number }>;
 
@@ -6,6 +7,7 @@ const DATABASE_PREFIX = 'pitmetric-pwa-domain';
 const SNAPSHOTS_STORE = 'snapshots';
 const OUTBOX_STORE = 'outbox';
 const CURRENT_SNAPSHOT = 'current';
+const RECORDS_STORE = 'records';
 
 type SavedSnapshot = { id: string; payload: MobileSnapshot; synced_at: string };
 
@@ -25,7 +27,7 @@ function openDatabase(scope: WebStorageScope): Promise<IDBDatabase> {
   }
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(name, 1);
+    const request = indexedDB.open(name, 2);
     request.onupgradeneeded = () => {
       const database = request.result;
       if (!database.objectStoreNames.contains(SNAPSHOTS_STORE)) {
@@ -33,6 +35,9 @@ function openDatabase(scope: WebStorageScope): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(OUTBOX_STORE)) {
         database.createObjectStore(OUTBOX_STORE, { keyPath: 'local_id' });
+      }
+      if (!database.objectStoreNames.contains(RECORDS_STORE)) {
+        database.createObjectStore(RECORDS_STORE, { keyPath: 'id' });
       }
     };
     request.onsuccess = () => {
@@ -129,6 +134,65 @@ export async function pendingWebCount(scope: WebStorageScope): Promise<number> {
 
 export async function confirmWebOperation(scope: WebStorageScope, clientId: string): Promise<void> {
   await withStore<void>(scope, OUTBOX_STORE, 'readwrite', store => { store.delete(clientId); });
+}
+
+export async function saveWebRecord(scope: WebStorageScope, record: QuickRecord, operation?: string): Promise<void> {
+  const database = await openDatabase(scope);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = database.transaction([RECORDS_STORE, OUTBOX_STORE], 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || new Error('Salvataggio offline non riuscito.'));
+      tx.onabort = () => reject(tx.error || new Error('Salvataggio offline annullato.'));
+      try {
+        tx.objectStore(RECORDS_STORE).add({ ...record, sync_state: operation ? 'pending' : 'local' });
+        if (operation) tx.objectStore(OUTBOX_STORE).add({
+          local_id: record.id, operation, payload: record.payload, created_at: record.occurred_at, attempts: 0,
+        });
+      } catch (error) {
+        tx.abort();
+        reject(error);
+      }
+    });
+  } finally {
+    database.close();
+  }
+}
+
+export async function readWebRecords(scope: WebStorageScope): Promise<QuickRecord[]> {
+  return withStore(scope, RECORDS_STORE, 'readonly', (store, done) => {
+    const request = store.getAll();
+    request.onsuccess = () => done((request.result as QuickRecord[]).sort((a, b) => b.occurred_at.localeCompare(a.occurred_at)));
+  });
+}
+
+export async function acknowledgeWebRecord(scope: WebStorageScope, clientId: string, remoteId: number): Promise<void> {
+  const database = await openDatabase(scope);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = database.transaction([RECORDS_STORE, OUTBOX_STORE], 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || new Error('Conferma sincronizzazione non salvata.'));
+      tx.onabort = () => reject(tx.error || new Error('Conferma sincronizzazione annullata.'));
+      const records = tx.objectStore(RECORDS_STORE);
+      const request = records.get(clientId);
+      request.onsuccess = () => {
+        if (request.result) records.put({ ...request.result, sync_state: 'synced', remote_id: remoteId });
+        tx.objectStore(OUTBOX_STORE).delete(clientId);
+      };
+    });
+  } finally {
+    database.close();
+  }
+}
+
+export async function deleteWebRecord(scope: WebStorageScope, id: string): Promise<void> {
+  await withStore<void>(scope, RECORDS_STORE, 'readwrite', (store) => {
+    const request = store.get(id);
+    request.onsuccess = () => {
+      if (request.result?.sync_state === 'local') store.delete(id);
+    };
+  });
 }
 
 export async function markWebOperationFailed(scope: WebStorageScope, clientId: string): Promise<void> {

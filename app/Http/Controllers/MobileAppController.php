@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConfigurationVersion;
+use App\Models\Driver;
 use App\Models\EventEntry;
 use App\Models\EventNote;
 use App\Models\EventScheduleItem;
@@ -14,6 +15,7 @@ use App\Models\MobileSyncOperation;
 use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
+use App\Models\TimingLap;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Workspace;
@@ -30,6 +32,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class MobileAppController extends Controller
@@ -211,6 +214,10 @@ class MobileAppController extends Controller
                 'work_orders' => $workOrders,
                 'setups' => $setups,
                 'setup_fields' => TechnicalSetup::FIELD_DEFINITIONS,
+                'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(['id', 'display_name']),
+                'timing_laps' => TimingLap::query()->whereIn('session_id', $sessions->pluck('id'))
+                    ->where('is_valid', true)->latest('id')->limit(500)
+                    ->get(['id', 'session_id', 'lap_number', 'lap_time_ms']),
             ],
             'synced_at' => now()->toIso8601String(),
         ]);
@@ -232,29 +239,30 @@ class MobileAppController extends Controller
 
         $validated = $request->validate([
             'client_id' => ['required', 'uuid'],
-            'operation' => ['required', 'in:event.note.create,session.create,vehicle.create,maintenance.work_order.create,setup.create'],
+            'operation' => ['required', 'in:event.note.create,session.create,timing.lap.create,session.tyres.create,vehicle.create,maintenance.work_order.create,setup.create'],
             'payload' => ['required', 'array'],
         ]);
 
-        $existing = MobileSyncOperation::query()
-            ->where('user_id', $user->getKey())
-            ->where('client_id', $validated['client_id'])
-            ->first();
+        $outcome = DB::transaction(function () use ($validated, $workspace, $user): array {
+            User::query()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
+            $existing = MobileSyncOperation::query()->where('user_id', $user->getKey())
+                ->where('client_id', $validated['client_id'])->first();
 
-        if ($existing instanceof MobileSyncOperation) {
-            return response()->json([
-                'duplicate' => true,
-                'result' => $existing->result,
-            ]);
-        }
+            if ($existing instanceof MobileSyncOperation) {
+                abort_unless((int) $existing->workspace_id === (int) $workspace->getKey()
+                    && $existing->operation === $validated['operation'], 409);
 
-        $result = DB::transaction(function () use ($validated, $workspace, $user): array {
+                return ['duplicate' => true, 'result' => $existing->result];
+            }
+
             /** @var array<string, mixed> $payload */
             $payload = $validated['payload'];
             $operation = (string) $validated['operation'];
             $result = match ($operation) {
                 'event.note.create' => $this->syncEventNote($payload, $user),
                 'session.create' => $this->syncSession($payload, $workspace, $user),
+                'timing.lap.create' => $this->syncLap($payload, $workspace, $user),
+                'session.tyres.create' => $this->syncTyres($payload, $workspace, $user),
                 'vehicle.create' => $this->syncVehicle($payload),
                 'maintenance.work_order.create' => $this->syncWorkOrder($payload, $user),
                 'setup.create' => $this->syncSetup($payload, $user),
@@ -271,10 +279,10 @@ class MobileAppController extends Controller
                 'processed_at' => now(),
             ]);
 
-            return $result;
+            return ['duplicate' => false, 'result' => $result];
         });
 
-        return response()->json(['duplicate' => false, 'result' => $result], 201);
+        return response()->json($outcome, $outcome['duplicate'] ? 200 : 201);
     }
 
     public function galleryIndex(Request $request): JsonResponse
@@ -457,6 +465,9 @@ class MobileAppController extends Controller
         ])->validate();
 
         RaceEvent::query()->whereKey($validated['event_id'])->firstOrFail();
+        if (isset($validated['event_entry_id'])) {
+            EventEntry::query()->where('event_id', $validated['event_id'])->findOrFail($validated['event_entry_id']);
+        }
 
         $note = EventNote::query()->create([
             'event_id' => $validated['event_id'],
@@ -488,15 +499,105 @@ class MobileAppController extends Controller
             'duration_minutes' => ['nullable', 'numeric', 'min:0', 'max:1440'],
             'distance_override_km' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'notes' => ['nullable', 'string', 'max:4000'],
+            'best_lap_ms' => ['nullable', 'integer', 'between:1,3600000'],
         ])->validate();
 
         $recorded = $this->recordSessionService->record($workspace, $user, $validated);
+
+        if (isset($validated['best_lap_ms'])) {
+            $this->syncLap(['session_id' => $recorded['session']->getKey(), 'lap_time_ms' => $validated['best_lap_ms']], $workspace, $user);
+        }
 
         return [
             'entity' => 'session',
             'id' => $recorded['session']->getKey(),
             'maintenance_attention' => $recorded['maintenanceAttention'],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function syncLap(array $payload, Workspace $workspace, User $user): array
+    {
+        $validated = Validator::make($payload, [
+            'session_id' => ['nullable', 'required_without:session_client_id', 'prohibits:session_client_id', 'integer'],
+            'session_client_id' => ['nullable', 'required_without:session_id', 'uuid'],
+            'lap_time_ms' => ['required', 'integer', 'between:1,3600000'],
+        ])->validate();
+
+        $session = $this->syncTargetSession($validated, $workspace, $user);
+        $lap = TimingLap::query()->create([
+            'session_id' => $session->getKey(),
+            'driver_id' => $session->eventEntry?->driver_id,
+            'vehicle_id' => $session->vehicle_id,
+            'circuit_layout_id' => $session->circuit_layout_id,
+            'lap_number' => (int) TimingLap::query()->where('session_id', $session->getKey())->max('lap_number') + 1,
+            'lap_time_ms' => $validated['lap_time_ms'],
+            'is_valid' => true,
+            'source' => 'manual',
+        ]);
+
+        return ['entity' => 'timing_lap', 'id' => $lap->getKey()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function syncTyres(array $payload, Workspace $workspace, User $user): array
+    {
+        $validated = Validator::make($payload, [
+            'session_id' => ['nullable', 'required_without:session_client_id', 'prohibits:session_client_id', 'integer'],
+            'session_client_id' => ['nullable', 'required_without:session_id', 'uuid'],
+            'phase' => ['required', 'in:cold,hot'],
+            'pressure_fl' => ['nullable', 'numeric', 'between:0.1,10'],
+            'pressure_fr' => ['nullable', 'numeric', 'between:0.1,10'],
+            'pressure_rl' => ['nullable', 'numeric', 'between:0.1,10'],
+            'pressure_rr' => ['nullable', 'numeric', 'between:0.1,10'],
+            'measured_at' => ['required', 'date'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ])->validate();
+        $session = $this->syncTargetSession($validated, $workspace, $user);
+        abort_unless($session->vehicle?->category === 'kart', 422);
+        $pressures = [];
+        foreach (['fl', 'fr', 'rl', 'rr'] as $corner) {
+            if (isset($validated['pressure_'.$corner])) {
+                $pressures[$corner] = round((float) $validated['pressure_'.$corner], 2);
+            }
+        }
+        if ($pressures === []) {
+            throw ValidationException::withMessages(['pressures' => 'Inserisci almeno una pressione.']);
+        }
+        $reading = $session->tyreReadings()->create([
+            'phase' => $validated['phase'], 'pressures' => $pressures,
+            'measured_at' => $validated['measured_at'], 'notes' => $validated['notes'] ?? null,
+            'created_by' => $user->getKey(),
+        ]);
+
+        return ['entity' => 'session_tyre_reading', 'id' => $reading->getKey()];
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function syncTargetSession(array $payload, Workspace $workspace, User $user): Session
+    {
+        $sessionId = $payload['session_id'] ?? null;
+        if (isset($payload['session_client_id'])) {
+            $operation = MobileSyncOperation::query()->where('user_id', $user->getKey())
+                ->where('workspace_id', $workspace->getKey())->where('operation', 'session.create')
+                ->where('client_id', $payload['session_client_id'])->first();
+            $sessionId = $operation?->result['id'] ?? null;
+            if ($sessionId === null) {
+                throw ValidationException::withMessages(['session_client_id' => 'Invia prima la sessione a cui appartiene il giro.']);
+            }
+        }
+
+        $session = Session::query()->with('eventEntry')->where('workspace_id', $workspace->getKey())
+            ->lockForUpdate()->findOrFail((int) $sessionId);
+        Gate::forUser($user)->authorize('update', $session);
+
+        return $session;
     }
 
     /** @param array<string, mixed> $payload
@@ -564,11 +665,32 @@ class MobileAppController extends Controller
 
         Vehicle::query()->whereKey($validated['vehicle_id'])->firstOrFail();
 
+        $valueRules = TechnicalSetup::kartGeometryRules();
+        foreach (array_keys(TechnicalSetup::FIELD_DEFINITIONS) as $field) {
+            if (! isset($valueRules[$field])) {
+                $valueRules[$field] = ['nullable', 'numeric', 'between:0,500'];
+            }
+        }
+        foreach (['fl', 'fr', 'rl', 'rr'] as $corner) {
+            $valueRules['tyre_pressure_'.$corner] = ['nullable', 'numeric', 'between:0,10'];
+        }
+        $valueRules['camber_rear_deg'] = ['nullable', 'numeric', 'between:-15,15'];
+        $valueRules['toe_front_mm'] = $valueRules['toe_rear_mm'] = ['nullable', 'numeric', 'between:-20,20'];
+        $valueRules['pinion_teeth'] = ['nullable', 'required_with:crown_teeth', 'integer', 'between:1,200'];
+        $valueRules['crown_teeth'] = ['nullable', 'required_with:pinion_teeth', 'integer', 'between:1,200'];
+        $valueRules['final_drive'] = ['nullable', 'string', 'max:30'];
+        $values = Validator::make($validated['values'] ?? [], $valueRules)->validate();
+        $values = [...array_diff_key($values, TechnicalSetup::kartGeometryRules()), ...TechnicalSetup::selectedKartGeometry($values)];
+        if (isset($values['pinion_teeth'], $values['crown_teeth'])) {
+            $values['final_drive'] = $values['pinion_teeth'].'/'.$values['crown_teeth'];
+            $values['gear_ratio'] = round((int) $values['crown_teeth'] / (int) $values['pinion_teeth'], 3);
+        }
+
         $setup = TechnicalSetup::query()->create([
             'vehicle_id' => $validated['vehicle_id'],
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'values' => $validated['values'] ?? [],
+            'values' => $values,
             'status' => 'active',
             'created_by' => $user->getKey(),
         ]);
@@ -595,10 +717,9 @@ class MobileAppController extends Controller
     /** @return array<string, mixed> */
     private function sessionPayload(User $user): array
     {
-        $workspace = $user->workspaces()
-            ->wherePivot('status', 'active')
-            ->orderBy('workspaces.id')
-            ->first();
+        $workspace = $this->hasCloudAccess($user)
+            ? $this->workspaceContext->personal($user)
+            : $this->workspaceContext->current($user);
 
         return [
             'authenticated' => true,

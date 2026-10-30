@@ -33,6 +33,7 @@ test('a GPS forecast request sends rounded coordinates with no account or sessio
     assert.deepEqual(JSON.parse(options.body), { latitude: 44.1235, longitude: 7.9877 });
     return new Response(JSON.stringify({ data: {
       provider: 'met_norway', captured_at: '2026-10-28T13:00:00+00:00',
+      forecast_at: '2026-10-28T14:00:00+00:00', latitude: 44.1235, longitude: 7.9877,
       air_temperature_c: 18.5, symbol_code: 'partlycloudy_day', hourly: [],
     } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   };

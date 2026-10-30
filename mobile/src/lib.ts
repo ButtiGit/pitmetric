@@ -6,6 +6,11 @@ import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacito
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { BiometricAuth, AndroidBiometryStrength } from '@aparajita/capacitor-biometric-auth';
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
+import type { MobileWeatherSnapshot } from './mobile-weather';
+import { isWeatherSnapshot } from './mobile-weather';
+import { cachedWebSnapshot, loginWeb, logoutWeb, refreshWebSnapshot, syncWebNow } from './web-cloud';
+import { readWebSession, webScope } from './web-session';
+import { pendingWebCount, pendingWebOperations, queueWebOperation } from './web-domain-store';
 
 export type SessionState = {
   authenticated: boolean;
@@ -144,6 +149,8 @@ export type MobileSnapshot = {
   setups: SetupItem[];
   setup_fields: Record<string, SetupField>;
   synced_at?: string | null;
+  drivers?: Array<{ id: number; display_name: string }>;
+  timing_laps?: Array<{ id: number; session_id: number; lap_number: number; lap_time_ms: number }>;
 };
 
 export type PendingOperation = {
@@ -199,6 +206,11 @@ async function database(): Promise<SQLiteDBConnection> {
       payload TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS mobile_weather (
+      id INTEGER PRIMARY KEY,
+      payload TEXT NOT NULL,
+      saved_at TEXT NOT NULL
+    );
   `);
 
   await db.execute("ALTER TABLE gallery_items ADD COLUMN media_type TEXT NOT NULL DEFAULT 'image'").catch(() => undefined);
@@ -211,6 +223,27 @@ async function database(): Promise<SQLiteDBConnection> {
 
 export async function bootLocalStore(): Promise<void> {
   await database();
+}
+
+export async function readNativeWeather(): Promise<MobileWeatherSnapshot | null> {
+  const conn = await database();
+  const rows = (await conn.query('SELECT payload FROM mobile_weather WHERE id=1')).values || [];
+  if (!rows.length) return null;
+  try {
+    const snapshot: unknown = JSON.parse(String(rows[0].payload));
+    return isWeatherSnapshot(snapshot) ? snapshot : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveNativeWeather(snapshot: MobileWeatherSnapshot): Promise<void> {
+  if (!isWeatherSnapshot(snapshot)) throw new Error('Previsione non valida.');
+  const conn = await database();
+  await conn.run(
+    'INSERT INTO mobile_weather (id,payload,saved_at) VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, saved_at=excluded.saved_at',
+    [JSON.stringify(snapshot), new Date().toISOString()],
+  );
 }
 
 async function token(): Promise<string | null> {
@@ -227,6 +260,7 @@ async function api(path: string, init: RequestInit = {}): Promise<Response> {
 }
 
 export async function login(email: string, password: string): Promise<SessionState> {
+  if (!Capacitor.isNativePlatform()) return loginWeb(email, password);
   const response = await api('/login', { method: 'POST', body: JSON.stringify({ email, password, device_name: Capacitor.getPlatform() }) });
   if (!response.ok) throw new Error(response.status === 422 ? 'Credenziali non valide.' : 'Accesso non riuscito.');
   const data = await response.json();
@@ -237,6 +271,7 @@ export async function login(email: string, password: string): Promise<SessionSta
 }
 
 export async function register(name: string, email: string, password: string): Promise<SessionState> {
+  if (!Capacitor.isNativePlatform()) return loginWeb(email, password, name);
   const response = await api('/register', { method: 'POST', body: JSON.stringify({ name, email, password, password_confirmation: password, device_name: Capacitor.getPlatform() }) });
   if (!response.ok) throw new Error('Registrazione non riuscita. Controlla i dati inseriti.');
   const data = await response.json();
@@ -247,6 +282,7 @@ export async function register(name: string, email: string, password: string): P
 }
 
 export async function restoreSession(): Promise<SessionState | null> {
+  if (!Capacitor.isNativePlatform()) return readWebSession()?.session || null;
   try { return (await SecureStorage.get('pitmetric.mobile.session')) as SessionState | null; } catch { return null; }
 }
 
@@ -273,6 +309,7 @@ export async function biometricUnlock(): Promise<SessionState | null> {
 }
 
 export async function logout(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return logoutWeb();
   const bearer = await token();
   if (bearer) await api('/logout', { method: 'POST' }).catch(() => undefined);
   await SecureStorage.remove('pitmetric.mobile.token').catch(() => undefined);
@@ -388,6 +425,7 @@ async function storeGalleryItem(item: GalleryItem): Promise<void> {
 }
 
 export async function galleryItems(): Promise<GalleryItem[]> {
+  if (!Capacitor.isNativePlatform()) return [];
   const conn = await database();
   const result = await conn.query('SELECT * FROM gallery_items ORDER BY created_at DESC');
   return ((result.values || []) as GalleryItem[]).map(item => ({
@@ -403,6 +441,11 @@ async function enqueue(operation: string, entity: string, localId: string, paylo
 }
 
 export async function queueOperation(operation: string, payload: Record<string, unknown>): Promise<string> {
+  if (!Capacitor.isNativePlatform()) {
+    const scope = webScope();
+    if (!scope) throw new Error('Accedi prima di registrare dati del team.');
+    return queueWebOperation(scope, operation, payload);
+  }
   const localId = crypto.randomUUID();
   await enqueue(operation, 'domain', localId, payload);
   void syncNow();
@@ -410,12 +453,20 @@ export async function queueOperation(operation: string, payload: Record<string, 
 }
 
 export async function pendingCount(): Promise<number> {
+  if (!Capacitor.isNativePlatform()) {
+    const scope = webScope();
+    return scope ? pendingWebCount(scope) : 0;
+  }
   const conn = await database();
   const result = await conn.query('SELECT COUNT(*) AS total FROM outbox');
   return Number(result.values?.[0]?.total || 0);
 }
 
 export async function pendingOperations(): Promise<PendingOperation[]> {
+  if (!Capacitor.isNativePlatform()) {
+    const scope = webScope();
+    return scope ? pendingWebOperations(scope) : [];
+  }
   const conn = await database();
   const result = await conn.query("SELECT local_id, operation, payload, created_at, attempts FROM outbox WHERE entity='domain' ORDER BY id DESC");
   return (result.values || []).map(row => ({
@@ -428,6 +479,7 @@ export async function pendingOperations(): Promise<PendingOperation[]> {
 }
 
 export async function cachedSnapshot(): Promise<MobileSnapshot> {
+  if (!Capacitor.isNativePlatform()) return (await cachedWebSnapshot()) || emptySnapshot();
   const conn = await database();
   const result = await conn.query('SELECT payload, updated_at FROM mobile_snapshot WHERE id=1');
   const row = result.values?.[0];
@@ -449,6 +501,7 @@ async function saveSnapshot(snapshot: MobileSnapshot, syncedAt: string): Promise
 }
 
 export async function refreshSnapshotFromCloud(): Promise<MobileSnapshot> {
+  if (!Capacitor.isNativePlatform()) return (await refreshWebSnapshot()) || emptySnapshot();
   const session = await restoreSession();
   const status = await Network.getStatus();
   if (!session?.cloudEnabled || !status.connected || !(await token())) return cachedSnapshot();
@@ -479,6 +532,7 @@ async function galleryFormData(item: GalleryItem): Promise<FormData> {
 }
 
 export async function syncNow(): Promise<{ synced: number; pending: number }> {
+  if (!Capacitor.isNativePlatform()) return syncWebNow();
   const status = await Network.getStatus();
   const bearer = await token();
   if (!status.connected || !bearer) return { synced: 0, pending: await pendingCount() };
@@ -527,6 +581,7 @@ export async function syncNow(): Promise<{ synced: number; pending: number }> {
 }
 
 export async function startAutoSync(onChange?: () => void): Promise<() => Promise<void>> {
+  if (!Capacitor.isNativePlatform()) return async () => undefined;
   const listener = await Network.addListener('networkStatusChange', async status => {
     if (status.connected) {
       await syncNow();

@@ -1,11 +1,37 @@
 <?php
 
+use App\Models\Component;
+use App\Models\ComponentInstallation;
+use App\Models\ComponentType;
+use App\Models\Configuration;
 use App\Models\GalleryAsset;
 use App\Models\MobileSyncOperation;
+use App\Models\Session;
+use App\Models\SessionTyreReading;
+use App\Models\TechnicalSetup;
+use App\Models\TimingLap;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\Workspace;
+use App\Services\CreateConfigurationVersionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+
+function mobileOfflinePilotKart(User $user): array
+{
+    $workspace = $user->workspaces()->firstOrFail();
+    $kart = Vehicle::factory()->create(['workspace_id' => $workspace->getKey(), 'category' => 'kart']);
+    $type = ComponentType::create(['name' => 'Offline pilot engine']);
+    $component = Component::create(['component_type_id' => $type->getKey(), 'name' => 'Engine', 'status' => 'active']);
+    ComponentInstallation::create([
+        'vehicle_id' => $kart->getKey(), 'component_id' => $component->getKey(),
+        'created_by' => $user->getKey(), 'installed_at' => now(),
+    ]);
+    $configuration = Configuration::create(['vehicle_id' => $kart->getKey(), 'name' => 'Offline configuration', 'status' => 'active']);
+    $version = app(CreateConfigurationVersionService::class)->create($configuration, $user, [$component->getKey()]);
+
+    return compact('kart', 'version', 'workspace');
+}
 
 test('capacitor origin can preflight the mobile login endpoint', function () {
     $this->withHeaders([
@@ -199,4 +225,117 @@ test('public app page exposes the stable android apk download', function () {
         ->assertOk()
         ->assertSee('PitMetric.apk')
         ->assertSee('android-latest');
+});
+
+test('PWA login and authenticated scope consistently select the requested active workspace', function () {
+    $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
+    $workspace = $user->workspaces()->firstOrFail();
+    $second = Workspace::factory()->create();
+    $user->workspaces()->attach($second, ['role' => 'mechanic_engineer', 'status' => 'active', 'joined_at' => now()]);
+    $token = $this->postJson('/api/mobile/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertOk()->assertJsonPath('session.workspace.id', $workspace->getKey())->json('token');
+
+    $this->withToken($token)->withHeader('X-Pitmetric-Workspace', (string) $second->getKey())
+        ->getJson('/api/mobile/me')->assertOk()->assertJsonPath('session.workspace.id', $second->getKey());
+    $this->getJson('/api/mobile/bootstrap')->assertOk()->assertJsonPath('data.workspace.id', $second->getKey());
+
+    $outsider = Workspace::factory()->create();
+    $this->withHeader('X-Pitmetric-Workspace', (string) $outsider->getKey())->getJson('/api/mobile/bootstrap')->assertForbidden();
+    $this->withHeader('X-Pitmetric-Workspace', 'invalid')->getJson('/api/mobile/me')->assertForbidden();
+});
+
+test('PWA session retries and dependent offline laps and tyre readings create each domain record once', function () {
+    $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
+    $this->actingAs($user);
+    ['version' => $version, 'workspace' => $workspace] = mobileOfflinePilotKart($user);
+    $token = $this->postJson('/api/mobile/login', ['email' => $user->email, 'password' => 'password'])->assertOk()->json('token');
+    $this->withToken($token)->withHeader('X-Pitmetric-Workspace', (string) $workspace->getKey());
+    $clientId = fake()->uuid();
+    $sessionOperation = [
+        'client_id' => $clientId, 'operation' => 'session.create',
+        'payload' => ['configuration_version_id' => $version->getKey(), 'session_type' => 'practice',
+            'started_at' => now()->toIso8601String(), 'completed_laps' => 3, 'best_lap_ms' => 52123],
+    ];
+    $sessionId = $this->postJson('/api/mobile/sync', $sessionOperation)->assertCreated()->json('result.id');
+    $this->postJson('/api/mobile/sync', $sessionOperation)->assertOk()->assertJsonPath('duplicate', true);
+    $lapOperation = ['client_id' => fake()->uuid(), 'operation' => 'timing.lap.create',
+        'payload' => ['session_client_id' => $clientId, 'lap_time_ms' => 51987]];
+    $this->postJson('/api/mobile/sync', $lapOperation)->assertCreated();
+    $this->postJson('/api/mobile/sync', $lapOperation)->assertOk()->assertJsonPath('duplicate', true);
+
+    foreach (['cold', 'hot'] as $phase) {
+        $reading = ['client_id' => fake()->uuid(), 'operation' => 'session.tyres.create', 'payload' => [
+            'session_client_id' => $clientId, 'phase' => $phase, 'pressure_fl' => $phase === 'cold' ? 0.8 : 1.1,
+            'measured_at' => now()->toIso8601String(),
+        ]];
+        $this->postJson('/api/mobile/sync', $reading)->assertCreated();
+        $this->postJson('/api/mobile/sync', $reading)->assertOk()->assertJsonPath('duplicate', true);
+    }
+    expect(Session::query()->count())->toBe(1)
+        ->and(TimingLap::query()->where('session_id', $sessionId)->orderBy('lap_number')->pluck('lap_time_ms')->all())->toBe([52123, 51987])
+        ->and(SessionTyreReading::query()->where('session_id', $sessionId)->count())->toBe(2)
+        ->and(Session::query()->findOrFail($sessionId)->setupSnapshot->values)->toBe([]);
+    $this->getJson('/api/mobile/bootstrap')->assertOk()->assertJsonCount(2, 'data.timing_laps');
+});
+
+test('PWA rejects laps from foreign sessions and unresolved local session references without consuming client IDs', function () {
+    $owner = User::factory()->withDatabaseAccess()->create();
+    $this->actingAs($owner);
+    ['kart' => $kart, 'version' => $version] = mobileOfflinePilotKart($owner);
+    $foreign = Session::create(['vehicle_id' => $kart->getKey(), 'configuration_version_id' => $version->getKey(),
+        'session_type' => 'practice', 'started_at' => now(), 'status' => 'draft', 'created_by' => $owner->getKey()]);
+    $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
+    $token = $this->postJson('/api/mobile/login', ['email' => $user->email, 'password' => 'password'])->assertOk()->json('token');
+    $this->withToken($token)->withHeader('X-Pitmetric-Workspace', (string) $user->workspaces()->firstOrFail()->getKey());
+    $clientId = fake()->uuid();
+    $this->postJson('/api/mobile/sync', ['client_id' => $clientId, 'operation' => 'timing.lap.create',
+        'payload' => ['session_id' => $foreign->getKey(), 'lap_time_ms' => 50123]])->assertNotFound();
+    $this->postJson('/api/mobile/sync', ['client_id' => $clientId, 'operation' => 'timing.lap.create',
+        'payload' => ['session_client_id' => fake()->uuid(), 'lap_time_ms' => 50123]])->assertUnprocessable();
+    $this->postJson('/api/mobile/sync', ['client_id' => $clientId, 'operation' => 'timing.lap.create',
+        'payload' => ['session_id' => $foreign->getKey(), 'lap_time_ms' => 0]])->assertUnprocessable();
+    expect(MobileSyncOperation::query()->where('client_id', $clientId)->exists())->toBeFalse()
+        ->and(TimingLap::query()->withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('PWA respects read only and revoked team memberships and never reuses a UUID in another workspace', function () {
+    $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
+    $workspace = $user->workspaces()->firstOrFail();
+    $token = $this->postJson('/api/mobile/login', ['email' => $user->email, 'password' => 'password'])->assertOk()->json('token');
+    $this->withToken($token)->withHeader('X-Pitmetric-Workspace', (string) $workspace->getKey());
+    $payload = ['client_id' => fake()->uuid(), 'operation' => 'vehicle.create', 'payload' => ['name' => 'Kart', 'category' => 'kart']];
+    $this->postJson('/api/mobile/sync', $payload)->assertCreated();
+    $second = Workspace::factory()->create();
+    $user->workspaces()->attach($second, ['role' => 'owner', 'status' => 'active', 'joined_at' => now()]);
+    $this->withHeader('X-Pitmetric-Workspace', (string) $second->getKey())->postJson('/api/mobile/sync', $payload)->assertConflict();
+    $user->workspaces()->updateExistingPivot($workspace, ['role' => 'viewer']);
+    $this->withHeader('X-Pitmetric-Workspace', (string) $workspace->getKey())->getJson('/api/mobile/me')
+        ->assertOk()->assertJsonPath('session.canWrite', false);
+    $this->postJson('/api/mobile/sync', ['client_id' => fake()->uuid(), ...array_diff_key($payload, ['client_id' => true])])->assertForbidden();
+    $user->workspaces()->updateExistingPivot($workspace, ['status' => 'suspended']);
+    $this->getJson('/api/mobile/bootstrap')->assertForbidden();
+});
+
+test('PWA validates setup measurements and computes the canonical transmission ratio', function () {
+    $user = User::factory()->withDatabaseAccess()->create(['password' => 'password']);
+    $this->actingAs($user);
+    $kart = mobileOfflinePilotKart($user)['kart'];
+    $token = $this->postJson('/api/mobile/login', ['email' => $user->email, 'password' => 'password'])->assertOk()->json('token');
+    $this->withToken($token);
+    $payload = ['client_id' => fake()->uuid(), 'operation' => 'setup.create', 'payload' => [
+        'vehicle_id' => $kart->getKey(), 'name' => 'Weekend', 'values' => [
+            'camber_front_deg' => -1.5, 'caster_front_deg' => 8.2, 'rear_width_mode' => 'both',
+            'track_width_rear_mm' => 1390, 'rear_axle_length_mm' => 1040,
+            'pinion_teeth' => 11, 'crown_teeth' => 74, 'gear_ratio' => 99,
+        ],
+    ]];
+    $id = $this->postJson('/api/mobile/sync', $payload)->assertCreated()->json('result.id');
+    $setup = TechnicalSetup::query()->findOrFail($id);
+    expect($setup->values['gear_ratio'])->toBe(6.727)
+        ->and($setup->values['rear_axle_length_mm'])->toBe(1040)
+        ->and($setup->values['caster_front_deg'])->toBe(8.2);
+    $payload['client_id'] = fake()->uuid();
+    $payload['payload']['values']['tyre_pressure_fl'] = 100;
+    $this->postJson('/api/mobile/sync', $payload)->assertUnprocessable();
+    expect(TechnicalSetup::query()->count())->toBe(1);
 });

@@ -608,3 +608,9 @@ ion-select-popover {
   .save-button,
   .sync-pill { transition: none; }
 }
+
+/* The single-screen shell uses local screen state rather than Ionic Router tabs. */
+nav.bottom-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); z-index: 30; background: rgba(249, 249, 251, .94); }
+nav.bottom-nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; min-height: 58px; border: 0; border-radius: 17px; background: transparent; color: #8e8e93; }
+nav.bottom-nav button[aria-selected="true"] { color: var(--pm-red); background: rgba(225, 6, 0, .07); }
+nav.bottom-nav button span { font-size: 10px; font-weight: 650; }
