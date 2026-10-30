@@ -594,7 +594,7 @@ class MobileAppController extends Controller
         }
 
         $session = Session::query()->with('eventEntry')->where('workspace_id', $workspace->getKey())
-            ->lockForUpdate()->findOrFail($sessionId);
+            ->lockForUpdate()->findOrFail((int) $sessionId);
         Gate::forUser($user)->authorize('update', $session);
 
         return $session;

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   testDir: './tests/browser',
@@ -10,6 +11,7 @@ export default defineConfig({
     { name: 'iphone-pwa', use: { ...devices['iPhone 13'], browserName: 'webkit' } },
   ],
   webServer: {
+    cwd: fileURLToPath(new URL('..', import.meta.url)),
     command: 'npm --prefix mobile run preview:pwa -- --host 127.0.0.1 --port 4174',
     url: 'http://127.0.0.1:4174/mobile/',
     reuseExistingServer: !process.env.CI,
