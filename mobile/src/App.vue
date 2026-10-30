@@ -35,6 +35,7 @@ type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weeke
 
 const webPreview = !Capacitor.isNativePlatform();
 const ready = ref(false);
+const offlineShellReady = ref(!webPreview || Boolean(navigator.serviceWorker?.controller));
 const session = ref<SessionState | null>(null);
 const active = ref<Screen>('home');
 const actionMessage = ref('');
@@ -540,6 +541,10 @@ async function forceSync() {
     const result = await syncNow();
     session.value = await restoreSession();
     await refreshLocal(false);
+    if (timingSession.value.startsWith('local:')) {
+      const saved = quick.value.find(item => item.id === timingSession.value.slice(6));
+      if (saved?.remote_id) timingSession.value = `remote:${saved.remote_id}`;
+    }
     actionMessage.value = result.pending ? `${result.pending} registrazioni ancora da inviare.` : result.synced > 0 ? `${result.synced} elementi sincronizzati.` : 'Dati già aggiornati.';
   } catch (error) {
     actionMessage.value = error instanceof Error ? error.message : 'Invio non riuscito. I dati restano sul dispositivo.';
@@ -561,6 +566,9 @@ onMounted(async () => {
     window.addEventListener('online', onBrowserConnectivityChange);
     window.addEventListener('offline', onBrowserConnectivityChange);
     window.addEventListener('storage', onSessionStorageChange);
+    if ('serviceWorker' in navigator) {
+      void navigator.serviceWorker.ready.then(() => { offlineShellReady.value = true; });
+    }
   } else {
     weatherOnline.value = (await Network.getStatus().catch(() => ({ connected: true }))).connected;
     const listener = await Network.addListener('networkStatusChange', status => {
@@ -611,7 +619,7 @@ onUnmounted(async () => {
         </header>
 
         <div v-if="webPreview" class="pwa-beta-banner" role="status">
-          <strong>{{ session?.workspace?.name || 'PWA · OFFLINE' }}</strong>
+          <strong>{{ session?.workspace?.name || 'PWA' }} · {{ offlineShellReady ? 'Offline pronta' : 'Preparazione offline… resta online' }}</strong>
           <span>{{ session?.cloudEnabled ? 'Salva offline. Invia al login o con Sincronizza ora. Nessun invio in background.' : 'Accedi da Altro → Account per scaricare i dati del team. Le registrazioni senza account restano separate sul dispositivo.' }}</span>
         </div>
 

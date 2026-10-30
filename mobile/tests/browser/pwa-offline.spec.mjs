@@ -11,7 +11,7 @@ test('PWA restores records offline and sends the same UUID only on explicit sync
   page.on('pageerror', error => errors.push(error.message));
   const sent = [];
   let nextUser = session;
-  await context.route('https://pitmetric.it/api/mobile/**', async route => {
+  await context.route('**/api/mobile/**', async route => {
     const request = route.request();
     const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type,x-pitmetric-workspace', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'content-type': 'application/json' };
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
@@ -45,7 +45,7 @@ test('PWA restores records offline and sends the same UUID only on explicit sync
   await context.setOffline(true);
   await page.getByLabel('Tempo manuale', { exact: true }).fill('51.234');
   await page.locator('.manual-card').getByRole('button', { name: 'Salva', exact: true }).click();
-  await expect(page.getByText('Da inviare', { exact: false }).first()).toBeVisible();
+  await expect(page.locator('.lap-list-row').getByText('Da inviare', { exact: false })).toBeVisible();
   expect(sent).toHaveLength(0);
 
   await page.reload();
@@ -66,4 +66,10 @@ test('PWA restores records offline and sends the same UUID only on explicit sync
   await expect(page.getByText('0:51.234', { exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) {
+    console.log('PWA failure UI:', await page.locator('body').innerText());
+  }
 });
