@@ -9,8 +9,11 @@ export default defineConfig(({ mode }) => ({
     name: 'pitmetric-offline-shell',
     generateBundle(_options, bundle) {
       if (mode !== 'pwa') return;
-      const assets = Object.keys(bundle).filter(name => /\.(js|css)$/.test(name)).map(name => `/mobile/${name}`);
-      const version = createHash('sha256').update(assets.join('\n')).digest('hex').slice(0, 16);
+      const publicAssets = ['manifest.webmanifest', 'icons/pitmetric-180.png', 'icons/pitmetric-192.png', 'icons/pitmetric-512.png', 'brand/pitmetric-mark-light.svg', 'brand/pitmetric-primary-light.svg'];
+      const assets = [...Object.keys(bundle).filter(name => /\.(js|css)$/.test(name)), ...publicAssets].map(name => `/mobile/${name}`);
+      const hash = createHash('sha256').update(assets.join('\n'));
+      for (const asset of publicAssets) hash.update(readFileSync(new URL(`./public/${asset}`, import.meta.url)));
+      const version = hash.digest('hex').slice(0, 16);
       const worker = readFileSync(new URL('./public/sw.js', import.meta.url), 'utf8')
         .replace("'__PWA_ASSETS__'", JSON.stringify(assets))
         .replace("'__PWA_VERSION__'", JSON.stringify(version));

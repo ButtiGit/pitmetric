@@ -13,7 +13,10 @@ self.addEventListener('install', (event) => {
     const html = await response.clone().text();
     const assets = (Array.isArray(PRECACHE_ASSETS) ? PRECACHE_ASSETS : [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map(match => match[1]))
       .map((asset) => new URL(asset, APP_URL))
-      .filter((url) => url.origin === self.location.origin && url.pathname.startsWith(`${new URL(APP_URL).pathname}assets/`));
+      .filter((url) => url.origin === self.location.origin && (
+        ['assets/', 'icons/', 'brand/'].some(folder => url.pathname.startsWith(`${new URL(APP_URL).pathname}${folder}`)) ||
+        url.pathname === `${new URL(APP_URL).pathname}manifest.webmanifest`
+      ));
 
     const cache = await caches.open(CACHE_NAME);
     await cache.put(APP_URL, response);
