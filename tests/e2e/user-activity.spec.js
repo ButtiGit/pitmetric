@@ -15,8 +15,12 @@ test('user studio shows creation totals and the successful login on desktop and 
     await expect(activity).toContainText('Records created');
     await expect(activity).toContainText('Last sign-in');
     await expect(activity.locator('[data-records-created]')).toHaveText(/^\d+$/);
-    await expect(activity.locator('[data-last-login] time')).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T/);
-    await expect(activity.locator('[data-last-login]')).toHaveText(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
+    const loginTime = activity.locator('[data-last-login] time');
+    await expect(loginTime).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T/);
+    const loggedInAt = new Date(await loginTime.getAttribute('datetime'));
+    const date = loggedInAt.toLocaleDateString('en-GB', { timeZone: 'Europe/Rome' });
+    const time = loggedInAt.toLocaleTimeString('en-GB', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    await expect(loginTime).toHaveText(`${date} ${time}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
     expect(errors).toEqual([]);
 });
