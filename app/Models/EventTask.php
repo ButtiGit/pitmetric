@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'due_at',
     'completed_at',
     'created_by',
+    'assigned_to',
+    'completed_by',
 ])]
 class EventTask extends Model
 {
@@ -39,11 +41,25 @@ class EventTask extends Model
         return $this->belongsTo(EventEntry::class);
     }
 
+    /** @return BelongsTo<User, $this> */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function completedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'completed_by');
+    }
+
     protected function casts(): array
     {
         return [
             'due_at' => 'datetime',
             'completed_at' => 'datetime',
+            'assigned_to' => 'integer',
+            'completed_by' => 'integer',
         ];
     }
 }

@@ -20,6 +20,7 @@ use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TeamTaskController;
 use App\Http\Controllers\TechnicalSetupController;
 use App\Http\Controllers\TelemetryController;
 use App\Http\Controllers\TimingController;
@@ -140,6 +141,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('team.invitations.accept');
 
     Route::middleware('database.access')->group(function () {
+        Route::get('/tasks', [TeamTaskController::class, 'index'])->name('tasks.index');
         Route::get('/championships', [ChampionshipController::class, 'index'])->name('championships.index');
         Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
@@ -163,6 +165,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/events/{raceEvent}', [RaceEventController::class, 'show'])->name('events.show');
 
         Route::middleware('can:team-write')->group(function () {
+            Route::post('/tasks', [TeamTaskController::class, 'store'])->name('tasks.store');
+            Route::put('/tasks/{eventTask}', [TeamTaskController::class, 'update'])->name('tasks.update');
+            Route::patch('/tasks/{eventTask}/status', [TeamTaskController::class, 'status'])->name('tasks.status');
             Route::post('/timing/laps', [TimingController::class, 'storeLap'])->name('timing.laps.store');
             Route::post('/championships', [ChampionshipController::class, 'store'])->name('championships.store');
             Route::put('/championships/{championship}', [ChampionshipController::class, 'update'])->name('championships.update');

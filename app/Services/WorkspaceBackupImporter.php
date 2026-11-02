@@ -190,6 +190,9 @@ class WorkspaceBackupImporter
                 $row = $this->prepare($row, $workspaceId, $userId);
                 $row['event_id'] = $this->mapped($maps['events'], $row['event_id']);
                 $row['event_entry_id'] = $this->mappedNullable($maps['event_entries'], $row['event_entry_id'] ?? null);
+                // Team identities are not part of a portable workspace backup.
+                $row['assigned_to'] = null;
+                $row['completed_by'] = null;
 
                 return $row;
             });
