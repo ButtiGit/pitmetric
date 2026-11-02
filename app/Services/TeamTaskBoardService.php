@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class TeamTaskBoardService
 {
+    public function __construct(private readonly VehicleReadinessService $vehicleReadiness) {}
+
     /** @param array<string, mixed> $filters
      * @return array<string, mixed>
      */
@@ -47,6 +49,7 @@ class TeamTaskBoardService
         return [
             'workspace' => $workspace, 'tasks' => $tasks, 'counts' => $counts, 'bucket' => $bucket, 'filters' => $filters,
             'taskHistory' => $history,
+            'vehicleReadiness' => $this->vehicleReadiness->data($workspace, $filters),
             'events' => RaceEvent::query()->latest('start_date')->get(['id', 'name', 'status']),
             'entries' => EventEntry::query()->with(['driver', 'vehicle', 'raceEvent'])->orderBy('event_id')->get(),
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
