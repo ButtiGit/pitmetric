@@ -19,6 +19,7 @@ class UserStudioController extends Controller
         $search = trim($request->string('q')->toString());
 
         $users = User::query()
+            ->withCount('recordCreations as records_created_count')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', '%'.$search.'%')

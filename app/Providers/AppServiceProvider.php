@@ -27,6 +27,7 @@ use App\Services\ButtiDeskBridge;
 use App\Services\TrackCaptureContextService;
 use App\Services\WorkspaceContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
@@ -80,6 +81,11 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('access-buttidesk', fn (User $user): bool => ButtiDeskBridge::eligible($user));
         Gate::define('launch-buttidesk', fn (User $user): bool => ButtiDeskBridge::configured() && ButtiDeskBridge::eligible($user));
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->user instanceof User) {
+                $event->user->recordSuccessfulLogin();
+            }
+        });
         Event::listen(Logout::class, function (): void {
             if (ButtiDeskBridge::configured()) {
                 try {

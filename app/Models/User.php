@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -9,9 +10,11 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +22,8 @@ use Illuminate\Support\Str;
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
+ * @property CarbonImmutable|null $last_login_at
+ * @property-read int $records_created_count
  * @property Carbon|null $newsletter_subscribed_at
  * @property string $newsletter_locale
  * @property bool $buttidesk_access_enabled
@@ -48,6 +53,24 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    /** @return HasMany<AuditLog, $this> */
+    public function recordCreations(): HasMany
+    {
+        return $this->hasMany(AuditLog::class)
+            ->where('action', 'created')
+            ->whereNotNull('subject_type')
+            ->whereNotNull('subject_id');
+    }
+
+    public function recordSuccessfulLogin(): void
+    {
+        if (! Schema::hasColumn($this->getTable(), 'last_login_at')) {
+            return;
+        }
+
+        $this->forceFill(['last_login_at' => now()])->saveQuietly();
+    }
+
     /**
      * @return array<string, string>
      */
@@ -55,6 +78,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'immutable_datetime',
             'newsletter_subscribed_at' => 'datetime',
             'database_access_enabled' => 'boolean',
             'buttidesk_access_enabled' => 'boolean',

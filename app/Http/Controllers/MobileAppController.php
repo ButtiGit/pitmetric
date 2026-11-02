@@ -708,6 +708,8 @@ class MobileAppController extends Controller
             'token_hash' => hash('sha256', $plainToken),
         ]);
 
+        $user->recordSuccessfulLogin();
+
         return response()->json([
             'token' => $plainToken,
             'session' => $this->sessionPayload($user),

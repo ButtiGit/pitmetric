@@ -40,6 +40,8 @@
                 </form>
             </section>
 
+            <p class="text-xs leading-5 text-pm-muted">{{ __('users.activity_help') }}</p>
+
             <section class="space-y-3 lg:hidden">
                 @forelse ($users as $user)
                     @php($isEditor = \Illuminate\Support\Facades\Gate::forUser($user)->allows('manage-updates'))
@@ -61,6 +63,10 @@
                         <div class="mt-4 grid grid-cols-2 gap-3 border-t border-pm-border pt-4 text-sm">
                             <div><p class="text-xs text-pm-muted">{{ __('users.verification') }}</p><p class="mt-1 font-semibold text-pm-text-secondary">{{ $user->email_verified_at ? __('users.verified') : __('users.unverified') }}</p></div>
                             <div><p class="text-xs text-pm-muted">{{ __('users.registered') }}</p><p class="mt-1 font-semibold text-pm-text-secondary">{{ $user->created_at?->format('d/m/Y') }}</p></div>
+                        </div>
+
+                        <div class="mt-4 border-t border-pm-border pt-4">
+                            <x-pitmetric.user-activity :user="$user" />
                         </div>
 
                         <div class="mt-4">
@@ -93,6 +99,7 @@
                                 <th class="px-5 py-3">{{ __('users.user') }}</th>
                                 <th class="px-5 py-3">{{ __('users.verification') }}</th>
                                 <th class="px-5 py-3">{{ __('users.registered') }}</th>
+                                <th class="px-5 py-3">{{ __('users.activity') }}</th>
                                 <th class="px-5 py-3">{{ __('users.access') }}</th>
                                 <th class="px-5 py-3">ButtiDesk-Pro</th>
                                 <th class="px-5 py-3 text-right"></th>
@@ -105,6 +112,7 @@
                                     <td class="px-5 py-4"><p class="font-bold text-pm-text">{{ $user->name }}</p><p class="mt-1 text-xs text-pm-text-secondary">{{ $user->email }}</p></td>
                                     <td class="px-5 py-4"><span class="font-semibold {{ $user->email_verified_at ? 'text-pm-success' : 'text-pm-muted' }}">{{ $user->email_verified_at ? __('users.verified') : __('users.unverified') }}</span></td>
                                     <td class="px-5 py-4 text-pm-text-secondary">{{ $user->created_at?->format('d/m/Y H:i') }}</td>
+                                    <td class="px-5 py-4"><x-pitmetric.user-activity :user="$user" /></td>
                                     <td class="px-5 py-4">
                                         @if ($isEditor)
                                             <span class="rounded-full bg-pm-accent-subtle px-2.5 py-1 text-xs font-bold text-pm-accent">{{ __('users.editor') }}</span>
@@ -129,7 +137,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="px-5 py-12 text-center text-pm-muted">{{ __('users.empty') }}</td></tr>
+                                <tr><td colspan="7" class="px-5 py-12 text-center text-pm-muted">{{ __('users.empty') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>
