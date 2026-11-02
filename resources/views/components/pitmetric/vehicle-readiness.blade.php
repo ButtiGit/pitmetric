@@ -11,7 +11,7 @@
         <div class="grid gap-4 lg:grid-cols-2">
             @forelse ($readiness['cards'] as $card)
                 @php($variant = ['attention' => 'danger', 'pending' => 'warning', 'incomplete' => 'neutral', 'clear' => 'success'][$card['state']])
-                <article class="min-w-0 rounded-xl border border-pm-border bg-pm-subtle p-4" data-readiness-vehicle="{{ $card['vehicle']->id }}" data-readiness-state="{{ $card['state'] }}">
+                <article class="min-w-0 rounded-xl border border-pm-border bg-pm-subtle p-4 [overflow-wrap:anywhere]" data-readiness-vehicle="{{ $card['vehicle']->id }}" data-readiness-state="{{ $card['state'] }}">
                     <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="min-w-0 break-words text-base font-black text-pm-text [overflow-wrap:anywhere]">{{ $card['vehicle']->name }}</h3><x-pitmetric.status-badge :label="__('readiness.'.$card['state'])" :variant="$variant" /></div>
                     <div class="mt-3 space-y-2 text-xs text-pm-text-secondary">
                         <p>{{ $card['component_count'] > 0 ? __('readiness.components', ['count' => $card['component_count']]) : __('readiness.no_components') }}</p>
