@@ -45,7 +45,7 @@ test('A4 sheets open from their records and preserve complete multipage session 
         const pdf = await page.pdf({ path: testInfo.outputPath(`print-${kind}.pdf`), preferCSSPageSize: true });
         const boxes = [...pdf.toString('latin1').matchAll(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)];
         expect(boxes.length).toBeGreaterThan(0);
-        if (kind === 'session') expect(boxes.length).toBeGreaterThan(1);
+        if (kind === 'session') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
         for (const box of boxes) {
             expect(Math.abs(Number(box[1]) - 595.276)).toBeLessThan(1);
             expect(Math.abs(Number(box[2]) - 841.89)).toBeLessThan(1);

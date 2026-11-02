@@ -23,7 +23,8 @@ thead { display: table-header-group; }
 th, td { text-align: left; vertical-align: top; padding: 7px; border: 1px solid #aaa; overflow-wrap: anywhere; }
 thead th { background: #eee; font-weight: 700; }
 tr { break-inside: avoid-page; }
-.print-values th { width: 54%; font-weight: 400; }
+.print-values th { font-weight: 400; }
+.print-values th:first-child { width: 54%; }
 .print-values td { font-weight: 700; }
 .print-pressures { font-size: 11px; }
 .print-pressures th:first-child { width: 23%; }
