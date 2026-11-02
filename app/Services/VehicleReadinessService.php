@@ -23,14 +23,14 @@ class VehicleReadinessService
     /** @param array<string, mixed> $filters
      * @return array<string, mixed>
      */
-    public function data(Workspace $workspace, array $filters): array
+    public function data(Workspace $workspace, array $filters, ?int $page = null): array
     {
         $vehicles = Vehicle::query()->where('workspace_id', $workspace->getKey())->where('status', 'active')
             ->when($filters['vehicle_id'] ?? null, fn (Builder $q, $id) => $q->whereKey($id))
             ->when($filters['event_id'] ?? null, fn (Builder $q, $id) => $q->whereIn('id', EventEntry::query()->select('vehicle_id')->where('event_id', $id)))
             ->with(['componentInstallations' => fn ($q) => $q->whereNull('removed_at')
                 ->with(['component.trackers' => fn ($trackers) => $trackers->where('is_active', true)])])
-            ->orderBy('name')->orderBy('id')->paginate(12, ['*'], 'readiness_page')->withQueryString();
+            ->orderBy('name')->orderBy('id')->paginate(12, ['*'], 'readiness_page', $page)->withQueryString();
         $ids = array_values($vehicles->pluck('id')->map(fn ($id): int => (int) $id)->all());
         $componentMap = [];
         foreach ($vehicles as $vehicle) {

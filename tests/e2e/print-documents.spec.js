@@ -16,9 +16,12 @@ test('A4 sheets open from their records and preserve complete multipage session 
         const printLink = record.locator('a[href*="/print/"]').filter({ hasText: 'Print / Save PDF' });
         await expect(printLink).toBeVisible();
         urls[kind] = await printLink.getAttribute('href');
-        if (kind === 'session') urls.tyres = await record.locator('a[href$="/tyres"]').getAttribute('href');
+        if (kind === 'session') {
+            urls.tyres = await record.locator('a[href$="/tyres"]').getAttribute('href');
+            urls.checklist = await record.locator('a[href$="/checklist"]').getAttribute('href');
+        }
     }
-    for (const kind of ['vehicle', 'setup', 'tyres', 'session']) {
+    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist']) {
         await page.goto(urls[kind]);
         const document = page.locator('[data-print-document]');
         await expect(document).toHaveAttribute('data-print-document', kind);
@@ -28,6 +31,11 @@ test('A4 sheets open from their records and preserve complete multipage session 
         expect(await page.evaluate(() => window.document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
         const clipped = await document.locator('h1,h2,p,dd,td,th').evaluateAll(elements => elements.filter(element => element.scrollWidth > element.clientWidth + 1).map(element => element.textContent));
         expect(clipped).toEqual([]);
+        if (kind === 'checklist') {
+            await expect(document).toContainText('E2E Print Weekend');
+            await expect(document).toContainText('E2E Print Driver');
+            await expect(document.locator('.print-check-box')).toHaveCount(6);
+        }
         if (kind === 'session') {
             await expect(document.locator('[data-print-lap]')).toHaveCount(75);
             await expect(document).toContainText('1:00.002');

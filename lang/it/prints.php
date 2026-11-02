@@ -61,6 +61,7 @@ return [
     'rear_width' => 'Carreggiata posteriore / lunghezza assale',
     'front_width' => 'Carreggiata anteriore',
     'titles' => [
+        'checklist' => 'Checklist pre-gara',
         'vehicle' => 'Scheda identificativa kart / mezzo',
         'setup' => 'Scheda setup tecnico',
         'session' => 'Report sessione',

@@ -79,6 +79,7 @@
                         </div>
 
                         <div class="mt-3 flex flex-wrap gap-2">
+                            @if ($session->event_entry_id)<a class="pm-ghost-button" href="{{ route('prints.checklist', $session->event_entry_id) }}" target="_blank" rel="noopener">{{ __('checklist.title') }}</a>@endif
                             <a class="pm-ghost-button" href="{{ route('prints.session', $session) }}" target="_blank" rel="noopener">{{ __('prints.print') }}</a>
                             @if ($session->vehicle->category === 'kart')<a class="pm-ghost-button" href="{{ route('prints.tyres', $session) }}" target="_blank" rel="noopener">{{ __('prints.titles.tyres') }}</a>@endif
                         </div>

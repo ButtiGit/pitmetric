@@ -50,3 +50,4 @@ tr { break-inside: avoid-page; }
     .print-pressures { font-size: 8pt; }
     th, td { padding: 5px; }
 }
+.print-check-box { display: inline-block; width: 12px; height: 12px; margin-right: 5px; border: 1px solid #171717; vertical-align: middle; }
