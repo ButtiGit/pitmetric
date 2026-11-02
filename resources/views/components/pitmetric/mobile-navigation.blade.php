@@ -41,6 +41,9 @@
         <section>
             <p class="pm-mobile-more-heading">{{ $it ? 'Attività' : 'Activity' }}</p>
             <div class="pm-mobile-more-grid">
+                @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
+                    <a href="{{ route('tasks.index') }}" wire:navigate><flux:icon.clipboard-document-check class="size-5" /><span>{{ __('tasks.title') }}</span></a>
+                @endif
                 <a href="{{ route('events.index') }}" wire:navigate><flux:icon.calendar-days class="size-5" /><span>{{ $it ? 'Weekend gara' : 'Race weekends' }}</span></a>
                 <a href="{{ route('sessions.index') }}" wire:navigate><flux:icon.flag class="size-5" /><span>{{ $it ? 'Sessioni' : 'Sessions' }}</span></a>
                 <a href="{{ route('circuits.index') }}" wire:navigate><flux:icon.map class="size-5" /><span>{{ $it ? 'Circuiti' : 'Circuits' }}</span></a>

@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'title' => 'Attività del team', 'subtitle' => 'Il lavoro dei weekend, raccolto in una sola vista.',
+    'urgent' => 'Urgenti', 'todo' => 'Da fare', 'in_progress' => 'In corso', 'done' => 'Completate',
+    'urgent_help' => 'Urgenti: attività aperte scadute oppure con priorità alta o critica. Sono comprese anche nei rispettivi stati.',
+    'new' => 'Nuova attività', 'edit' => 'Modifica attività', 'save' => 'Salva attività',
+    'event' => 'Weekend', 'all_events' => 'Tutti i weekend', 'choose_event' => 'Scegli il weekend',
+    'vehicle' => 'Kart / mezzo', 'all_vehicles' => 'Tutti i mezzi',
+    'entry' => 'Pilota / kart', 'whole_team' => 'Tutto il team',
+    'assignee' => 'Responsabile', 'unassigned' => 'Da assegnare', 'inactive' => 'non più attivo',
+    'name' => 'Attività', 'description' => 'Note operative', 'priority' => 'Priorità', 'due' => 'Scadenza',
+    'low' => 'Bassa', 'normal' => 'Normale', 'high' => 'Alta', 'critical' => 'Critica',
+    'search' => 'Cerca attività', 'mine' => 'Solo assegnate a me', 'filter' => 'Filtra', 'reset' => 'Azzera filtri',
+    'overdue' => 'Scaduta', 'no_due' => 'Senza scadenza', 'start' => 'Inizia', 'complete' => 'Completa',
+    'reopen' => 'Riapri', 'completed' => 'Completata da :name il :date', 'unknown' => 'Operatore non disponibile',
+    'history' => 'Ultime modifiche', 'created' => 'Attività creata', 'updated' => 'Attività aggiornata',
+    'status_changed' => 'Stato aggiornato', 'empty' => 'Nessuna attività in questa vista',
+    'empty_help' => 'Cambia stato o filtri, oppure aggiungi un lavoro a un weekend.',
+    'need_event' => 'Crea un weekend per collegare le attività del team.', 'events' => 'Apri weekend',
+    'maintenance' => 'Lavori di manutenzione', 'maintenance_help' => ':open aperti · :blocked bloccati · :overdue scaduti',
+    'maintenance_open' => 'Apri manutenzioni', 'created_notice' => 'Attività creata.',
+    'updated_notice' => 'Attività aggiornata.', 'status_notice' => 'Stato dell’attività aggiornato.',
+    'conflict' => 'L’attività è cambiata. Aggiorna la vista prima di riprovare.',
+    'member_error' => 'Scegli un membro attivo di questo team.',
+    'delete_error' => 'Un’attività completata deve rimanere nello storico. Puoi riaprirla.',
+];

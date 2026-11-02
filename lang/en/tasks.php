@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'title' => 'Team tasks', 'subtitle' => 'Work across race weekends, together in one view.',
+    'urgent' => 'Urgent', 'todo' => 'To do', 'in_progress' => 'In progress', 'done' => 'Completed',
+    'urgent_help' => 'Urgent includes overdue open tasks and high or critical priorities. These also appear under their current status.',
+    'new' => 'New task', 'edit' => 'Edit task', 'save' => 'Save task',
+    'event' => 'Weekend', 'all_events' => 'All weekends', 'choose_event' => 'Choose a weekend',
+    'vehicle' => 'Kart / vehicle', 'all_vehicles' => 'All vehicles',
+    'entry' => 'Driver / kart', 'whole_team' => 'Whole team',
+    'assignee' => 'Assignee', 'unassigned' => 'Unassigned', 'inactive' => 'no longer active',
+    'name' => 'Task', 'description' => 'Operational notes', 'priority' => 'Priority', 'due' => 'Due date',
+    'low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'critical' => 'Critical',
+    'search' => 'Search tasks', 'mine' => 'Assigned to me', 'filter' => 'Filter', 'reset' => 'Reset filters',
+    'overdue' => 'Overdue', 'no_due' => 'No deadline', 'start' => 'Start', 'complete' => 'Complete',
+    'reopen' => 'Reopen', 'completed' => 'Completed by :name on :date', 'unknown' => 'Operator unavailable',
+    'history' => 'Recent changes', 'created' => 'Task created', 'updated' => 'Task updated',
+    'status_changed' => 'Status updated', 'empty' => 'No tasks in this view',
+    'empty_help' => 'Change the status or filters, or add a task to a weekend.',
+    'need_event' => 'Create a weekend to link team tasks.', 'events' => 'Open weekends',
+    'maintenance' => 'Maintenance work orders', 'maintenance_help' => ':open open · :blocked blocked · :overdue overdue',
+    'maintenance_open' => 'Open maintenance', 'created_notice' => 'Task created.',
+    'updated_notice' => 'Task updated.', 'status_notice' => 'Task status updated.',
+    'conflict' => 'This task has changed. Refresh the board before trying again.',
+    'member_error' => 'Choose an active member of this team.',
+    'delete_error' => 'A completed task must remain in history. You can reopen it instead.',
+];

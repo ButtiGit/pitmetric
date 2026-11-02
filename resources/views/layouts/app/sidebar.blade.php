@@ -11,7 +11,7 @@
             <x-buttidesk.product-switch />
 
             @php
-                $activityOpen = request()->routeIs('championships.*') || request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
+                $activityOpen = request()->routeIs('tasks.*') || request()->routeIs('championships.*') || request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
                 $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
                 $managementOpen = request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*');
@@ -29,6 +29,9 @@
                             <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
                         </summary>
                         <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
+                                <flux:sidebar.item icon="clipboard-document-check" :href="route('tasks.index')" :current="request()->routeIs('tasks.*')">{{ __('tasks.title') }}</flux:sidebar.item>
+                            @endif
                             @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="flag" :href="route('championships.index')" :current="request()->routeIs('championships.*')">{{ __('championship.title') }}</flux:sidebar.item>
                             @endif
