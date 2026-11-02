@@ -14,6 +14,7 @@ use App\Http\Controllers\F1LiveController;
 use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NewsletterPreferencesController;
+use App\Http\Controllers\PrintDocumentController;
 use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
@@ -141,6 +142,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('team.invitations.accept');
 
     Route::middleware('database.access')->group(function () {
+        Route::get('/print/vehicles/{vehicle}', [PrintDocumentController::class, 'vehicle'])->name('prints.vehicle');
+        Route::get('/print/setups/{technicalSetup}', [PrintDocumentController::class, 'setup'])->name('prints.setup');
+        Route::get('/print/sessions/{session}', [PrintDocumentController::class, 'session'])->name('prints.session');
+        Route::get('/print/sessions/{session}/tyres', [PrintDocumentController::class, 'tyres'])->name('prints.tyres');
         Route::get('/tasks', [TeamTaskController::class, 'index'])->name('tasks.index');
         Route::get('/championships', [ChampionshipController::class, 'index'])->name('championships.index');
         Route::get('/championships/{championship}', [ChampionshipController::class, 'show'])->name('championships.show');

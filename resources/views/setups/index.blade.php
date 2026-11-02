@@ -140,6 +140,7 @@
                             <div>
                                 <p class="text-xs font-bold text-pm-accent">{{ $setup->vehicle->name }}</p>
                                 <h2 class="mt-1 text-xl font-black text-pm-text">{{ $setup->name }}</h2>
+                                <a class="pm-ghost-button mt-3" href="{{ route('prints.setup', $setup) }}" target="_blank" rel="noopener">{{ __('prints.print') }}</a>
                                 @if ($setup->description)<p class="mt-2 text-sm leading-6 text-pm-muted">{{ $setup->description }}</p>@endif
                             </div>
                             <div class="flex items-center gap-2">

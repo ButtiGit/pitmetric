@@ -87,6 +87,7 @@
 
                                 <div class="mt-10 md:ml-[34%]">
                                     <h2 class="text-2xl font-black tracking-[-0.035em] text-pm-text sm:text-3xl">{{ $vehicle->name }}</h2>
+                                    <a class="pm-ghost-button mt-3" href="{{ route('prints.vehicle', $vehicle) }}" target="_blank" rel="noopener">{{ __('prints.print') }}</a>
                                     <p class="mt-2 text-sm font-semibold text-pm-text-secondary">
                                         @if ($vehicle->manufacturer || $vehicle->model)
                                             {{ collect([$vehicle->manufacturer, $vehicle->model])->filter()->join(' ') }}

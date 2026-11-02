@@ -78,6 +78,10 @@
                             <div class="flex flex-wrap gap-2">@foreach ($session->usageValues as $usageValue)<span class="rounded-lg border border-pm-border bg-pm-subtle px-3 py-2 font-mono text-xs font-bold text-pm-text">{{ $usageValue->metric->name }}: {{ $formatUsage($usageValue->value, $usageValue->metric) }}</span>@endforeach</div>
                         </div>
 
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <a class="pm-ghost-button" href="{{ route('prints.session', $session) }}" target="_blank" rel="noopener">{{ __('prints.print') }}</a>
+                            @if ($session->vehicle->category === 'kart')<a class="pm-ghost-button" href="{{ route('prints.tyres', $session) }}" target="_blank" rel="noopener">{{ __('prints.titles.tyres') }}</a>@endif
+                        </div>
 <div class="mt-3"><p class="whitespace-pre-wrap text-sm text-pm-text-secondary">{{ $session->notes }}</p><x-pitmetric.record-editor id="edit-session-{{ $session->id }}" :title="$it ? 'Modifica note' : 'Edit notes'" :trigger="$it ? 'Modifica note' : 'Edit notes'" :action="route('sessions.update', $session)">
 <label class="grid gap-2 sm:col-span-2"><span class="pm-label">Note</span><textarea class="pm-input min-h-24" name="notes" maxlength="4000">{{ $session->notes }}</textarea></label>
 </x-pitmetric.record-editor>

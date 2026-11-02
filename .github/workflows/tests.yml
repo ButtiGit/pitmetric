@@ -80,12 +80,23 @@ jobs:
           php artisan migrate:fresh --force
           php artisan db:seed --class='Database\Seeders\E2EBrowserSeeder' --force
           php artisan db:seed --class='Database\Seeders\E2ETracksideSeeder' --force
+          php artisan db:seed --class='Database\Seeders\E2EPrintSeeder' --force
 
       - name: Install Chrome for Playwright
         run: npx playwright install --with-deps chrome
 
       - name: Run desktop and mobile browser E2E
         run: npm run e2e
+
+      - name: Keep A4 print previews for layout review
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: print-document-previews
+          path: |
+            test-results/**/print-*.pdf
+            test-results/**/print-*.png
+          retention-days: 3
 
   fastf1-parser:
     runs-on: ubuntu-latest
