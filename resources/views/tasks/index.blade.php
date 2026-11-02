@@ -31,6 +31,8 @@
                 <div class="flex flex-wrap items-end gap-3"><label class="flex min-h-11 items-center gap-2 text-sm text-pm-text-secondary"><input type="checkbox" name="mine" value="1" @checked(($filters['mine'] ?? '') === '1')>{{ __('tasks.mine') }}</label><button type="submit" class="pm-race-button">{{ __('tasks.filter') }}</button><a href="{{ route('tasks.index') }}" class="text-sm text-pm-muted underline">{{ __('tasks.reset') }}</a></div>
             </form>
 
+            <x-pitmetric.vehicle-readiness :readiness="$vehicleReadiness" :filters="$filters" />
+
             <section class="grid gap-4 lg:grid-cols-2" aria-label="{{ __('tasks.'.$bucket) }}">
                 @forelse ($tasks as $task)
                     @php($overdue = $task->status !== 'done' && $task->due_at?->isPast())

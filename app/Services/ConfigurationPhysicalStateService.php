@@ -36,11 +36,15 @@ class ConfigurationPhysicalStateService
         return $physicalIds === $snapshotIds;
     }
 
-    /** @return Collection<int, ConfigurationVersion> */
-    public function alignedVersions(Workspace $workspace): Collection
+    /**
+     * @param  list<int>|null  $vehicleIds
+     * @return Collection<int, ConfigurationVersion>
+     */
+    public function alignedVersions(Workspace $workspace, ?array $vehicleIds = null): Collection
     {
         return ConfigurationVersion::query()
             ->whereHas('configuration', fn ($query) => $query
+                ->when($vehicleIds !== null, fn ($vehicles) => $vehicles->whereIn('vehicle_id', $vehicleIds))
                 ->whereNull('configurations.deleted_at')
                 ->where('status', 'active')
                 ->whereHas('vehicle', fn ($vehicle) => $vehicle->whereNull('vehicles.deleted_at')->where('status', 'active'))
