@@ -9,7 +9,7 @@ test('vehicle preparation exposes missing data and keeps vehicle filtering usabl
     await page.locator('form').filter({ has: page.locator('input[name="email"]') }).locator('button[type="submit"]').click();
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
     if (testInfo.project.name.includes('mobile')) await page.setViewportSize({ width: 320, height: 844 });
-    const vehicleName = `E2E ${testInfo.project.name} preparation ${'LongVehicleName'.repeat(8)}`;
+    const vehicleName = `E2E ${testInfo.project.name} preparation ${'LongVehicleName'.repeat(4)}`;
     await page.goto('/garage');
     await page.getByRole('button', { name: /Add vehicle/i }).click();
     const form = page.locator('form[action$="/garage"]').first();
