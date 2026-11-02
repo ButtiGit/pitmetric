@@ -61,6 +61,7 @@ return [
     'rear_width' => 'Rear track / axle length',
     'front_width' => 'Front track width',
     'titles' => [
+        'checklist' => 'Pre-race checklist',
         'vehicle' => 'Kart / vehicle identification',
         'setup' => 'Technical setup sheet',
         'session' => 'Session report',

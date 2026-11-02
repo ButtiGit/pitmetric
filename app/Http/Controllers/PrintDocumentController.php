@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EventEntry;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\Vehicle;
 use App\Models\Workspace;
+use App\Services\PreRaceChecklistService;
 use App\Services\PrintDocumentService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Response;
@@ -13,6 +15,13 @@ use Illuminate\Support\Facades\Gate;
 
 class PrintDocumentController extends Controller
 {
+    public function checklist(EventEntry $eventEntry, PreRaceChecklistService $checklists): Response
+    {
+        Gate::authorize('view', $eventEntry);
+
+        return $this->document('checklist', $eventEntry, route('events.show', $eventEntry->event_id), $checklists->data($eventEntry));
+    }
+
     public function vehicle(Vehicle $vehicle): Response
     {
         Gate::authorize('view', $vehicle);
