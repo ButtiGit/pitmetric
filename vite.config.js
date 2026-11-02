@@ -9,6 +9,7 @@ export default defineConfig({
             input: [
                 'resources/js/app.js',
                 'resources/js/public.js',
+                'resources/css/print.css',
             ],
             refresh: true,
             fonts: [
