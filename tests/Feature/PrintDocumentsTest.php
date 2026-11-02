@@ -12,6 +12,9 @@ use App\Models\Vehicle;
 use App\Services\CreateConfigurationVersionService;
 use App\Services\PrintDocumentService;
 use App\Services\WorkspaceContext;
+use Database\Seeders\E2EBrowserSeeder;
+use Database\Seeders\E2EPrintSeeder;
+use Database\Seeders\E2ETracksideSeeder;
 use Illuminate\Support\Facades\Http;
 
 function printableFixture(User $user): array
@@ -30,6 +33,12 @@ function printableFixture(User $user): array
 
     return compact('vehicle', 'setup', 'session', 'component');
 }
+
+test('browser print fixtures remain compatible with the normal session and weather views', function () {
+    $this->seed([E2EBrowserSeeder::class, E2ETracksideSeeder::class, E2EPrintSeeder::class]);
+    $user = User::where('email', E2EBrowserSeeder::EMAIL)->firstOrFail();
+    $this->actingAs($user)->get(route('sessions.index'))->assertOk()->assertSee('E2E Print Kart');
+});
 
 test('print sheets contain full identities and only currently installed components', function () {
     $user = User::factory()->withDatabaseAccess()->create();

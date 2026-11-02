@@ -53,7 +53,10 @@ class E2EPrintSeeder extends Seeder
                 $session->tyreReadings()->create(['phase' => $phase, 'pressures' => ['fl' => $phase === 'cold' ? 0.8 : 1.05, 'fr' => 0.9, 'rl' => 0.85], 'measured_at' => '2026-11-01 10:20:00', 'created_by' => $user->id, 'notes' => 'Full pressure reading note.']);
             }
             $session->weatherObservations()->create(['values' => ['air_temperature_c' => 18, 'track_temperature_c' => 25], 'measured_at' => '2026-11-01 10:00:00', 'created_by' => $user->id]);
-            $session->forceFill(['weather_snapshot' => ['provider' => 'met_norway', 'forecast_at' => '2026-11-01 10:00:00', 'captured_at' => '2026-11-01 09:50:00', 'air_temperature_c' => 17], 'historical_weather_snapshot' => ['provider' => 'nasa_power', 'session_started_at' => '2026-11-01 10:00:00', 'valid_at' => '2026-11-01 10:00:00', 'air_temperature_c' => 16]])->save();
+            $session->forceFill([
+                'weather_snapshot' => ['provider' => 'met_norway', 'latitude' => 45.0, 'longitude' => 7.0, 'forecast_at' => '2026-11-01 10:00:00', 'captured_at' => '2026-11-01 09:50:00', 'air_temperature_c' => 17],
+                'historical_weather_snapshot' => ['provider' => 'nasa_power', 'data_type' => 'historical_reanalysis', 'latitude' => 45.0, 'longitude' => 7.0, 'captured_at' => '2026-11-02 10:00:00', 'session_started_at' => '2026-11-01 10:00:00', 'valid_at' => '2026-11-01 10:00:00', 'air_temperature_c' => 16],
+            ])->save();
         } finally {
             Auth::logout();
         }
