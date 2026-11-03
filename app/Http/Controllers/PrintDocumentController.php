@@ -7,6 +7,7 @@ use App\Models\EventEntry;
 use App\Models\EventTask;
 use App\Models\MaintenanceRecord;
 use App\Models\RaceEvent;
+use App\Models\SeasonContract;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\User;
@@ -16,6 +17,7 @@ use App\Services\MaintenanceReportService;
 use App\Services\OpenWorklistService;
 use App\Services\PreRaceChecklistService;
 use App\Services\PrintDocumentService;
+use App\Services\SeasonContractPageService;
 use App\Services\WeekendReportService;
 use App\Services\WorkspaceContext;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,13 @@ use Illuminate\Support\Facades\Gate;
 
 class PrintDocumentController extends Controller
 {
+    public function contract(SeasonContract $seasonContract, SeasonContractPageService $contracts): Response
+    {
+        Gate::authorize('view', $seasonContract);
+
+        return $this->document('contract', $seasonContract, route('contracts.show', $seasonContract), $contracts->detail($seasonContract));
+    }
+
     public function weekend(RaceEvent $raceEvent, WeekendReportService $reports): Response
     {
         Gate::authorize('view', $raceEvent);

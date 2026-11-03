@@ -61,6 +61,7 @@ return [
     'rear_width' => 'Rear track / axle length',
     'front_width' => 'Front track width',
     'titles' => [
+        'contract' => 'Season contract summary',
         'weekend' => 'End-of-weekend report',
         'maintenance' => 'Completed maintenance report',
         'worklist' => 'Open work list',

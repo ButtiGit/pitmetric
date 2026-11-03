@@ -8,6 +8,7 @@ use App\Models\Component;
 use App\Models\ComponentInstallation;
 use App\Models\ComponentType;
 use App\Models\Configuration;
+use App\Models\ContractParticipation;
 use App\Models\Driver;
 use App\Models\EventEntry;
 use App\Models\EventNote;
@@ -17,6 +18,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
 use App\Models\RaceEvent;
+use App\Models\SeasonContract;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\UsageBatch;
@@ -49,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         foreach ([
+            SeasonContract::class,
+            ContractParticipation::class,
             Championship::class,
             Circuit::class,
             Component::class,

@@ -14,7 +14,7 @@
                 $activityOpen = request()->routeIs('tasks.*') || request()->routeIs('championships.*') || request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
                 $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
-                $managementOpen = request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*');
+                $managementOpen = request()->routeIs('contracts.*') || request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*');
                 $studioOpen = request()->routeIs('studio.*');
             @endphp
 
@@ -78,6 +78,9 @@
                             <flux:icon.chevron-right class="size-4 shrink-0 transition-transform duration-200 group-open/sidebar-section:rotate-90" />
                         </summary>
                         <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
+                            @if (app(\App\Services\WorkspaceContext::class)->isContractsReady())
+                                <flux:sidebar.item icon="document-text" :href="route('contracts.index')" :current="request()->routeIs('contracts.*')" wire:navigate>{{ __('contracts.title') }}</flux:sidebar.item>
+                            @endif
                             <flux:sidebar.item icon="banknotes" :href="route('expenses.index')" :current="request()->routeIs('expenses.*')">{{ __('demo.nav.expenses') }}</flux:sidebar.item>
                             @if (auth()->user()->hasDatabaseAccess() || auth()->user()->can('manage-updates'))
                                 <flux:sidebar.item icon="clipboard-document-check" href="/syspilot/">SysPilot</flux:sidebar.item>

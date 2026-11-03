@@ -9,7 +9,7 @@ class DataHubService
 {
     public const FORMAT = 'pitmetric-workspace-backup';
 
-    public const VERSION = 2;
+    public const VERSION = 3;
 
     public function __construct(
         private readonly WorkspaceBackupExporter $exporter,

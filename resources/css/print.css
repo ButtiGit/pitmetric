@@ -46,6 +46,7 @@ tr { break-inside: avoid-page; }
     .print-toolbar { display: none !important; }
     .print-paper { max-width: none; padding: 0; margin: 0; }
     .print-header { break-inside: avoid-page; }
+    .print-contract-record { break-inside: avoid-page; }
     .print-weekend-entry { break-inside: avoid-page; }
     .print-maintenance-record { break-inside: avoid-page; }
     table { font-size: 9pt; }
