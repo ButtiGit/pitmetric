@@ -58,6 +58,7 @@ function anotherContractEntry(EventEntry $source, string $name = 'Another contra
 test('creating and editing contracts preserve original terms and block overlaps', function () {
     $f = contractFixture();
     $this->get(route('contracts.index'))->assertOk()->assertSee('E2E Print Driver');
+    $this->get(route('events.index'))->assertOk()->assertSee(route('contracts.index', ['driver_id' => $f['entry']->driver_id]));
     $this->get(route('contracts.show', $f['contract']))->assertOk()->assertSee(__('contracts.rule'));
     $payload = ['driver_id' => $f['entry']->driver_id, 'vehicle_id' => $f['entry']->vehicle_id, 'season' => '2026', 'starts_on' => '2026-06-01', 'ends_on' => '2026-12-31', 'initial_races' => 3];
     $this->postJson(route('contracts.store'), $payload)->assertUnprocessable();
@@ -247,6 +248,7 @@ test('the new migration can roll back and existing events remain usable before i
         expect(app(WorkspaceContext::class)->isContractsReady())->toBeFalse();
         $this->get(route('contracts.index'))->assertStatus(503);
         $this->get(route('events.show', $entry->event_id))->assertOk();
+        $this->get(route('events.index'))->assertOk();
         $this->get(route('garage.index'))->assertOk();
     } finally {
         $migration->up();

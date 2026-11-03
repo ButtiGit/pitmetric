@@ -4,6 +4,7 @@
     @forelse ($contract->participations->sortBy([['event_id','asc'],['id','asc']]) as $row)
         <article class="pm-panel mb-3 space-y-3 p-4 [overflow-wrap:anywhere] print-contract-record" data-contract-participation="{{ $row->id }}">
             <h3 class="font-bold">{{ $row->raceEvent?->name ?? '—' }} · {{ $row->round?->name ?? '—' }}</h3>
+            <p class="text-sm">{{ $row->raceEvent?->start_date?->format('d/m/Y') }} · {{ $row->raceEvent?->end_date?->format('d/m/Y') }}</p>
             <dl class="grid gap-3 text-sm sm:grid-cols-2 print-facts">
                 <div><dt>{{ __('prints.status') }}</dt><dd>{{ __('contracts.states.'.$row->status) }}</dd></div>
                 <div><dt>{{ __('prints.vehicle') }}</dt><dd>{{ $row->vehicle?->name ?? '—' }}@if ($row->vehicle_id !== $contract->vehicle_id) · {{ __('contracts.substitute') }}@endif</dd></div>

@@ -41,6 +41,7 @@ class RaceEventController extends Controller
         $workspace = $workspaceContext->personal($user);
 
         return view('events.index', [
+            'contractsAvailable' => $workspaceContext->isContractsReady(),
             'events' => RaceEvent::query()
                 ->with(['circuitLayout.circuit'])
                 ->withCount(['entries', 'sessions', 'tasks'])
