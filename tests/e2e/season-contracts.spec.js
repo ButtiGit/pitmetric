@@ -95,7 +95,7 @@ test('two team operators cannot consume the last available race twice', async ({
     const eventUrl = await page.locator('[data-contract-participation] a[href*="/events/"]').first().getAttribute('href');
     await page.goto('/team');
     const teamName = await page.locator('#edit-team input[name="name"]').inputValue();
-    const context2 = await browser.newContext();
+    const context2 = await browser.newContext({ baseURL: new URL(contractUrl).origin });
     const second = await context2.newPage();
     try {
         await login(second, 'e2e-contract-operator@pitmetric.test');
