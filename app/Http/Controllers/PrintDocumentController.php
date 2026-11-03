@@ -3,18 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\EventEntry;
+use App\Models\EventTask;
+use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Workspace;
+use App\Services\OpenWorklistService;
 use App\Services\PreRaceChecklistService;
 use App\Services\PrintDocumentService;
+use App\Services\WorkspaceContext;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class PrintDocumentController extends Controller
 {
+    public function worklist(Request $request, WorkspaceContext $context, OpenWorklistService $worklists): Response
+    {
+        Gate::authorize('viewAny', EventTask::class);
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+        $workspace = $context->personal($user);
+        $filters = $request->validate([
+            'event_id' => ['nullable', 'integer', 'min:1'], 'vehicle_id' => ['nullable', 'integer', 'min:1'],
+            'assigned_to' => ['nullable', 'integer', 'min:1'], 'mine' => ['nullable', 'in:1'], 'q' => ['nullable', 'string', 'max:120'],
+        ]);
+        if (empty($filters['assigned_to']) && ($filters['mine'] ?? null) === '1') {
+            $filters['assigned_to'] = $user->id;
+        }
+        $event = empty($filters['event_id']) ? null : RaceEvent::query()->findOrFail($request->integer('event_id'));
+        $vehicle = empty($filters['vehicle_id']) ? null : Vehicle::query()->findOrFail($request->integer('vehicle_id'));
+        $members = $workspace->users()->orderBy('name')->get(['users.id', 'users.name']);
+        $assignee = empty($filters['assigned_to']) ? null : $members->firstWhere('id', $filters['assigned_to']);
+        abort_if(! empty($filters['assigned_to']) && $assignee === null, 404);
+
+        return $this->document('worklist', $workspace, route('tasks.index', $filters), [
+            ...$worklists->data($workspace, $filters), 'filters' => $filters, 'members' => $members,
+            'eventLabel' => $event?->name, 'vehicleLabel' => $vehicle?->name, 'assigneeLabel' => $assignee?->name,
+        ]);
+    }
+
     public function checklist(EventEntry $eventEntry, PreRaceChecklistService $checklists): Response
     {
         Gate::authorize('view', $eventEntry);
@@ -75,7 +106,7 @@ class PrintDocumentController extends Controller
     {
         return response()->view('prints.'.$kind, [
             ...$data, 'kind' => $kind, 'reference' => '#'.$record->getKey(),
-            'workspace' => Workspace::query()->findOrFail($record->getAttribute('workspace_id')),
+            'workspace' => $record instanceof Workspace ? $record : Workspace::query()->findOrFail($record->getAttribute('workspace_id')),
             'generatedAt' => now()->timezone('Europe/Rome'), 'backUrl' => $backUrl,
         ])->header('Cache-Control', 'private, no-store');
     }
