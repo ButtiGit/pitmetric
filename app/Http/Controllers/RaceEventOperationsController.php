@@ -69,6 +69,7 @@ class RaceEventOperationsController extends Controller
         $user = $this->user($request);
         $workspace = $workspaceContext->personal($user);
         $validated = $request->validate([
+            'season_contract_id' => ['nullable', 'integer', 'min:1'], 'round_id' => ['nullable', 'integer', 'min:1'], 'contract_notes' => ['nullable', 'string', 'max:2000'],
             'driver_id' => ['required', 'integer'],
             'vehicle_id' => ['required', 'integer'],
             'configuration_version_id' => ['required', 'integer'],

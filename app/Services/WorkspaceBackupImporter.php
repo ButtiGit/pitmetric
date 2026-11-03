@@ -122,6 +122,38 @@ class WorkspaceBackupImporter
 
                 return $row;
             });
+            $maps['season_contracts'] = $this->insertRows('season_contracts', $tables['season_contracts'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                $row['driver_id'] = $this->mapped($maps['drivers'], $row['driver_id']);
+                $row['vehicle_id'] = $this->mapped($maps['vehicles'], $row['vehicle_id']);
+                $row['championship_id'] = $this->mappedNullable($maps['championships'], $row['championship_id'] ?? null);
+
+                return $row;
+            });
+            $maps['contract_participations'] = $this->insertRows('contract_participations', $tables['contract_participations'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                foreach (['season_contract_id' => 'season_contracts', 'event_entry_id' => 'event_entries', 'event_id' => 'events', 'driver_id' => 'drivers', 'vehicle_id' => 'vehicles'] as $key => $source) {
+                    $row[$key] = $this->mapped($maps[$source], $row[$key]);
+                }
+                $row['championship_id'] = $this->mappedNullable($maps['championships'], $row['championship_id'] ?? null);
+                $row['round_id'] = $this->mappedNullable($maps['championship_rounds'], $row['round_id'] ?? null);
+                $row['confirmed_by'] = empty($row['confirmed_by']) ? null : $userId;
+
+                return $row;
+            });
+            $maps['contract_extensions'] = $this->insertRows('contract_extensions', $tables['contract_extensions'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                $row['season_contract_id'] = $this->mapped($maps['season_contracts'], $row['season_contract_id']);
+
+                return $row;
+            });
+            $maps['contract_changes'] = $this->insertRows('contract_changes', $tables['contract_changes'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
+                $row = $this->prepare($row, $workspaceId, $userId);
+                $row['season_contract_id'] = $this->mapped($maps['season_contracts'], $row['season_contract_id']);
+                $row['contract_participation_id'] = $this->mappedNullable($maps['contract_participations'], $row['contract_participation_id'] ?? null);
+
+                return $row;
+            });
             $maps['track_sessions'] = $this->insertRows('track_sessions', $tables['track_sessions'] ?? [], function (array $row) use ($workspaceId, $userId, &$maps): array {
                 $row = $this->prepare($row, $workspaceId, $userId);
                 $row['event_id'] = $this->mappedNullable($maps['events'], $row['event_id'] ?? null);
@@ -234,7 +266,7 @@ class WorkspaceBackupImporter
     /** @param array<string, mixed> $backup */
     private function validateBackup(array $backup): void
     {
-        if (($backup['format'] ?? null) !== DataHubService::FORMAT || ! in_array((int) ($backup['version'] ?? 0), [1, DataHubService::VERSION], true)) {
+        if (($backup['format'] ?? null) !== DataHubService::FORMAT || ! in_array((int) ($backup['version'] ?? 0), [1, 2, DataHubService::VERSION], true)) {
             throw ValidationException::withMessages([
                 'backup' => 'This file is not a supported PitMetric workspace backup.',
             ]);

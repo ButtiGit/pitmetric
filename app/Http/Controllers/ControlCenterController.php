@@ -7,6 +7,7 @@ use App\Models\Component;
 use App\Models\Document;
 use App\Models\MaintenanceRecord;
 use App\Models\RaceEvent;
+use App\Models\SeasonContract;
 use App\Models\Session;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -38,6 +39,7 @@ class ControlCenterController extends Controller
         'event' => RaceEvent::class,
         'maintenance_record' => MaintenanceRecord::class,
         'session' => Session::class,
+        'season_contract' => SeasonContract::class,
     ];
 
     public function index(
@@ -183,7 +185,7 @@ class ControlCenterController extends Controller
         $validated = $request->validate([
             'document' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,csv,txt,xls,xlsx,doc,docx'],
             'name' => ['nullable', 'string', 'max:180'],
-            'attachable' => ['nullable', 'string', 'regex:/^(vehicle|component|event|maintenance_record|session):[0-9]+$/'],
+            'attachable' => ['nullable', 'string', 'regex:/^(vehicle|component|event|maintenance_record|session|season_contract):[0-9]+$/'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -222,7 +224,7 @@ class ControlCenterController extends Controller
             throw $exception;
         }
 
-        return to_route('control-center.index')->with('status', 'Private document uploaded.');
+        return to_route($attachableType === 'season_contract' ? 'contracts.show' : 'control-center.index', $attachableType === 'season_contract' ? ['seasonContract' => $attachableId] : [])->with('status', __('contracts.document_saved'));
     }
 
     public function updateDocument(Request $request, Document $document, WorkspaceContext $workspaceContext): RedirectResponse
@@ -297,6 +299,9 @@ class ControlCenterController extends Controller
 
     private function assertAttachableExists(string $type, int $id): void
     {
+        if ($type === 'season_contract') {
+            abort_unless(app(WorkspaceContext::class)->isContractsReady(), 503);
+        }
         $modelClass = self::ATTACHABLE_TYPES[$type] ?? null;
 
         if ($modelClass === null || ! $modelClass::query()->whereKey($id)->exists()) {

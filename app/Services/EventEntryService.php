@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ConfigurationVersion;
+use App\Models\ContractParticipation;
 use App\Models\Driver;
 use App\Models\EventEntry;
 use App\Models\Expense;
@@ -33,7 +34,11 @@ class EventEntryService
                 ->where('vehicle_id', $vehicle->getKey()))
             ->firstOrFail();
 
-        return DB::transaction(function () use ($raceEvent, $driver, $vehicle, $version, $validated, $user): EventEntry {
+        return DB::transaction(function () use ($workspace, $raceEvent, $driver, $vehicle, $version, $validated, $user): EventEntry {
+            if (! empty($validated['season_contract_id'])) {
+                Workspace::query()->whereKey($workspace->id)->lockForUpdate()->firstOrFail();
+                abort_unless(app(WorkspaceContext::class)->isContractsReady(), 503);
+            }
             $entry = EventEntry::create([
                 'event_id' => $raceEvent->getKey(),
                 'driver_id' => $driver->getKey(),
@@ -54,6 +59,10 @@ class EventEntryService
                 (int) $raceEvent->getKey(),
             );
 
+            if (! empty($validated['season_contract_id'])) {
+                app(SeasonContractService::class)->attach($entry, $user, ['season_contract_id' => $validated['season_contract_id'], 'round_id' => $validated['round_id'] ?? null, 'notes' => $validated['contract_notes'] ?? null, 'reason' => __('contracts.associated'), 'revision' => 0]);
+            }
+
             return $entry;
         });
     }
@@ -62,7 +71,8 @@ class EventEntryService
     {
         DB::transaction(function () use ($eventEntry): void {
             $entry = EventEntry::query()->whereKey($eventEntry->getKey())->lockForUpdate()->firstOrFail();
-            if ($entry->sessions()->exists() || $entry->scheduleItems()->exists()
+            if ((app(WorkspaceContext::class)->isContractsReady() && ContractParticipation::query()->where('event_entry_id', $entry->id)->exists())
+                || $entry->sessions()->exists() || $entry->scheduleItems()->exists()
                 || $entry->tasks()->exists() || $entry->eventNotes()->exists()
                 || Expense::query()->where('related_type', 'event_entry')->where('related_id', $entry->getKey())->exists()) {
                 throw ValidationException::withMessages([

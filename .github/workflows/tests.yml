@@ -84,6 +84,7 @@ jobs:
           php artisan db:seed --class='Database\Seeders\E2EWorklistSeeder' --force
           php artisan db:seed --class='Database\Seeders\E2EMaintenanceReportSeeder' --force
           php artisan db:seed --class='Database\Seeders\E2EWeekendReportSeeder' --force
+          php artisan db:seed --class='Database\Seeders\E2ESeasonContractSeeder' --force
 
       - name: Install Chrome for Playwright
         run: npx playwright install --with-deps chrome

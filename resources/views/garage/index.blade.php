@@ -3,6 +3,7 @@
         $categoryLabels = collect(\App\Models\Vehicle::CATEGORIES)->mapWithKeys(fn (string $category) => [$category => __('garage.categories.'.$category)]);
         $statusLabels = collect(\App\Models\Vehicle::STATUSES)->mapWithKeys(fn (string $status) => [$status => __('garage.statuses.'.$status)]);
         $it = app()->getLocale() === 'it';
+        $contractsAvailable = app(\App\Services\WorkspaceContext::class)->isContractsReady();
     @endphp
 
     <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -88,6 +89,7 @@
                                 <div class="mt-10 md:ml-[34%]">
                                     <h2 class="text-2xl font-black tracking-[-0.035em] text-pm-text sm:text-3xl">{{ $vehicle->name }}</h2>
                                     <a class="pm-ghost-button mt-3" href="{{ route('prints.vehicle', $vehicle) }}" target="_blank" rel="noopener">{{ __('prints.print') }}</a>
+                                    @if ($contractsAvailable)<a class="pm-ghost-button mt-3" href="{{ route('contracts.index', ['vehicle_id' => $vehicle->id]) }}">{{ __('contracts.title') }}</a>@endif
                                     <p class="mt-2 text-sm font-semibold text-pm-text-secondary">
                                         @if ($vehicle->manufacturer || $vehicle->model)
                                             {{ collect([$vehicle->manufacturer, $vehicle->model])->filter()->join(' ') }}

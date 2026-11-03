@@ -31,7 +31,7 @@ class WorkspaceBackupTableRegistry
             'setup_snapshots',
             'maintenance_work_orders',
         ];
-        foreach (['championships', 'championship_rounds', 'championship_participants', 'championship_results'] as $table) {
+        foreach (['championships', 'championship_rounds', 'championship_participants', 'championship_results', 'season_contracts', 'contract_participations', 'contract_extensions', 'contract_changes'] as $table) {
             if (Schema::hasTable($table)) {
                 $tables[] = $table;
             }

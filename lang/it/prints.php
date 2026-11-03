@@ -61,6 +61,7 @@ return [
     'rear_width' => 'Carreggiata posteriore / lunghezza assale',
     'front_width' => 'Carreggiata anteriore',
     'titles' => [
+        'contract' => 'Riepilogo contratto stagionale',
         'weekend' => 'Riepilogo di fine weekend',
         'maintenance' => 'Report interventi eseguiti',
         'worklist' => 'Elenco lavori da completare',

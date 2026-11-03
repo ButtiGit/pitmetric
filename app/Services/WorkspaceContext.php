@@ -98,6 +98,12 @@ class WorkspaceContext
             && Schema::hasColumn('maintenance_records', 'event_id');
     }
 
+    public function isContractsReady(): bool
+    {
+        return Schema::hasTable('season_contracts') && Schema::hasTable('contract_participations')
+            && Schema::hasTable('contract_extensions') && Schema::hasTable('contract_changes');
+    }
+
     public function isChampionshipsReady(): bool
     {
         return $this->isEventsReady()

@@ -11,6 +11,7 @@ use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\MaintenanceHealthService;
+use App\Services\SeasonContractPageService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,7 @@ class RaceEventController extends Controller
         $workspace = $workspaceContext->personal($user);
 
         return view('events.index', [
+            'contractsAvailable' => $workspaceContext->isContractsReady(),
             'events' => RaceEvent::query()
                 ->with(['circuitLayout.circuit'])
                 ->withCount(['entries', 'sessions', 'tasks'])
@@ -176,7 +178,11 @@ class RaceEventController extends Controller
             })
             ->first();
 
+        $contractsReady = $workspaceContext->isContractsReady();
+
         return view('events.show', [
+            'contractsReady' => $contractsReady,
+            ...($contractsReady ? app(SeasonContractPageService::class)->event($raceEvent) : []),
             'event' => $raceEvent,
             'drivers' => Driver::query()->where('status', 'active')->orderBy('display_name')->get(),
             'vehicles' => Vehicle::query()->where('status', 'active')->orderBy('name')->get(),
