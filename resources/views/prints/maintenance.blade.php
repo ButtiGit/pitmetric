@@ -21,7 +21,7 @@
     </x-slot:actions>
     <p>{{ __('maintenance-report.scope') }}</p>
     <dl class="print-facts">
-        <div><dt>{{ __('maintenance-report.period') }}</dt><dd>{{ $filters['from'] ?? '—' }} → {{ $filters['to'] ?? '—' }}</dd></div>
+        <div><dt>{{ __('maintenance-report.period') }}</dt><dd>{{ __('maintenance-report.from') }} {{ $filters['from'] ?? '—' }} · {{ __('maintenance-report.to') }} {{ $filters['to'] ?? '—' }}</dd></div>
         <div><dt>{{ __('maintenance-report.component') }}</dt><dd>{{ $components->firstWhere('id', $filters['component_id'] ?? null)?->name ?? __('maintenance-report.all') }}</dd></div>
         <div><dt>{{ __('prints.vehicle') }}</dt><dd>{{ $vehicles->firstWhere('id', $filters['vehicle_id'] ?? null)?->name ?? __('maintenance-report.all') }}</dd></div>
         <div><dt>{{ __('prints.event') }}</dt><dd>{{ $events->firstWhere('id', $filters['event_id'] ?? null)?->name ?? __('maintenance-report.all') }}</dd></div>
