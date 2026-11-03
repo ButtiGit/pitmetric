@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\ComponentTracker;
+use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
 use App\Models\User;
+use App\Services\AssignMaintenanceEventService;
 use App\Services\CompleteMaintenanceService;
 use App\Services\MaintenancePageService;
 use App\Services\MaintenanceValueService;
@@ -222,6 +224,7 @@ class MaintenanceController extends Controller
             isset($validated['cost']) ? (int) round(((float) $validated['cost']) * 100) : null,
             $validated['notes'] ?? null,
             $maintenanceWorkOrder,
+            isset($validated['event_id']) ? (int) $validated['event_id'] : null,
         );
 
         return to_route('maintenance.index')->with('status', __('Maintenance completed, work order closed and cost linked to expenses.'));
@@ -243,17 +246,28 @@ class MaintenanceController extends Controller
             $validated['description'],
             isset($validated['cost']) ? (int) round(((float) $validated['cost']) * 100) : null,
             $validated['notes'] ?? null,
+            eventId: isset($validated['event_id']) ? (int) $validated['event_id'] : null,
         );
 
         return to_route('maintenance.index')->with('status', __('Maintenance completed, interval reset and cost linked to expenses.'));
     }
 
+    public function assignEvent(Request $request, MaintenanceRecord $maintenanceRecord, AssignMaintenanceEventService $assignment): RedirectResponse
+    {
+        Gate::authorize('update', $maintenanceRecord);
+        $validated = $request->validate(['event_id' => ['nullable', 'integer', 'min:1']]);
+        $assignment->assign($maintenanceRecord, isset($validated['event_id']) ? (int) $validated['event_id'] : null);
+
+        return to_route('maintenance.index')->with('status', __('weekend.linked'));
+    }
+
     /**
-     * @return array{performed_at: string, description: string, cost?: numeric-string|float|int|null, notes?: string|null}
+     * @return array{event_id?: int|null, performed_at: string, description: string, cost?: numeric-string|float|int|null, notes?: string|null}
      */
     private function validatedCompletion(Request $request): array
     {
         return $request->validate([
+            'event_id' => ['nullable', 'integer', 'min:1'],
             'performed_at' => ['required', 'date'],
             'description' => ['required', 'string', 'max:180'],
             'cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],

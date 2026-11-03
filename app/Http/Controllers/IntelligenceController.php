@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\RaceEvent;
 use App\Models\User;
 use App\Services\PerformanceIntelligenceService;
+use App\Services\WeekendReportCsvService;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -45,13 +47,13 @@ class IntelligenceController extends Controller
         RaceEvent $raceEvent,
         WorkspaceContext $workspaceContext,
         PerformanceIntelligenceService $intelligence,
-    ): View {
+    ): Response {
         $workspaceContext->personal($this->user($request));
         Gate::authorize('view', $raceEvent);
 
-        return view('insights.weekend-report', [
+        return response()->view('insights.weekend-report', [
             'report' => $intelligence->weekend($raceEvent),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function weekendReportCsv(
@@ -59,6 +61,7 @@ class IntelligenceController extends Controller
         RaceEvent $raceEvent,
         WorkspaceContext $workspaceContext,
         PerformanceIntelligenceService $intelligence,
+        WeekendReportCsvService $csv,
     ): StreamedResponse {
         $workspaceContext->personal($this->user($request));
         Gate::authorize('view', $raceEvent);
@@ -67,75 +70,13 @@ class IntelligenceController extends Controller
         $eventDate = Carbon::parse($raceEvent->start_date)->format('Y-m-d');
         $filename = 'pitmetric-weekend-'.Str::slug($raceEvent->name).'-'.$eventDate.'.csv';
 
-        return response()->streamDownload(function () use ($report): void {
+        return response()->streamDownload(function () use ($report, $csv): void {
             $stream = fopen('php://output', 'w');
-
-            if ($stream === false) {
-                return;
+            if ($stream !== false) {
+                $csv->write($stream, $report);
+                fclose($stream);
             }
-
-            fputcsv($stream, ['PitMetric Weekend Report']);
-            fputcsv($stream, ['Event', $report['event']->name]);
-            fputcsv($stream, ['Start', $report['event']->start_date->toDateString()]);
-            fputcsv($stream, ['End', $report['event']->end_date->toDateString()]);
-            fputcsv($stream, ['Sessions', $report['summary']['sessions']]);
-            fputcsv($stream, ['Laps', $report['summary']['laps']]);
-            fputcsv($stream, ['Distance km', number_format($report['summary']['distance_meters'] / 1000, 3, '.', '')]);
-            fputcsv($stream, ['Runtime hours', number_format($report['summary']['duration_seconds'] / 3600, 3, '.', '')]);
-            fputcsv($stream, ['Cost EUR', number_format($report['summary']['cost_cents'] / 100, 2, '.', '')]);
-            fputcsv($stream, ['Cost per km EUR', $this->csvMoney($report['summary']['cost_per_km_cents'])]);
-            fputcsv($stream, ['Cost per hour EUR', $this->csvMoney($report['summary']['cost_per_hour_cents'])]);
-            fputcsv($stream, []);
-
-            fputcsv($stream, ['Entries']);
-            fputcsv($stream, ['Driver', 'Vehicle', 'Sessions', 'Laps', 'Distance km', 'Runtime hours', 'Direct cost EUR']);
-
-            foreach ($report['entries'] as $row) {
-                fputcsv($stream, [
-                    $row['entry']->driver->display_name,
-                    $row['entry']->vehicle->name,
-                    $row['sessions'],
-                    $row['laps'],
-                    number_format($row['distance_meters'] / 1000, 3, '.', ''),
-                    number_format($row['duration_seconds'] / 3600, 3, '.', ''),
-                    number_format($row['direct_cost_cents'] / 100, 2, '.', ''),
-                ]);
-            }
-
-            fputcsv($stream, []);
-            fputcsv($stream, ['Sessions']);
-            fputcsv($stream, ['Date', 'Type', 'Driver', 'Vehicle', 'Laps', 'Distance km', 'Runtime min', 'Direct cost EUR', 'Setup']);
-
-            foreach ($report['sessions'] as $row) {
-                $session = $row['session'];
-                fputcsv($stream, [
-                    $session->started_at->format('Y-m-d H:i'),
-                    $session->session_type,
-                    $session->eventEntry->driver->display_name ?? '',
-                    $session->vehicle->name ?? '',
-                    $session->completed_laps ?? '',
-                    number_format($row['distance_meters'] / 1000, 3, '.', ''),
-                    $session->duration_seconds !== null ? number_format($session->duration_seconds / 60, 1, '.', '') : '',
-                    number_format($row['cost_cents'] / 100, 2, '.', ''),
-                    $session->setupSnapshot->name ?? $session->setupSnapshot->technicalSetup->name ?? '',
-                ]);
-            }
-
-            fputcsv($stream, []);
-            fputcsv($stream, ['Expenses']);
-            fputcsv($stream, ['Date', 'Category', 'Description', 'Amount EUR']);
-
-            foreach ($report['expenses'] as $expense) {
-                fputcsv($stream, [
-                    $expense->occurred_at->format('Y-m-d H:i'),
-                    $expense->category,
-                    $expense->description,
-                    number_format($expense->amount_cents / 100, 2, '.', ''),
-                ]);
-            }
-
-            fclose($stream);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'private, no-store']);
     }
 
     private function user(Request $request): User
@@ -147,10 +88,5 @@ class IntelligenceController extends Controller
         }
 
         return $user;
-    }
-
-    private function csvMoney(?int $cents): string
-    {
-        return $cents === null ? '' : number_format($cents / 100, 2, '.', '');
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
+use App\Models\RaceEvent;
 use App\Models\User;
 use App\Services\WorkspaceContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -36,6 +38,7 @@ class ExpenseController extends Controller
         $monthEnd = now()->endOfMonth();
 
         return view('expenses.index', [
+            'events' => RaceEvent::withTrashed()->orderByDesc('start_date')->get(),
             'expenses' => $expenses,
             'totalCents' => (int) $expenses->sum('amount_cents'),
             'monthCents' => (int) Expense::query()
@@ -60,6 +63,7 @@ class ExpenseController extends Controller
         $workspaceContext->personal($user);
 
         $validated = $request->validate([
+            'event_id' => ['nullable', 'integer', Rule::exists('events', 'id')->where('workspace_id', app(WorkspaceContext::class)->currentId($request->user()))],
             'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2', 'max:1000000'],
             'category' => ['required', 'string', 'max:80'],
             'description' => ['required', 'string', 'max:180'],
@@ -67,6 +71,7 @@ class ExpenseController extends Controller
         ]);
 
         Expense::create([
+            'event_id' => $validated['event_id'] ?? null,
             'amount_cents' => (int) round(((float) $validated['amount']) * 100),
             'currency' => 'EUR',
             'category' => $validated['category'],
@@ -89,12 +94,14 @@ class ExpenseController extends Controller
         }
 
         $validated = $request->validate([
+            'event_id' => ['nullable', 'integer', Rule::exists('events', 'id')->where('workspace_id', app(WorkspaceContext::class)->currentId($request->user()))],
             'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2', 'max:1000000'],
             'category' => ['required', 'string', 'max:80'],
             'description' => ['required', 'string', 'max:180'],
             'occurred_at' => ['required', 'date'],
         ]);
         $expense->update([
+            'event_id' => array_key_exists('event_id', $validated) ? $validated['event_id'] : $expense->event_id,
             'amount_cents' => (int) round(((float) $validated['amount']) * 100),
             'category' => $validated['category'],
             'description' => $validated['description'],

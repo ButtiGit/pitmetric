@@ -38,6 +38,7 @@
                         @can('team-write')<form method="POST" action="{{ route('maintenance.complete', $schedule) }}" class="grid gap-4 sm:grid-cols-2">
                             @csrf
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Data e ora' : 'Date and time' }}</span><input class="pm-input" name="performed_at" type="datetime-local" required value="{{ now()->format('Y-m-d\TH:i') }}"></label>
+                            <x-prints.event-select :$events :selected="old('event_id')" />
                             <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo (€)' : 'Cost (€)' }}</span><input class="pm-input" name="cost" type="number" min="0" max="1000000" step="0.01"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · registrato automaticamente nei Costi' : 'Optional · automatically recorded in Expenses' }}</span></label>
                             <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Intervento' : 'Work performed' }}</span><input class="pm-input" name="description" required maxlength="180" value="{{ $schedule->name }}"></label>
                             <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note' : 'Notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000"></textarea></label>
@@ -72,7 +73,16 @@
         <div class="mt-4 space-y-3">
             @foreach ($records as $record)
                 <div class="flex flex-col gap-1 rounded-xl border border-pm-border bg-pm-subtle p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div><p class="font-bold text-pm-text">{{ $record->component->name }} · {{ $record->description }}</p><p class="mt-1 text-xs text-pm-muted">{{ $record->performed_at->format('d/m/Y H:i') }}</p></div>
+                    <div><p class="font-bold text-pm-text">{{ $record->component->name }} · {{ $record->description }}</p><p class="mt-1 text-xs text-pm-muted">{{ $record->performed_at->format('d/m/Y H:i') }} · {{ $events->firstWhere('id', $record->event_id)?->name ?? __('weekend.no_event') }}</p></div>
+                    @can('update', $record)
+                        <x-crud-modal id="maintenance-event-{{ $record->id }}" :title="__('weekend.assign_event')" :trigger="__('weekend.assign_event')" trigger-class="pm-ghost-button">
+                            <form method="POST" action="{{ route('maintenance.records.event', $record) }}" class="grid gap-4">
+                                @csrf @method('PATCH')
+                                <x-prints.event-select :$events :selected="$record->event_id" />
+                                <button type="submit" class="pm-race-button">{{ __('Save') }}</button>
+                            </form>
+                        </x-crud-modal>
+                    @endcan
                     @if ($record->cost_cents !== null)
                         <div class="text-right"><p class="font-mono font-bold text-pm-text">€ {{ number_format($record->cost_cents / 100, 2, ',', '.') }}</p><p class="mt-1 text-[10px] uppercase tracking-[0.1em] text-pm-muted">{{ $it ? 'collegato ai costi' : 'linked to expenses' }}</p></div>
                     @endif
