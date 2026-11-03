@@ -23,7 +23,9 @@ test('A4 sheets open from their records and preserve complete multipage session 
     }
     await page.goto('/tasks');
     urls.worklist = await page.locator('a[href*="/print/open-work"]').getAttribute('href');
-    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist', 'worklist']) {
+    await page.goto('/maintenance');
+    urls.maintenance = await page.locator('a[href$="/print/maintenance"]').getAttribute('href');
+    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist', 'worklist', 'maintenance']) {
         await page.goto(urls[kind]);
         const document = page.locator('[data-print-document]');
         await expect(document).toHaveAttribute('data-print-document', kind);
@@ -33,6 +35,19 @@ test('A4 sheets open from their records and preserve complete multipage session 
         expect(await page.evaluate(() => window.document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
         const clipped = await document.locator('h1,h2,p,dd,td,th').evaluateAll(elements => elements.filter(element => element.scrollWidth > element.clientWidth + 1).map(element => element.textContent));
         expect(clipped).toEqual([]);
+        if (kind === 'maintenance') {
+            await page.locator('select[name="component_id"]').selectOption(await page.locator('select[name="component_id"] option').filter({ hasText: 'E2E Print Engine' }).getAttribute('value'));
+            await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+            await expect(document.locator('[data-maintenance-record]')).toHaveCount(18);
+            await expect(document).toContainText('E2E Maintenance item 18');
+            await expect(document).toContainText('E2E Linked completed order');
+            await expect(document).toContainText('END-MAINTENANCE-NOTES');
+            await page.locator('input[name="from"]').fill('2026-11-01');
+            await page.locator('input[name="to"]').fill('2026-11-01');
+            await page.locator('select[name="event_id"]').selectOption({ label: await page.locator('select[name="event_id"] option').filter({ hasText: 'E2E Print Weekend' }).textContent() });
+            await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+            await expect(document.locator('[data-maintenance-record]')).toHaveCount(18);
+        }
         if (kind === 'worklist') {
             expect(await document.locator('[data-work-row]').count()).toBeGreaterThanOrEqual(33);
             await expect(document).toContainText('E2E Work item 32');
@@ -60,7 +75,7 @@ test('A4 sheets open from their records and preserve complete multipage session 
         const pdf = await page.pdf({ path: testInfo.outputPath(`print-${kind}.pdf`), preferCSSPageSize: true });
         const boxes = [...pdf.toString('latin1').matchAll(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)];
         expect(boxes.length).toBeGreaterThan(0);
-        if (kind === 'session' || kind === 'worklist') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
+        if (kind === 'session' || kind === 'worklist' || kind === 'maintenance') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
         for (const box of boxes) {
             expect(Math.abs(Number(box[1]) - 595.276)).toBeLessThan(1);
             expect(Math.abs(Number(box[2]) - 841.89)).toBeLessThan(1);

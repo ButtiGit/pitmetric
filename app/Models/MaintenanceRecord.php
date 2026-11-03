@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'event_id',
@@ -20,6 +21,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MaintenanceRecord extends Model
 {
     use BelongsToWorkspace;
+
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** @return HasMany<MaintenanceWorkOrder, $this> */
+    public function workOrders(): HasMany
+    {
+        return $this->hasMany(MaintenanceWorkOrder::class);
+    }
+
+    /** @return HasMany<TrackerResetEvent, $this> */
+    public function resetEvents(): HasMany
+    {
+        return $this->hasMany(TrackerResetEvent::class);
+    }
 
     /** @return BelongsTo<RaceEvent, $this> */
     public function raceEvent(): BelongsTo

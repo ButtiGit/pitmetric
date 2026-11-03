@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Component;
 use App\Models\EventEntry;
 use App\Models\EventTask;
+use App\Models\MaintenanceRecord;
 use App\Models\RaceEvent;
 use App\Models\Session;
 use App\Models\TechnicalSetup;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Workspace;
+use App\Services\MaintenanceReportService;
 use App\Services\OpenWorklistService;
 use App\Services\PreRaceChecklistService;
 use App\Services\PrintDocumentService;
@@ -21,6 +24,31 @@ use Illuminate\Support\Facades\Gate;
 
 class PrintDocumentController extends Controller
 {
+    public function maintenance(Request $request, WorkspaceContext $context, MaintenanceReportService $reports): Response
+    {
+        Gate::authorize('viewAny', MaintenanceRecord::class);
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+        $workspace = $context->personal($user);
+        $filters = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])],
+            'component_id' => ['nullable', 'integer', 'min:1'], 'vehicle_id' => ['nullable', 'integer', 'min:1'], 'event_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+        foreach (['component_id' => Component::class, 'vehicle_id' => Vehicle::class, 'event_id' => RaceEvent::class] as $key => $model) {
+            if (! empty($filters[$key])) {
+                $model::withTrashed()->findOrFail($request->integer($key));
+            }
+        }
+
+        return $this->document('maintenance', $workspace, route('maintenance.index'), [
+            ...$reports->data($workspace, $filters), 'filters' => $filters,
+            'components' => Component::withTrashed()->orderBy('name')->get(),
+            'vehicles' => Vehicle::withTrashed()->orderBy('name')->get(),
+            'events' => RaceEvent::withTrashed()->orderByDesc('start_date')->orderBy('name')->get(),
+        ]);
+    }
+
     public function worklist(Request $request, WorkspaceContext $context, OpenWorklistService $worklists): Response
     {
         Gate::authorize('viewAny', EventTask::class);

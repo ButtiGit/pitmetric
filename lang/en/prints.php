@@ -61,6 +61,7 @@ return [
     'rear_width' => 'Rear track / axle length',
     'front_width' => 'Front track width',
     'titles' => [
+        'maintenance' => 'Completed maintenance report',
         'worklist' => 'Open work list',
         'checklist' => 'Pre-race checklist',
         'vehicle' => 'Kart / vehicle identification',
