@@ -61,6 +61,7 @@ return [
     'rear_width' => 'Carreggiata posteriore / lunghezza assale',
     'front_width' => 'Carreggiata anteriore',
     'titles' => [
+        'maintenance' => 'Report interventi eseguiti',
         'worklist' => 'Elenco lavori da completare',
         'checklist' => 'Checklist pre-gara',
         'vehicle' => 'Scheda identificativa kart / mezzo',

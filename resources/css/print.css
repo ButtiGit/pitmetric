@@ -53,4 +53,5 @@ tr { break-inside: avoid-page; }
 .print-check-box { display: inline-block; width: 12px; height: 12px; margin-right: 5px; border: 1px solid #171717; vertical-align: middle; }
 .print-toolbar form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; width: 100%; }
 .print-toolbar form label { flex: 1; min-width: 0; }
-.print-toolbar select { display: block; width: 100%; min-height: 44px; color: #171717; background: #fff; padding: 8px; }
+.print-toolbar select, .print-toolbar input { display: block; width: 100%; min-width: 0; min-height: 44px; color: #171717; background: #fff; padding: 8px; font: inherit; }
+.print-toolbar .print-maintenance-filters label { flex: 1 1 180px; }

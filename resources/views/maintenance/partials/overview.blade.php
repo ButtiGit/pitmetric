@@ -7,6 +7,7 @@
     </div>
 
     <div class="flex flex-wrap gap-2">
+        <a class="pm-ghost-button" href="{{ route('prints.maintenance') }}" target="_blank" rel="noopener">{{ __('maintenance-report.open') }}</a>
         <x-crud-modal id="create-maintenance-work-order" :title="$it ? 'Nuovo lavoro manutenzione' : 'New maintenance work order'" :description="$it ? 'Pianifica un intervento su un piano esistente e assegnalo al team.' : 'Plan work against an existing schedule and assign it to the team.'" :trigger="$it ? '+ Lavoro' : '+ Work order'" trigger-class="hidden sm:inline-flex pm-race-button">
             @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.store') }}" class="grid gap-4 md:grid-cols-2">
                 @csrf
