@@ -1,0 +1,21 @@
+.pm-weekend-report { background: #fff; color: #171717; font: 14px/1.45 Arial, Helvetica, sans-serif; overflow-wrap: anywhere; }
+.pm-weekend-report h1 { font-size: 25px; font-weight: 800; line-height: 1.2; margin: 8px 0; }
+.pm-weekend-report h2 { font-size: 19px; font-weight: 700; border-bottom: 1px solid #999; padding-bottom: 5px; margin: 20px 0 10px; }
+.pm-weekend-report h3 { font-size: 15px; font-weight: 700; margin: 16px 0 6px; }
+.pm-weekend-report p { margin: 6px 0; }
+.pm-weekend-report .print-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 14px 0; }
+.pm-weekend-report .print-facts > div { min-width: 0; }
+.pm-weekend-report dt, .pm-weekend-report .print-caption { font-size: 12px; color: #444; }
+.pm-weekend-report dd { margin: 2px 0 0; font-weight: 700; }
+.pm-weekend-report table { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+.pm-weekend-report th, .pm-weekend-report td { padding: 6px; border: 1px solid #aaa; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.pm-weekend-report th { background: #eee; font-weight: 700; }
+.pm-weekend-report .print-note { white-space: pre-wrap; }
+.pm-weekend-report .print-warning { border: 2px solid #333; padding: 8px; font-weight: 700; }
+.pm-weekend-report .print-brand { font-weight: 800; letter-spacing: .1em; }
+.pm-weekend-report a { color: #a52a12; text-decoration: underline; }
+@media screen and (max-width: 600px) {
+    .pm-weekend-report .print-facts { grid-template-columns: minmax(0, 1fr); }
+    .pm-weekend-report .print-pressures { font-size: 10px; }
+    .pm-weekend-report th, .pm-weekend-report td { padding: 4px; }
+}

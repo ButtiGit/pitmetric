@@ -10,6 +10,8 @@ use Illuminate\Support\Collection;
 
 class PerformanceIntelligenceService
 {
+    public function __construct(private readonly SessionReportMetrics $metrics) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -17,6 +19,7 @@ class PerformanceIntelligenceService
     {
         $sessions = Session::query()
             ->with([
+                'usageValues.metric',
                 'vehicle',
                 'circuitLayout',
                 'eventEntry.driver',
@@ -78,6 +81,7 @@ class PerformanceIntelligenceService
             ->with([
                 'circuitLayout.circuit',
                 'sessions.circuitLayout',
+                'sessions.usageValues.metric',
                 'expenses',
             ])
             ->when($from, fn ($query, CarbonInterface $date) => $query->whereDate('end_date', '>=', $date->toDateString()))
@@ -110,72 +114,7 @@ class PerformanceIntelligenceService
      */
     public function weekend(RaceEvent $event): array
     {
-        $event->loadMissing([
-            'circuitLayout.circuit',
-            'entries.driver',
-            'entries.vehicle',
-            'sessions.vehicle',
-            'sessions.circuitLayout',
-            'sessions.eventEntry.driver',
-            'sessions.setupSnapshot.technicalSetup',
-            'tasks',
-            'eventNotes',
-            'expenses',
-            'maintenanceRecords.schedule.tracker.component',
-        ]);
-
-        $sessions = $event->sessions
-            ->where('status', 'finalized')
-            ->sortBy('started_at')
-            ->values();
-        $expenses = $event->expenses->sortBy('occurred_at')->values();
-        $summary = $this->summarizeSessions($sessions, (int) $expenses->sum('amount_cents'));
-
-        $taskCosts = $this->relatedCostsById($expenses, 'event_task');
-        $entryCosts = $this->relatedCostsById($expenses, 'event_entry');
-        $sessionCosts = $this->relatedCostsById($expenses, 'session');
-
-        $entries = $event->entries->map(function ($entry) use ($sessions, $entryCosts, $sessionCosts, $taskCosts, $event): array {
-            $entrySessions = $sessions->where('event_entry_id', $entry->getKey())->values();
-            $entryTaskIds = $event->tasks
-                ->where('event_entry_id', $entry->getKey())
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id);
-
-            $directCostCents = (int) $entryCosts->get((int) $entry->getKey(), 0)
-                + (int) $entrySessions->sum(fn (Session $session) => (int) $sessionCosts->get((int) $session->getKey(), 0))
-                + (int) $entryTaskIds->sum(fn (int $taskId) => (int) $taskCosts->get($taskId, 0));
-
-            return [
-                'entry' => $entry,
-                'direct_cost_cents' => $directCostCents,
-                ...$this->summarizeSessions($entrySessions, $directCostCents),
-            ];
-        })->sortByDesc('distance_meters')->values();
-
-        $sessionRows = $sessions->map(function (Session $session) use ($sessionCosts): array {
-            return [
-                'session' => $session,
-                'distance_meters' => $this->sessionDistanceMeters($session),
-                'cost_cents' => (int) $sessionCosts->get((int) $session->getKey(), 0),
-            ];
-        });
-
-        return [
-            'event' => $event,
-            'summary' => $summary,
-            'entries' => $entries,
-            'sessions' => $sessionRows,
-            'expense_categories' => $this->expenseCategories($expenses),
-            'expenses' => $expenses,
-            'operations' => [
-                'tasks_total' => $event->tasks->count(),
-                'tasks_done' => $event->tasks->where('status', 'done')->count(),
-                'tasks_open' => $event->tasks->where('status', '!=', 'done')->count(),
-                'notes' => $event->eventNotes->count(),
-                'maintenance_records' => $event->maintenanceRecords->count(),
-            ],
-        ];
+        return app(WeekendReportService::class)->data($event);
     }
 
     /**
@@ -185,7 +124,7 @@ class PerformanceIntelligenceService
     private function summarizeSessions(Collection $sessions, int $costCents = 0): array
     {
         $distanceMeters = (int) $sessions->sum(fn (Session $session) => $this->sessionDistanceMeters($session));
-        $durationSeconds = (int) $sessions->sum(fn (Session $session) => max(0, (int) ($session->duration_seconds ?? 0)));
+        $durationSeconds = (int) $sessions->sum(fn (Session $session) => max(0, (int) ($this->metrics->runtime($session) ?? 0)));
         $laps = (int) $sessions->sum(fn (Session $session) => max(0, (int) ($session->completed_laps ?? 0)));
 
         return [
@@ -205,28 +144,7 @@ class PerformanceIntelligenceService
 
     private function sessionDistanceMeters(Session $session): int
     {
-        $override = max(0, (int) ($session->distance_override_meters ?? 0));
-
-        if ($override > 0) {
-            return $override;
-        }
-
-        $laps = max(0, (int) ($session->completed_laps ?? 0));
-        $layoutMeters = max(0, (int) ($session->circuitLayout->length_meters ?? 0));
-
-        return $laps * $layoutMeters;
-    }
-
-    /**
-     * @param  Collection<int, Expense>  $expenses
-     * @return Collection<int, int>
-     */
-    private function relatedCostsById(Collection $expenses, string $relatedType): Collection
-    {
-        return $expenses
-            ->where('related_type', $relatedType)
-            ->groupBy(fn (Expense $expense) => (int) $expense->related_id)
-            ->map(fn (Collection $relatedExpenses): int => (int) $relatedExpenses->sum('amount_cents'));
+        return max(0, (int) ($this->metrics->distance($session) ?? 0));
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\ComponentTracker;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
+use App\Models\RaceEvent;
 use App\Models\Workspace;
 
 class MaintenancePageService
@@ -38,6 +39,7 @@ class MaintenancePageService
             ->get();
 
         return [
+            'events' => RaceEvent::withTrashed()->orderByDesc('start_date')->get(),
             'trackers' => $trackers,
             'schedules' => $schedules,
             'archivedSchedules' => MaintenanceSchedule::query()

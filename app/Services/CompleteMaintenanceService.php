@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
+use App\Models\RaceEvent;
 use App\Models\TrackerResetEvent;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -22,12 +23,17 @@ class CompleteMaintenanceService
         ?int $costCents = null,
         ?string $notes = null,
         ?MaintenanceWorkOrder $workOrder = null,
+        ?int $eventId = null,
     ): MaintenanceRecord {
-        return DB::transaction(function () use ($schedule, $user, $performedAt, $description, $costCents, $notes, $workOrder): MaintenanceRecord {
+        return DB::transaction(function () use ($schedule, $user, $performedAt, $description, $costCents, $notes, $workOrder, $eventId): MaintenanceRecord {
             $lockedSchedule = MaintenanceSchedule::query()
                 ->whereKey($schedule->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($eventId !== null) {
+                RaceEvent::withTrashed()->where('workspace_id', $lockedSchedule->workspace_id)->findOrFail($eventId);
+            }
 
             if (! $lockedSchedule->is_active) {
                 throw ValidationException::withMessages(['schedule' => __('Restore this maintenance schedule before recording work.')]);
@@ -44,6 +50,7 @@ class CompleteMaintenanceService
             $lockedSchedule->load('tracker.component');
 
             $record = MaintenanceRecord::create([
+                'event_id' => $eventId,
                 'component_id' => $lockedSchedule->tracker->component_id,
                 'maintenance_schedule_id' => $lockedSchedule->getKey(),
                 'performed_at' => $performedAt,
@@ -73,6 +80,7 @@ class CompleteMaintenanceService
 
             if ($costCents !== null && $costCents > 0) {
                 Expense::create([
+                    'event_id' => $eventId,
                     'amount_cents' => $costCents,
                     'currency' => 'EUR',
                     'category' => 'maintenance',

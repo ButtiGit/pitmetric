@@ -16,6 +16,7 @@ use App\Services\MaintenanceReportService;
 use App\Services\OpenWorklistService;
 use App\Services\PreRaceChecklistService;
 use App\Services\PrintDocumentService;
+use App\Services\WeekendReportService;
 use App\Services\WorkspaceContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -24,6 +25,13 @@ use Illuminate\Support\Facades\Gate;
 
 class PrintDocumentController extends Controller
 {
+    public function weekend(RaceEvent $raceEvent, WeekendReportService $reports): Response
+    {
+        Gate::authorize('view', $raceEvent);
+
+        return $this->document('weekend', $raceEvent, route('insights.events.report', $raceEvent), ['report' => $reports->data($raceEvent)]);
+    }
+
     public function maintenance(Request $request, WorkspaceContext $context, MaintenanceReportService $reports): Response
     {
         Gate::authorize('viewAny', MaintenanceRecord::class);

@@ -85,6 +85,7 @@
                                     @can('team-write')<form method="POST" action="{{ route('maintenance.work-orders.complete', $workOrder) }}" class="grid gap-4 sm:grid-cols-2">
                                         @csrf
                                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Data e ora' : 'Date and time' }}</span><input class="pm-input" name="performed_at" type="datetime-local" required value="{{ now()->format('Y-m-d\TH:i') }}"></label>
+                            <x-prints.event-select :$events :selected="old('event_id')" />
                                         <label class="grid gap-2"><span class="pm-label">{{ $it ? 'Costo (€)' : 'Cost (€)' }}</span><input class="pm-input" name="cost" type="number" inputmode="decimal" min="0" max="1000000" step="0.01"><span class="text-xs text-pm-muted">{{ $it ? 'Opzionale · verrà registrato nei Costi' : 'Optional · will be recorded in Expenses' }}</span></label>
                                         <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Intervento eseguito' : 'Work performed' }}</span><input class="pm-input" name="description" required maxlength="180" value="{{ $workOrder->title }}"></label>
                                         <label class="grid gap-2 sm:col-span-2"><span class="pm-label">{{ $it ? 'Note finali' : 'Completion notes' }}</span><textarea class="pm-input min-h-20" name="notes" maxlength="2000"></textarea></label>

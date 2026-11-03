@@ -144,6 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('database.access')->group(function () {
         Route::get('/print/vehicles/{vehicle}', [PrintDocumentController::class, 'vehicle'])->name('prints.vehicle');
         Route::get('/print/open-work', [PrintDocumentController::class, 'worklist'])->name('prints.worklist');
+        Route::get('/print/events/{raceEvent}/weekend', [PrintDocumentController::class, 'weekend'])->name('prints.weekend');
         Route::get('/print/maintenance', [PrintDocumentController::class, 'maintenance'])->name('prints.maintenance');
         Route::get('/print/entries/{eventEntry}/checklist', [PrintDocumentController::class, 'checklist'])->name('prints.checklist');
         Route::get('/print/setups/{technicalSetup}', [PrintDocumentController::class, 'setup'])->name('prints.setup');
@@ -261,6 +262,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/sessions', [SessionController::class, 'store'])->name('sessions.store');
             Route::post('/telemetry/import', [TelemetryController::class, 'store'])->name('telemetry.store');
 
+            Route::patch('/maintenance/records/{maintenanceRecord}/event', [MaintenanceController::class, 'assignEvent'])->name('maintenance.records.event');
             Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('maintenance.store');
             Route::post('/maintenance/work-orders', [MaintenanceController::class, 'storeWorkOrder'])
                 ->name('maintenance.work-orders.store');

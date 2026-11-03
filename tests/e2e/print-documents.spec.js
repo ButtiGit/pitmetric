@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('A4 sheets open from their records and preserve complete multipage session reports', async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/login');
@@ -25,16 +26,39 @@ test('A4 sheets open from their records and preserve complete multipage session 
     urls.worklist = await page.locator('a[href*="/print/open-work"]').getAttribute('href');
     await page.goto('/maintenance');
     urls.maintenance = await page.locator('a[href$="/print/maintenance"]').getAttribute('href');
-    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist', 'worklist', 'maintenance']) {
+    await page.goto('/events');
+    await page.locator('a').filter({ hasText: 'E2E Complete Weekend' }).first().click();
+    const weekendLink = page.locator('a[href$="/weekend"][href*="/print/events/"]');
+    await expect(weekendLink).toBeVisible();
+    urls.weekend = await weekendLink.getAttribute('href');
+    await page.getByRole('link', { name: 'Open weekend report', exact: true }).click();
+    await expect(page.locator('[data-weekend-report]')).toContainText('END-WEEKEND-NOTES');
+    expect(await page.evaluate(() => window.document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+    const weekendClipped = await page.locator('[data-weekend-report] h1,h2,h3,p,dd,td,th').evaluateAll(elements => elements.filter(element => element.scrollWidth > element.clientWidth + 1).map(element => element.textContent));
+    expect(weekendClipped).toEqual([]);
+    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist', 'worklist', 'maintenance', 'weekend']) {
         await page.goto(urls[kind]);
         const document = page.locator('[data-print-document]');
         await expect(document).toHaveAttribute('data-print-document', kind);
-        await expect(document).toContainText('E2E Print Kart');
+        await expect(document).toContainText(kind === 'weekend' ? 'E2E Weekend Kart' : 'E2E Print Kart');
         await expect(document).toContainText('Handwritten notes');
         await expect(page.locator('[data-pm-sidebar]')).toHaveCount(0);
         expect(await page.evaluate(() => window.document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
         const clipped = await document.locator('h1,h2,p,dd,td,th').evaluateAll(elements => elements.filter(element => element.scrollWidth > element.clientWidth + 1).map(element => element.textContent));
         expect(clipped).toEqual([]);
+        if (kind === 'weekend') {
+            await expect(document.locator('[data-weekend-session]')).toHaveCount(4);
+            await expect(document.locator('[data-weekend-task]')).toHaveCount(6);
+            await expect(document.locator('[data-maintenance-record]')).toHaveCount(3);
+            await expect(document).toContainText('1:00.002');
+            await expect(document).toContainText('END-WEEKEND-NOTES');
+            await expect(document).toContainText('END-WEEKEND-ISSUE');
+            await expect(document).toContainText('END-WEEKEND-TASK-6');
+            await expect(document).toContainText('E2E Weekend general expense 6');
+            await expect(document).toContainText('Provisional: excluded');
+            await expect(document).toContainText('NASA POWER');
+            await expect(document).toContainText('MET Norway');
+        }
         if (kind === 'maintenance') {
             await page.locator('select[name="component_id"]').selectOption(await page.locator('select[name="component_id"] option').filter({ hasText: 'E2E Print Engine' }).getAttribute('value'));
             await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
@@ -75,7 +99,7 @@ test('A4 sheets open from their records and preserve complete multipage session 
         const pdf = await page.pdf({ path: testInfo.outputPath(`print-${kind}.pdf`), preferCSSPageSize: true });
         const boxes = [...pdf.toString('latin1').matchAll(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)];
         expect(boxes.length).toBeGreaterThan(0);
-        if (kind === 'session' || kind === 'worklist' || kind === 'maintenance') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
+        if (kind === 'session' || kind === 'worklist' || kind === 'maintenance' || kind === 'weekend') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
         for (const box of boxes) {
             expect(Math.abs(Number(box[1]) - 595.276)).toBeLessThan(1);
             expect(Math.abs(Number(box[2]) - 841.89)).toBeLessThan(1);
