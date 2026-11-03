@@ -16,7 +16,11 @@ test('season contracts keep manual race balances and print their complete histor
     if (testInfo.project.name.includes('mobile')) await page.setViewportSize({ width: 320, height: 844 });
     await page.goto('/contracts');
     const main = page.locator('[data-contract-id]').filter({ hasText: 'E2E Main 2026' });
-    await main.getByRole('link', { name: 'Open contract', exact: true }).click();
+    const mainLink = main.getByRole('link', { name: 'Open contract', exact: true });
+    await mainLink.evaluate(node => node.scrollIntoView({ block: 'center' }));
+    await mainLink.click();
+    await expect(page).toHaveURL(/\/contracts\/\d+$/);
+    await expect(page.locator('[data-contract-participation]')).toHaveCount(8);
     await expect(page.locator('[data-contract-count="total"]')).toHaveText('7');
     await expect(page.locator('[data-contract-count="consumed"]')).toHaveText('2');
     await expect(page.locator('[data-contract-count="remaining"]')).toHaveText('5');
@@ -35,6 +39,19 @@ test('season contracts keep manual race balances and print their complete histor
     await page.emulateMedia({ media: null });
     const back = await page.locator('.print-toolbar a').first().getAttribute('href');
     await page.goto(back);
+    const pending = page.locator('[data-contract-participation]').nth(4);
+    const participationId = await pending.getAttribute('data-contract-participation');
+    for (const [status, consumed] of [['confirmed', '3'], ['planned', '2']]) {
+        const trigger = pending.getByRole('button', { name: 'Confirm / correct race', exact: true });
+        await trigger.evaluate(node => node.scrollIntoView({ block: 'center' }));
+        await trigger.click();
+        const change = page.locator(`#participation-${participationId} form`);
+        await change.locator('select[name="status"]').selectOption(status);
+        await change.locator('textarea[name="reason"]').fill(`Browser confirmation and correction: ${status}`);
+        page.once('dialog', dialog => dialog.accept());
+        await change.locator('button[type="submit"]').click();
+        await expect(page.locator('[data-contract-count="consumed"]')).toHaveText(consumed);
+    }
     await page.getByRole('button', { name: 'Attach document', exact: true }).click();
     await page.locator('#contract-document input[name="document"]').setInputFiles(testInfo.outputPath('print-contract.pdf'));
     await page.locator('#contract-document button[type="submit"]').click();
@@ -68,8 +85,10 @@ test('two team operators cannot consume the last available race twice', async ({
     await login(page);
     await page.goto('/contracts');
     await page.locator('[data-contract-id]').filter({ hasText: 'E2E Last Place' }).getByRole('link', { name: 'Open contract', exact: true }).click();
+    await expect(page).toHaveURL(/\/contracts\/\d+$/);
     const contractUrl = page.url();
     const forms = page.locator('form[action*="/contract-participations/"]');
+    await expect(forms).toHaveCount(2);
     const actions = await forms.evaluateAll(nodes => nodes.map(n => ({ url: n.action, revision: n.querySelector('input[name="revision"]').value })));
     expect(actions).toHaveLength(2);
     const token1 = await page.locator('meta[name="csrf-token"]').getAttribute('content');

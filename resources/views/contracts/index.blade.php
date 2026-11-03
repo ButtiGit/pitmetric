@@ -1,5 +1,5 @@
 <x-layouts::app :title="__('contracts.title')">
-    <div class="pitmetric-app min-h-full bg-pm-page p-4 sm:p-6"><div class="mx-auto max-w-6xl space-y-5">
+    <div class="pitmetric-app pm-mobile-page-with-dock min-h-full bg-pm-page p-4 sm:p-6"><div class="mx-auto max-w-6xl space-y-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
             <x-pitmetric.page-header :title="__('contracts.title')" :description="__('contracts.subtitle')" />
             @can('create', \App\Models\SeasonContract::class)

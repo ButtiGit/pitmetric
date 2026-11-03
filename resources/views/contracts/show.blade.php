@@ -1,5 +1,5 @@
 <x-layouts::app :title="__('contracts.title').' #'.$contract->id">
-    <div class="pitmetric-app min-h-full bg-pm-page p-4 sm:p-6"><div class="mx-auto max-w-5xl space-y-5 text-pm-text [overflow-wrap:anywhere]">
+    <div class="pitmetric-app pm-mobile-page-with-dock min-h-full bg-pm-page p-4 sm:p-6"><div class="mx-auto max-w-5xl space-y-5 text-pm-text [overflow-wrap:anywhere]">
         <div class="flex flex-wrap gap-3"><a class="pm-ghost-button" href="{{ route('contracts.index') }}" wire:navigate>{{ __('prints.back') }}</a><a class="pm-ghost-button" href="{{ route('prints.contract', $contract) }}" target="_blank" rel="noopener">{{ __('contracts.print') }}</a></div>
         <x-contracts.feedback />
         <section class="pm-panel space-y-4 p-4 sm:p-6">
