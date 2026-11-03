@@ -91,7 +91,7 @@ test('two team operators cannot consume the last available race twice', async ({
     await expect(forms).toHaveCount(2);
     const actions = await forms.evaluateAll(nodes => nodes.map(n => ({ url: n.action, revision: n.querySelector('input[name="revision"]').value })));
     expect(actions).toHaveLength(2);
-    const token1 = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    const token1 = await page.locator('input[name="_token"]').first().inputValue();
     const eventUrl = await page.locator('[data-contract-participation] a[href*="/events/"]').first().getAttribute('href');
     await page.goto('/team');
     const teamName = await page.locator('#edit-team input[name="name"]').inputValue();
@@ -102,10 +102,10 @@ test('two team operators cannot consume the last available race twice', async ({
         await second.goto('/team');
         const switchForm = second.locator('form[action*="/team/switch/"]').filter({ hasText: teamName });
         const switchAction = await switchForm.getAttribute('action');
-        const token2 = await second.locator('meta[name="csrf-token"]').getAttribute('content');
+        const token2 = await second.locator('input[name="_token"]').first().inputValue();
         await second.request.post(switchAction, { headers: { 'X-CSRF-TOKEN': token2 }, maxRedirects: 0 });
         await second.goto(contractUrl);
-        const freshToken = await second.locator('meta[name="csrf-token"]').getAttribute('content');
+        const freshToken = await second.locator('input[name="_token"]').first().inputValue();
         const responses = await Promise.all([
             page.request.patch(actions[0].url, { data: { revision: actions[0].revision, status: 'confirmed', reason: 'First operator confirmation' }, headers: { 'X-CSRF-TOKEN': token1, Accept: 'application/json', Referer: contractUrl }, maxRedirects: 0 }),
             second.request.patch(actions[1].url, { data: { revision: actions[1].revision, status: 'confirmed', reason: 'Second operator confirmation' }, headers: { 'X-CSRF-TOKEN': freshToken, Accept: 'application/json', Referer: contractUrl }, maxRedirects: 0 }),
