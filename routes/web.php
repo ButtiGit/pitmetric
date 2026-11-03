@@ -143,6 +143,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('database.access')->group(function () {
         Route::get('/print/vehicles/{vehicle}', [PrintDocumentController::class, 'vehicle'])->name('prints.vehicle');
+        Route::get('/print/open-work', [PrintDocumentController::class, 'worklist'])->name('prints.worklist');
         Route::get('/print/entries/{eventEntry}/checklist', [PrintDocumentController::class, 'checklist'])->name('prints.checklist');
         Route::get('/print/setups/{technicalSetup}', [PrintDocumentController::class, 'setup'])->name('prints.setup');
         Route::get('/print/sessions/{session}', [PrintDocumentController::class, 'session'])->name('prints.session');

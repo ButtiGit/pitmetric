@@ -32,6 +32,7 @@
             </form>
 
             <x-pitmetric.vehicle-readiness :readiness="$vehicleReadiness" :filters="$filters" />
+            <div><a class="pm-ghost-button" href="{{ route('prints.worklist', \Illuminate\Support\Arr::only($filters, ['event_id', 'vehicle_id', 'mine', 'q'])) }}" target="_blank" rel="noopener">{{ __('worklist.open') }}</a><p class="mt-2 text-xs text-pm-muted">{{ __('worklist.all_open') }}</p></div>
 
             <section class="grid gap-4 lg:grid-cols-2" aria-label="{{ __('tasks.'.$bucket) }}">
                 @forelse ($tasks as $task)

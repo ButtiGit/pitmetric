@@ -21,7 +21,9 @@ test('A4 sheets open from their records and preserve complete multipage session 
             urls.checklist = await record.locator('a[href$="/checklist"]').getAttribute('href');
         }
     }
-    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist']) {
+    await page.goto('/tasks');
+    urls.worklist = await page.locator('a[href*="/print/open-work"]').getAttribute('href');
+    for (const kind of ['vehicle', 'setup', 'tyres', 'session', 'checklist', 'worklist']) {
         await page.goto(urls[kind]);
         const document = page.locator('[data-print-document]');
         await expect(document).toHaveAttribute('data-print-document', kind);
@@ -31,6 +33,11 @@ test('A4 sheets open from their records and preserve complete multipage session 
         expect(await page.evaluate(() => window.document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
         const clipped = await document.locator('h1,h2,p,dd,td,th').evaluateAll(elements => elements.filter(element => element.scrollWidth > element.clientWidth + 1).map(element => element.textContent));
         expect(clipped).toEqual([]);
+        if (kind === 'worklist') {
+            expect(await document.locator('[data-work-row]').count()).toBeGreaterThanOrEqual(33);
+            await expect(document).toContainText('E2E Work item 32');
+            await expect(document).toContainText('E2E Worklist blocked service');
+        }
         if (kind === 'checklist') {
             await expect(document).toContainText('E2E Print Weekend');
             await expect(document).toContainText('E2E Print Driver');
@@ -53,7 +60,7 @@ test('A4 sheets open from their records and preserve complete multipage session 
         const pdf = await page.pdf({ path: testInfo.outputPath(`print-${kind}.pdf`), preferCSSPageSize: true });
         const boxes = [...pdf.toString('latin1').matchAll(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)];
         expect(boxes.length).toBeGreaterThan(0);
-        if (kind === 'session') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
+        if (kind === 'session' || kind === 'worklist') expect([...pdf.toString('latin1').matchAll(/\/Type\s*\/Page\b/g)].length).toBeGreaterThan(1);
         for (const box of boxes) {
             expect(Math.abs(Number(box[1]) - 595.276)).toBeLessThan(1);
             expect(Math.abs(Number(box[2]) - 841.89)).toBeLessThan(1);
