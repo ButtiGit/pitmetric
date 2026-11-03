@@ -33,7 +33,7 @@
     @endforeach
     @forelse ($records as $record)
         @php($metric = $record->schedule?->tracker?->metric)
-        <section data-maintenance-record="{{ $record->id }}">
+        <section class="print-maintenance-record" data-maintenance-record="{{ $record->id }}">
             <h2>#{{ $record->id }} · {{ $record->component?->name ?? __('maintenance-report.unknown') }} · {{ $record->performed_at->timezone('Europe/Rome')->format('d/m/Y H:i') }}</h2>
             <dl class="print-facts">
                 <div><dt>{{ __('maintenance-report.component') }}</dt><dd>{{ $record->component?->name ?? __('maintenance-report.unknown') }} · {{ $record->component?->serial_number ?? '—' }}</dd></div>
