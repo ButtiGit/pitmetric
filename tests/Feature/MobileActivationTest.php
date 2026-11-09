@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Services\StudioAppActivations;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 test('first opening is recorded once per installation and remains anonymous', function () {
     $installation = 'c61600c2-77e3-46b6-96bf-6dad7c903fd0';
@@ -44,6 +45,8 @@ test('public first opening endpoint rejects invalid devices and unknown platform
 });
 
 test('activation widget is visible only to editors', function () {
+    Http::preventStrayRequests();
+    Http::fake(['https://api.github.com/repos/ButtiGit/pitmetric/releases/tags/android-latest' => Http::response(['assets' => []])]);
     config()->set('pitmetric.update_editor_emails', ['editor@pitmetric.test']);
     $regular = User::factory()->create();
     $editor = User::factory()->create(['email' => 'editor@pitmetric.test']);
