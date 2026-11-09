@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\ButtiDeskBridgeController;
-use App\Http\Controllers\MobileAppController;
 use App\Http\Controllers\MobileActivationController;
+use App\Http\Controllers\MobileAppController;
 use App\Http\Controllers\MobileWeatherController;
 use App\Http\Middleware\AuthenticateButtiDeskBridge;
 use Illuminate\Support\Facades\Route;
