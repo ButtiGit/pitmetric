@@ -30,6 +30,7 @@ import {
   windDirection, type MobileWeatherSnapshot
 } from './mobile-weather';
 import { readWebWeather, saveWebWeather } from './web-weather-store';
+import { trackFirstOpen } from './app-activation';
 
 type Screen = 'home' | 'timer' | 'sessions' | 'garage' | 'more' | 'pit' | 'weekend' | 'maintenance' | 'setup' | 'gallery' | 'account' | 'weather';
 
@@ -231,6 +232,7 @@ async function onSessionStorageChange(event: StorageEvent): Promise<void> {
 
 function onBrowserConnectivityChange(event: Event): void {
   weatherOnline.value = event.type === 'online';
+  if (event.type === 'online') void trackFirstOpen('pwa');
 }
 
 const bestLap = computed(() => {
@@ -577,6 +579,8 @@ async function signOut() {
 }
 
 onMounted(async () => {
+  const platform = Capacitor.getPlatform();
+  void trackFirstOpen(platform === 'android' || platform === 'ios' ? platform : 'pwa');
   if (webPreview) {
     window.addEventListener('online', onBrowserConnectivityChange);
     window.addEventListener('offline', onBrowserConnectivityChange);
@@ -588,6 +592,7 @@ onMounted(async () => {
     weatherOnline.value = (await Network.getStatus().catch(() => ({ connected: true }))).connected;
     const listener = await Network.addListener('networkStatusChange', status => {
       weatherOnline.value = status.connected;
+      if (status.connected) void trackFirstOpen(platform === 'ios' ? 'ios' : 'android');
     }).catch(() => null);
     if (listener) stopWeatherNetwork = () => listener.remove();
   }

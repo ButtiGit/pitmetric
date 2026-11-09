@@ -50,6 +50,34 @@
                 </div>
             </section>
 
+            <section class="pm-panel relative overflow-hidden p-5 sm:p-6" aria-labelledby="site-activations-title">
+                <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-[#8BC7F6]/[.07] blur-[65px]"></div>
+                <div class="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="max-w-xl">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-[#8BC7F6]/25 bg-[#8BC7F6]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[#8BC7F6]">Nuovo · Attivazioni</span>
+                        <h2 id="site-activations-title" class="mt-3 text-xl font-black tracking-tight text-pm-text">App e PWA attive dopo l'aggiornamento</h2>
+                        <p class="mt-2 text-xs leading-6 text-pm-text-secondary">Il contatore cresce di <strong class="text-pm-text">+1 alla prima apertura</strong> della versione aggiornata su ciascuna installazione o browser. Le riaperture non vengono contate due volte e gli avvii offline vengono inviati alla riconnessione.</p>
+                        <p class="mt-1 text-[11px] leading-5 text-pm-muted">Totali cumulativi dal rilascio del 09/11/2026, non limitati agli ultimi 30 giorni. Sono aperture confermate, non utenti connessi in questo istante.</p>
+                    </div>
+                    <div class="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[440px]">
+                        @foreach ([
+                            ['label' => 'Totale', 'value' => $appActivations['total'] ?? null, 'accent' => 'text-[#8BC7F6]'],
+                            ['label' => 'PWA', 'value' => $appActivations['pwa'] ?? null, 'accent' => 'text-pm-text'],
+                            ['label' => 'Android', 'value' => $appActivations['android'] ?? null, 'accent' => 'text-pm-text'],
+                            ['label' => 'iOS', 'value' => $appActivations['ios'] ?? null, 'accent' => 'text-pm-text'],
+                        ] as $activation)
+                            <div class="rounded-xl border border-pm-border bg-pm-subtle px-3 py-4 text-center">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-pm-text-secondary">{{ $activation['label'] }}</p>
+                                <p class="mt-2 font-mono text-3xl font-black tabular-nums {{ $activation['accent'] }}">{{ $activation['value'] === null ? '—' : number_format($activation['value'], 0, ',', '.') }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @unless ($activationReady)
+                    <p class="relative mt-4 rounded-lg border border-pm-warning/25 bg-pm-warning-subtle px-3 py-2 text-xs text-pm-warning">Contatore in attesa: esegui le nuove migrazioni Laravel sul server.</p>
+                @endunless
+            </section>
+
             <div class="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
                 <section class="pm-panel min-w-0 p-5 sm:p-6" aria-labelledby="site-chart-title">
                     <div class="flex flex-wrap items-start justify-between gap-3">
@@ -199,7 +227,7 @@
                     <h2 class="text-lg font-black tracking-tight text-pm-text">Come leggere questi dati</h2>
                     <div class="mt-4 space-y-4 text-xs leading-6 text-pm-text-secondary">
                         <p><span class="font-bold text-pm-text">Visite:</span> sono visualizzazioni di pagine, non visitatori unici. I conteggi iniziano dall’attivazione del modulo; non recuperiamo lo storico passato.</p>
-                        <p><span class="font-bold text-pm-text">App:</span> i download APK forniti da GitHub sono riferiti alla release corrente, non ai soli ultimi 30 giorni. I clic APK indicano le visite al pulsante del sito; le aperture PWA non corrispondono alle installazioni effettive.</p>
+                        <p><span class="font-bold text-pm-text">App:</span> i download APK forniti da GitHub sono riferiti alla release corrente, non ai soli ultimi 30 giorni. I clic APK e PWA misurano i pulsanti del sito; il nuovo contatore delle prime aperture misura i browser/installazioni che eseguono la versione aggiornata, non download o utenti online. La cancellazione dei dati locali può far contare di nuovo un browser.</p>
                         <p><span class="font-bold text-pm-text">Diagnostica:</span> i controlli della dashboard verificano disponibilità e configurazione. I test funzionali e browser approfonditi vengono eseguiti nella pipeline CI, non sul database di produzione.</p>
                         <p><span class="font-bold text-pm-text">Errori:</span> le risposte HTTP 5xx sono aggregate per percorso; per analizzare stack trace e dettagli tecnici consulta i log di Coolify/Laravel.</p>
                     </div>

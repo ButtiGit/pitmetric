@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StudioSiteCheckRun;
 use App\Models\StudioSiteMetric;
+use App\Services\StudioAppActivations;
 use App\Services\StudioSiteDiagnostics;
 use App\Services\StudioSiteReleaseDownloads;
 use Illuminate\Contracts\View\View;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Schema;
 
 final class StudioSiteManagementController extends Controller
 {
-    public function index(StudioSiteReleaseDownloads $releases): View
+    public function index(StudioSiteReleaseDownloads $releases, StudioAppActivations $activations): View
     {
         if (! $this->isReady()) {
             return view('studio.site.setup');
@@ -51,8 +52,10 @@ final class StudioSiteManagementController extends Controller
 
         $runs = StudioSiteCheckRun::query()->with('author:id,name')->latest()->limit(8)->get();
         $githubApkDownloads = $releases->count();
+        $activationReady = Schema::hasTable('studio_app_activations');
+        $appActivations = $activationReady ? $activations->totals() : null;
 
-        return view('studio.site.index', compact('totals', 'trend', 'trendMaximum', 'topPages', 'httpErrors', 'runs', 'githubApkDownloads'));
+        return view('studio.site.index', compact('totals', 'trend', 'trendMaximum', 'topPages', 'httpErrors', 'runs', 'githubApkDownloads', 'activationReady', 'appActivations'));
     }
 
     public function run(Request $request, StudioSiteDiagnostics $diagnostics): RedirectResponse
