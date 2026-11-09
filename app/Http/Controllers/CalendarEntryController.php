@@ -36,9 +36,9 @@ final class CalendarEntryController extends Controller
             ->whereBetween('starts_at', [$gridStart->copy()->utc(), $gridEnd->copy()->endOfDay()->utc()])
             ->with('sourceMail:id,provider_id,direction,subject')
             ->orderBy('starts_at')->get();
-        $entriesByDay = $entries->groupBy(fn (CalendarEntry $entry): string => $entry->starts_at->copy()->timezone($timezone)->toDateString());
+        $entriesByDay = $entries->groupBy(fn (CalendarEntry $entry): string => Carbon::parse($entry->starts_at, 'UTC')->timezone($timezone)->toDateString());
         $agenda = $entries->filter(function (CalendarEntry $entry) use ($selectedDay, $month, $timezone): bool {
-            $date = $entry->starts_at->copy()->timezone($timezone);
+            $date = Carbon::parse($entry->starts_at, 'UTC')->timezone($timezone);
 
             return $selectedDay !== null ? $date->toDateString() === $selectedDay : $date->format('Y-m') === $month;
         });
