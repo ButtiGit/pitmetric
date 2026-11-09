@@ -51,8 +51,9 @@ final class StudioSiteDiagnostics
         ];
     }
 
-    /** @param list<string> $tables
-     *  @return array{key: string, name: string, status: string, detail: string}
+    /**
+     * @param  list<string>  $tables
+     * @return array{key: string, name: string, status: string, detail: string}
      */
     private function tableCheck(string $key, string $name, array $tables): array
     {
@@ -65,8 +66,9 @@ final class StudioSiteDiagnostics
         });
     }
 
-    /** @param list<string> $routes
-     *  @return array{key: string, name: string, status: string, detail: string}
+    /**
+     * @param  list<string>  $routes
+     * @return array{key: string, name: string, status: string, detail: string}
      */
     private function routeCheck(string $key, string $name, array $routes): array
     {
@@ -79,8 +81,9 @@ final class StudioSiteDiagnostics
         });
     }
 
-    /** @param callable(): array{string, string} $resolve
-     *  @return array{key: string, name: string, status: string, detail: string}
+    /**
+     * @param  callable(): array{string, string}  $resolve
+     * @return array{key: string, name: string, status: string, detail: string}
      */
     private function probe(string $key, string $name, callable $resolve): array
     {
