@@ -103,12 +103,12 @@ final class StudioSiteDiagnostics
             ['branch' => 'main', 'per_page' => 1],
         );
 
-        if (! $response->successful()) {
+        if ($response->successful() === false) {
             return ['warning', 'GitHub Actions non risponde: consulta la CI direttamente su GitHub.'];
         }
 
         $run = $response->json('workflow_runs.0');
-        if (! is_array($run)) {
+        if (is_array($run) === false) {
             return ['warning', 'Nessuna esecuzione della CI disponibile.'];
         }
 
