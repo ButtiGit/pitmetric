@@ -80,6 +80,7 @@
             <section>
                 <p class="pm-mobile-more-heading">{{ $it ? 'Gestione' : 'Management' }}</p>
                 <div class="pm-mobile-more-grid">
+                    <a href="{{ route('calendar.index') }}" wire:navigate><flux:icon.calendar-days class="size-5" /><span>{{ $it ? 'Calendario' : 'Calendar' }}</span></a>
                     <a href="{{ route('team.index') }}" wire:navigate><flux:icon.users class="size-5" /><span>Team</span></a>
                     @can('team-manage')
                         <a href="{{ route('control-center.index') }}" wire:navigate><flux:icon.shield-check class="size-5" /><span>Control Center</span></a>

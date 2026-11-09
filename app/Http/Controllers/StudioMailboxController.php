@@ -25,19 +25,32 @@ final class StudioMailboxController extends Controller
                 $request->session()->put('studio_mail_cursors.'.$direction, $cursor);
             }
         }
+        $filters = $request->validate([
+            'filter' => ['sometimes', 'in:all,unread,sent'],
+            'q' => ['sometimes', 'nullable', 'string', 'max:120'],
+        ]);
+        $filter = $filters['filter'] ?? 'all';
+        $search = trim($filters['q'] ?? '');
         $unread = StudioMailMessage::query()->where('direction', 'received')
             ->whereDoesntHave('readers', fn (Builder $query) => $query->whereKey($user->id));
         $threads = StudioMailMessage::query()->select('thread_key')->selectRaw('MAX(sent_at) as last_at')
-            ->when($request->query('filter') === 'unread', fn (Builder $query) => $query->whereIn('thread_key', (clone $unread)->select('thread_key')))
+            ->when($filter === 'unread', fn (Builder $query) => $query->whereIn('thread_key', (clone $unread)->select('thread_key')))
+            ->when($filter === 'sent', fn (Builder $query) => $query->whereIn('thread_key', StudioMailMessage::query()->select('thread_key')->where('direction', 'sent')))
+            ->when($search !== '', fn (Builder $query) => $query->whereIn('thread_key', StudioMailMessage::query()
+                ->select('thread_key')->where(function (Builder $matches) use ($search): void {
+                    $matches->where('subject', 'like', '%'.$search.'%')
+                        ->orWhere('sender', 'like', '%'.$search.'%')
+                        ->orWhere('recipients', 'like', '%'.$search.'%');
+                })))
             ->groupBy('thread_key')->orderByDesc('last_at')->orderBy('thread_key')->paginate(30)->withQueryString();
         $messages = StudioMailMessage::query()->whereIn('thread_key', $threads->pluck('thread_key'))
-            ->select(['id', 'provider_id', 'direction', 'thread_key', 'sender', 'recipients', 'subject', 'sent_at'])
+            ->select(['id', 'provider_id', 'direction', 'thread_key', 'sender', 'recipients', 'subject', 'body', 'sent_at'])
             ->withExists(['readers as is_read' => fn (Builder $query) => $query->whereKey($user->id)])
             ->orderBy('sent_at')->orderBy('id')->get()->groupBy('thread_key');
 
         return view('studio.mail.index', [
             'threads' => $threads, 'threadMessages' => $messages,
-            'unreadCount' => $unread->count(), 'filter' => $request->query('filter', 'all'),
+            'unreadCount' => $unread->count(), 'filter' => $filter, 'search' => $search,
             'cursors' => $request->session()->get('studio_mail_cursors', []),
             'mailboxError' => implode(' ', $sync['errors']),
         ]);

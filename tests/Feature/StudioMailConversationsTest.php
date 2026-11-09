@@ -78,6 +78,18 @@ test('manual read and unread actions survive refreshing and validate their targe
     $this->patch(route('studio.mail.read', 'incoming_1'), ['read' => 'arbitrary'])->assertSessionHasErrors('read');
 });
 
+test('inbox search matches a conversation by sender or subject and keeps unread filtering', function () {
+    $editor = User::factory()->create(['email' => 'editor@pitmetric.test']);
+    studioMessage('email_search_1', subject: 'Prova domenica', contact: 'team@example.com');
+    studioMessage('email_search_2', subject: 'Contratto gomme', contact: 'supplier@example.com');
+
+    $this->actingAs($editor)->get(route('studio.mail.index', ['q' => 'supplier']))
+        ->assertOk()->assertSee('Contratto gomme')->assertDontSee('Prova domenica');
+    $this->get(route('studio.mail.index', ['q' => 'domenica', 'filter' => 'unread']))
+        ->assertOk()->assertSee('Prova domenica')->assertDontSee('Contratto gomme');
+    $this->get(route('studio.mail.index', ['q' => str_repeat('a', 121)]))->assertSessionHasErrors('q');
+});
+
 test('guests and ordinary users cannot read conversations or change read states', function () {
     $message = studioMessage('incoming_1');
     $this->get(route('studio.mail.show', 'incoming_1'))->assertRedirect(route('login'));
