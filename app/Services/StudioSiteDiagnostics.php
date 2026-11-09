@@ -57,7 +57,7 @@ final class StudioSiteDiagnostics
     private function tableCheck(string $key, string $name, array $tables): array
     {
         return $this->probe($key, $name, function () use ($tables): array {
-            $missing = array_values(array_filter($tables, fn (string $table): bool => ! Schema::hasTable($table)));
+            $missing = array_values(array_filter($tables, fn (string $table): bool => Schema::hasTable($table) === false));
 
             return $missing === []
                 ? ['ok', count($tables).' tabelle presenti.']
@@ -71,7 +71,7 @@ final class StudioSiteDiagnostics
     private function routeCheck(string $key, string $name, array $routes): array
     {
         return $this->probe($key, $name, function () use ($routes): array {
-            $missing = array_values(array_filter($routes, fn (string $route): bool => ! Route::has($route)));
+            $missing = array_values(array_filter($routes, fn (string $route): bool => Route::has($route) === false));
 
             return $missing === []
                 ? ['ok', count($routes).' percorsi applicativi registrati.']

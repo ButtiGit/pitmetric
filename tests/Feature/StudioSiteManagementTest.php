@@ -62,8 +62,13 @@ test('download buttons redirect correctly and track clicks not actual installati
     $metric = StudioSiteMetric::query()->where('kind', 'apk_download')->sole();
     expect($metric->subject)->toBe('android')->and($metric->value)->toBe(1);
 
-    $this->get(route('app.open.pwa'))->assertNotFound();
-    expect(StudioSiteMetric::query()->where('kind', 'pwa_open')->count())->toBe(0);
+    if (is_file(public_path('mobile/index.html')) && is_file(public_path('mobile/sw.js'))) {
+        $this->get(route('app.open.pwa'))->assertRedirect('/mobile/');
+        expect(StudioSiteMetric::query()->where('kind', 'pwa_open')->sole()->value)->toBe(1);
+    } else {
+        $this->get(route('app.open.pwa'))->assertNotFound();
+        expect(StudioSiteMetric::query()->where('kind', 'pwa_open')->count())->toBe(0);
+    }
 });
 
 test('server errors are aggregated by route without exposing technical details', function () {
