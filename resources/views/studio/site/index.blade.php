@@ -19,10 +19,10 @@
                         <p class="mt-3 max-w-2xl text-sm leading-6 text-pm-text-secondary">Traffico, interesse verso le app e stato tecnico di PitMetric in un solo posto. Le statistiche si aggiornano dalle nuove visite, senza salvare IP o dati personali dei visitatori.</p>
                     </div>
                     <div class="flex shrink-0 flex-col gap-2 sm:flex-row md:flex-col lg:flex-row">
-                        <a href="{{ route('localized.home', ['locale' => app()->getLocale()]) }}" target="_blank" rel="noopener noreferrer" class="pm-ghost-button text-center">Visita il sito ↗</a>
+                        <a href="{{ route('localized.home', ['locale' => app()->getLocale()]) }}" target="_blank" rel="noopener noreferrer" class="pm-ghost-button inline-flex items-center justify-center gap-2 text-center">Visita il sito <flux:icon.arrow-top-right-on-square class="size-4" /></a>
                         <form method="POST" action="{{ route('studio.site.checks') }}">
                             @csrf
-                            <button type="submit" class="pm-race-button w-full justify-center">Esegui verifiche <span aria-hidden="true">↗</span></button>
+                            <button type="submit" class="pm-race-button w-full justify-center">Esegui verifiche</button>
                         </form>
                     </div>
                 </div>
@@ -133,7 +133,7 @@
                     <div class="mt-5 grid gap-2 md:grid-cols-2">
                         @foreach ($lastRun->results as $check)
                             <article class="flex min-w-0 items-start gap-3 rounded-xl border border-pm-border bg-pm-subtle p-3.5">
-                                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-black {{ $check['status'] === 'ok' ? 'bg-pm-success-subtle text-pm-success' : ($check['status'] === 'warning' ? 'bg-pm-warning-subtle text-pm-warning' : 'bg-[#E10600]/15 text-[#FA7773]') }}" aria-label="{{ $check['status'] === 'ok' ? 'Riuscito' : ($check['status'] === 'warning' ? 'Avviso' : 'Errore') }}">{{ $check['status'] === 'ok' ? '✓' : ($check['status'] === 'warning' ? '!' : '×') }}</span>
+                                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-black {{ $check['status'] === 'ok' ? 'bg-pm-success-subtle text-pm-success' : ($check['status'] === 'warning' ? 'bg-pm-warning-subtle text-pm-warning' : 'bg-[#E10600]/15 text-[#FA7773]') }}" aria-label="{{ $check['status'] === 'ok' ? 'Riuscito' : ($check['status'] === 'warning' ? 'Avviso' : 'Errore') }}">{{ $check['status'] === 'ok' ? 'OK' : ($check['status'] === 'warning' ? '!' : 'X') }}</span>
                                 <div class="min-w-0">
                                     <h3 class="text-xs font-bold text-pm-text">{{ $check['name'] }}</h3>
                                     <p class="mt-1 text-[11px] leading-5 text-pm-muted">{{ $check['detail'] }}</p>
@@ -181,7 +181,7 @@
                             <details class="group rounded-xl border border-pm-border bg-pm-subtle">
                                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
                                     <span class="min-w-0"><span class="block text-xs font-bold text-pm-text">{{ $run->created_at->timezone('Europe/Rome')->format('d/m/Y · H:i:s') }}</span><span class="mt-0.5 block truncate text-[11px] text-pm-muted">{{ $run->author?->name ?? 'Sistema' }}</span></span>
-                                    <span class="flex shrink-0 items-center gap-2"><span class="font-mono text-[10px] text-pm-text-secondary">{{ $run->passed }} OK · {{ $run->warnings }} avvisi · {{ $run->failed }} errori</span><span class="text-pm-muted transition-transform group-open:rotate-180">⌄</span></span>
+                                    <span class="flex shrink-0 items-center gap-2"><span class="font-mono text-[10px] text-pm-text-secondary">{{ $run->passed }} OK · {{ $run->warnings }} avvisi · {{ $run->failed }} errori</span><flux:icon.chevron-down class="size-4 text-pm-muted transition-transform group-open:rotate-180" /></span>
                                 </summary>
                                 <div class="space-y-2 border-t border-pm-border px-4 py-3">
                                     @foreach ($run->results as $check)
@@ -203,7 +203,7 @@
                         <p><span class="font-bold text-pm-text">Diagnostica:</span> i controlli della dashboard verificano disponibilità e configurazione. I test funzionali e browser approfonditi vengono eseguiti nella pipeline CI, non sul database di produzione.</p>
                         <p><span class="font-bold text-pm-text">Errori:</span> le risposte HTTP 5xx sono aggregate per percorso; per analizzare stack trace e dettagli tecnici consulta i log di Coolify/Laravel.</p>
                     </div>
-                    <a href="https://github.com/ButtiGit/pitmetric/actions/workflows/tests.yml" target="_blank" rel="noopener noreferrer" class="pm-ghost-button mt-6 inline-flex max-w-full items-center justify-center text-center">Apri i test completi su GitHub ↗</a>
+                    <a href="https://github.com/ButtiGit/pitmetric/actions/workflows/tests.yml" target="_blank" rel="noopener noreferrer" class="pm-ghost-button mt-6 inline-flex max-w-full items-center justify-center gap-2 text-center">Apri i test completi su GitHub <flux:icon.arrow-top-right-on-square class="size-4" /></a>
                 </aside>
             </section>
         </div>
