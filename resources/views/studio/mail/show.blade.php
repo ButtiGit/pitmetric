@@ -1,5 +1,5 @@
 <x-layouts::app title="Conversazione | PitMetric Mail">
-    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 pb-32 sm:px-6 lg:px-8 lg:py-7 lg:pb-7">
         <div class="mx-auto w-full max-w-[1120px] space-y-5">
             @if (session('status'))<div role="status" class="rounded-xl border border-pm-success/25 bg-pm-success-subtle px-4 py-3 text-sm font-semibold text-pm-success">{{ session('status') }}</div>@endif
 

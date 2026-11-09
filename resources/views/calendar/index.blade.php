@@ -6,7 +6,7 @@
             : now($timezone)->addHour()->startOfHour();
         $defaultEnd = $defaultStart->copy()->addHour();
     @endphp
-    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7" data-pm-workspace>
+    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 pb-32 sm:px-6 lg:px-8 lg:py-7 lg:pb-7" data-pm-workspace>
         <div class="mx-auto w-full max-w-[1420px] space-y-5">
             <section class="pm-panel flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
                 <div class="min-w-0">

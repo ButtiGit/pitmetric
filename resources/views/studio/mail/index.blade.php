@@ -1,5 +1,5 @@
 <x-layouts::app title="Inbox | PitMetric">
-    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+    <div class="pitmetric-app min-h-full w-full bg-pm-page px-4 py-5 pb-32 sm:px-6 lg:px-8 lg:py-7 lg:pb-7">
         <div class="mx-auto w-full max-w-[1380px] space-y-5">
             <section class="pm-panel p-5 sm:p-7">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
