@@ -9,6 +9,7 @@ use App\Services\StudioSiteReleaseDownloads;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 final class StudioSiteManagementController extends Controller
@@ -31,7 +32,7 @@ final class StudioSiteManagementController extends Controller
             'http_error' => (int) $metrics->where('kind', 'http_error')->sum('value'),
         ];
 
-        $dailyPageViews = $metrics->where('kind', 'page_view')->groupBy(fn (StudioSiteMetric $metric): string => $metric->day->toDateString())
+        $dailyPageViews = $metrics->where('kind', 'page_view')->groupBy(fn (StudioSiteMetric $metric): string => Carbon::parse($metric->day)->toDateString())
             ->map(fn ($items): int => (int) $items->sum('value'));
         $trend = collect(range(13, 0))->map(function (int $daysAgo) use ($dailyPageViews): array {
             $day = now('Europe/Rome')->subDays($daysAgo);
