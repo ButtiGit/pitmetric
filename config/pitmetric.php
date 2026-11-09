@@ -8,4 +8,5 @@ $editorEmails = array_values(array_filter(array_map(
 return [
     'update_editor_emails' => $editorEmails,
     'calendar_timezone' => env('PITMETRIC_CALENDAR_TIMEZONE', 'Europe/Rome'),
+    'android_apk_url' => 'https://github.com/ButtiGit/pitmetric/releases/download/android-latest/PitMetric.apk',
 ];

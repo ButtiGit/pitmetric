@@ -109,6 +109,7 @@
                             </summary>
                             <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
                                 <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
+                                <flux:sidebar.item icon="chart-bar-square" :href="route('studio.site.index')" :current="request()->routeIs('studio.site.*')">{{ app()->getLocale() === 'it' ? 'Gestione sito' : 'Site management' }}</flux:sidebar.item>
                                 <flux:sidebar.item icon="inbox" :href="route('studio.mail.index')" :current="request()->routeIs('studio.mail.*')">Inbox</flux:sidebar.item>
                                 <flux:sidebar.item icon="bolt" :href="route('studio.f1-live.index')" :current="request()->routeIs('studio.f1-live.*')" wire:navigate>F1 Live</flux:sidebar.item>
                                 <flux:sidebar.item icon="paper-airplane" :href="route('studio.outreach.index')" :current="request()->routeIs('studio.outreach.*')">Outreach</flux:sidebar.item>

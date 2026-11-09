@@ -21,7 +21,9 @@ use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
 use App\Http\Controllers\SeasonContractController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\SiteAppDownloadController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\StudioSiteManagementController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamTaskController;
 use App\Http\Controllers\TechnicalSetupController;
@@ -65,6 +67,8 @@ Route::get('/updates/{update:slug}', fn (Update $update) => redirect()->route('l
 ], 301))->name('updates.show');
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/app/download/android', [SiteAppDownloadController::class, 'android'])->middleware('throttle:60,1')->name('app.download.android');
+Route::get('/app/open/pwa', [SiteAppDownloadController::class, 'pwa'])->middleware('throttle:60,1')->name('app.open.pwa');
 Route::get('/game_dev', fn () => response()
     ->view('game-dev')
     ->header('X-Robots-Tag', 'noindex, nofollow'))
@@ -301,6 +305,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('studio.')
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
+            Route::get('site', [StudioSiteManagementController::class, 'index'])->name('site.index');
+            Route::post('site/checks', [StudioSiteManagementController::class, 'run'])->middleware('throttle:3,1')->name('site.checks');
             Route::get('f1-live', [F1LiveController::class, 'index'])->name('f1-live.index');
             Route::get('f1-live/feed', [F1LiveController::class, 'live'])->middleware('throttle:30,1,f1-feed')->name('f1-live.feed');
             Route::get('f1-live/events', [F1LiveController::class, 'events'])->middleware('throttle:12,1,f1-events')->name('f1-live.events');

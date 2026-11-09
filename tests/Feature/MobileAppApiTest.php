@@ -223,8 +223,10 @@ test('mobile domain sync is idempotent and writes real garage records', function
 test('public app page exposes the stable android apk download', function () {
     $this->get(route('localized.app', ['locale' => 'en']))
         ->assertOk()
-        ->assertSee('PitMetric.apk')
-        ->assertSee('android-latest');
+        ->assertSee(route('app.download.android'));
+
+    $this->get(route('app.download.android'))
+        ->assertRedirect('https://github.com/ButtiGit/pitmetric/releases/download/android-latest/PitMetric.apk');
 });
 
 test('PWA login and authenticated scope consistently select the requested active workspace', function () {

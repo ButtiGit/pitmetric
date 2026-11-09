@@ -2,7 +2,7 @@
     :title="app()->getLocale() === 'it' ? 'App motorsport Android e PWA per piloti e team' : 'Android and PWA motorsport app for drivers and teams'"
     :description="app()->getLocale() === 'it' ? 'Scarica PitMetric per Android o aggiungi la PWA beta alla schermata Home di iPhone e Android per registrare tempi, sessioni e note in pista.' : 'Download PitMetric for Android or add the beta PWA to the Home Screen on iPhone and Android for trackside laps, sessions and notes.'"
 >
-    @php($apkUrl = 'https://github.com/ButtiGit/pitmetric/releases/download/android-latest/PitMetric.apk')
+    @php($apkUrl = route('app.download.android'))
     @php($pwaReady = is_file(public_path('mobile/index.html')) && is_file(public_path('mobile/sw.js')))
 
     <section class="relative isolate overflow-hidden border-b border-white/10 bg-[#080A0D]">
@@ -28,7 +28,7 @@
                         {{ app()->getLocale() === 'it' ? 'Scarica APK Android' : 'Download Android APK' }}
                     </a>
                     @if ($pwaReady)
-                        <a href="{{ url('/mobile/') }}" data-pm-pwa-download class="inline-flex min-h-12 items-center justify-center border border-white/35 bg-white/10 px-6 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-white transition hover:border-white hover:bg-white/20">
+                        <a href="{{ route('app.open.pwa') }}" data-pm-pwa-download class="inline-flex min-h-12 items-center justify-center border border-white/35 bg-white/10 px-6 py-3 text-center text-sm font-black uppercase tracking-[0.08em] text-white transition hover:border-white hover:bg-white/20">
                             {{ app()->getLocale() === 'it' ? 'Installa PWA · iPhone / Android' : 'Install PWA · iPhone / Android' }}
                         </a>
                     @else
