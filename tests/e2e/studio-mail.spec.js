@@ -15,13 +15,15 @@ test('mail conversations show our replies and persist read and unread states', a
     await expect(thread).toContainText('3 messaggi · 1 inviato');
     if (device === 'mobile') await page.setViewportSize({ width: 320, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
-    await thread.getByRole('link').click();
+    await thread.getByRole('link', { name: /Apri conversazione:/ }).click();
     const messages = page.locator('[data-mail-message]');
     await expect(messages).toHaveCount(3);
     await expect(messages.nth(0)).toContainText('Richiesta del team');
     await expect(messages.nth(1)).toContainText('La mia risposta');
     await expect(messages.nth(1)).toContainText('Tu · Inviata');
     await expect(messages.nth(2)).toContainText('Nuovo messaggio del team');
+    await expect(messages.nth(0).getByRole('link', { name: /Crea evento dalla mail:/ })).toBeVisible();
+    await expect(messages.nth(1).getByRole('link', { name: /Crea evento dalla mail:/ })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
     await page.screenshot({ path: testInfo.outputPath('studio-conversation.png'), fullPage: true });
     await page.getByRole('link', { name: "Indietro all'Inbox" }).click();

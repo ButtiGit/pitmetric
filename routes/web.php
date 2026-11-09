@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ButtiDeskBridgeController;
+use App\Http\Controllers\CalendarEntryController;
 use App\Http\Controllers\ChampionshipController;
 use App\Http\Controllers\ChampionshipImportController;
 use App\Http\Controllers\CircuitController;
@@ -117,6 +118,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/apps/buttidesk/return', fn () => redirect()->route('dashboard'))->name('buttidesk.return');
 
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('/calendar', [CalendarEntryController::class, 'index'])->name('calendar.index');
+    Route::post('/calendar', [CalendarEntryController::class, 'store'])->name('calendar.store');
+    Route::put('/calendar/{calendarEntry}', [CalendarEntryController::class, 'update'])->name('calendar.update');
+    Route::delete('/calendar/{calendarEntry}', [CalendarEntryController::class, 'destroy'])->name('calendar.destroy');
 
     Route::get('/events', [RaceEventController::class, 'index'])->name('events.index');
     Route::get('/garage', [VehicleController::class, 'index'])->name('garage.index');
