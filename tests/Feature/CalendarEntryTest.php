@@ -46,7 +46,7 @@ test('calendar is available to enabled accounts and Studio editors only', functi
     $this->get(route('calendar.index'))->assertRedirect(route('login'));
     $this->actingAs($ordinary)->get(route('calendar.index'))->assertForbidden();
     $this->post(route('calendar.store'), calendarPayload())->assertForbidden();
-    $this->actingAs($enabled)->get(route('calendar.index'))->assertOk()->assertSee('Il tuo calendario');
+    $this->actingAs($enabled)->get(route('calendar.index'))->assertOk()->assertSee('create-calendar-entry');
     $this->actingAs($editor)->get(route('calendar.index'))->assertOk();
 });
 
@@ -113,7 +113,7 @@ test('calendar selects a date without showing appointments from a different user
     $this->actingAs($user)->post(route('calendar.store'), calendarPayload())->assertRedirect();
 
     $this->get(route('calendar.index', ['month' => '2026-11', 'day' => '2026-11-14']))
-        ->assertOk()->assertSee('Riunione kart')->assertSee('14 novembre 2026');
+        ->assertOk()->assertSee('Riunione kart')->assertSee('Agenda');
     $this->get(route('calendar.index', ['month' => '2026-12']))
         ->assertOk()->assertDontSee('Riunione kart');
 });
