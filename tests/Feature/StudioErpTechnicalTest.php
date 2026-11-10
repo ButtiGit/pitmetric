@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Workspace;
 use App\Services\StudioErpTechnical;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -50,18 +51,18 @@ test('ERP overview shows aggregate counts without changing operational records',
 
     $this->post(route('studio.erp.checks'))->assertRedirect(route('studio.erp.index'));
 
-    expect(Vehicle::query()->find($vehicle->id))->not->toBeNull()
+    expect(DB::table('vehicles')->where('id', $vehicle->id)->exists())->toBeTrue()
         ->and(Workspace::query()->count())->toBe(1)
         ->and(DB::table('technical_setups')->count())->toBe(0)
         ->and(StudioErpCheckRun::query()->count())->toBe(1);
 });
 
-test('ERP integrity diagnostics detect cross-workspace references without repairing them', function () {
+test('database prevents cross-workspace ERP references and integrity checks remain read only', function () {
     $first = Workspace::factory()->create();
     $second = Workspace::factory()->create();
     $vehicle = Vehicle::factory()->for($first)->create();
 
-    DB::table('technical_setups')->insert([
+    expect(fn () => DB::table('technical_setups')->insert([
         'workspace_id' => $second->id,
         'vehicle_id' => $vehicle->id,
         'name' => 'Inconsistent setup',
@@ -69,12 +70,12 @@ test('ERP integrity diagnostics detect cross-workspace references without repair
         'status' => 'active',
         'created_at' => now(),
         'updated_at' => now(),
-    ]);
+    ]))->toThrow(QueryException::class);
 
     $results = collect(app(StudioErpTechnical::class)->run());
     $integrity = $results->firstWhere('key', 'tenant_integrity');
 
-    expect($integrity['status'])->toBe('error')
-        ->and($integrity['detail'])->toContain('1 riferimenti')
-        ->and(DB::table('technical_setups')->where('workspace_id', $second->id)->count())->toBe(1);
+    expect($integrity['status'])->toBe('ok')
+        ->and($integrity['detail'])->toContain('Nessun riferimento')
+        ->and(DB::table('technical_setups')->where('workspace_id', $second->id)->count())->toBe(0);
 });
