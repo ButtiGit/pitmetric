@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -112,7 +113,20 @@ class UpdateStudioController extends Controller
             'media_type' => ['nullable', 'in:image,video'],
             'remove_media' => ['nullable', 'boolean'],
             'status' => ['required', 'in:draft,published'],
+            'published_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
         ]);
+
+        $publicationAt = null;
+
+        if (filled($data['published_at'] ?? null)) {
+            $publicationAt = Carbon::createFromFormat('!Y-m-d\TH:i', (string) $data['published_at'], 'Europe/Rome');
+
+            if ($publicationAt->isFuture()) {
+                throw ValidationException::withMessages(['published_at' => __('pitmetric.studio.publication_date_future')]);
+            }
+
+            $publicationAt = $publicationAt->utc();
+        }
 
         $uploaded = $request->file('media');
         $externalMedia = trim((string) ($data['media_url'] ?? ''));
@@ -187,7 +201,7 @@ class UpdateStudioController extends Controller
             'media_alt' => $title,
             'media_alt_it' => $titleIt,
             'status' => $data['status'],
-            'published_at' => $data['status'] === 'published' ? ($update->published_at ?? now()) : null,
+            'published_at' => $data['status'] === 'published' ? ($publicationAt ?? $update->published_at ?? now()) : null,
         ]);
 
         if ($removeMedia) {

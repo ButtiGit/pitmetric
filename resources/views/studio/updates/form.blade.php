@@ -254,6 +254,11 @@
                         <p class="text-xs font-semibold uppercase tracking-[0.14em] text-pm-muted">{{ __('pitmetric.studio.publish') }}</p>
                         <h2 class="mt-3 text-lg font-black text-pm-text">{{ __('pitmetric.studio.ready_question') }}</h2>
                         <p class="mt-2 text-sm leading-6 text-pm-text-secondary">{{ __('pitmetric.studio.publish_help_simple') }}</p>
+                        <label class="mt-5 grid gap-2">
+                            <span class="pm-label">{{ __('pitmetric.studio.publication_date') }}</span>
+                            <input type="datetime-local" name="published_at" value="{{ old('published_at', $update->published_at?->copy()->timezone('Europe/Rome')->format('Y-m-d\TH:i')) }}" step="60" class="pm-input min-w-0" aria-describedby="publication-date-help" @error('published_at') aria-invalid="true" @enderror>
+                        </label>
+                        <p id="publication-date-help" class="mt-2 text-xs leading-5 text-pm-muted">{{ __('pitmetric.studio.publication_date_help') }}</p>
                         <div class="mt-6 grid gap-3">
                             <button type="submit" name="status" value="published" class="pm-race-button w-full justify-center">{{ __('pitmetric.studio.publish_now') }}</button>
                             <button type="submit" name="status" value="draft" class="pm-ghost-button w-full justify-center">{{ __('pitmetric.studio.save_draft') }}</button>
