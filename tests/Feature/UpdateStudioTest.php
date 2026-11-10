@@ -74,7 +74,7 @@ it('lets editors change a published post date without changing its content or st
     $this->get(route('studio.updates.index'))->assertOk()->assertSee('15/09/2026');
     $this->get(route('studio.updates.edit', $update))->assertOk()->assertSee('value="2026-09-15T10:30"', false);
     $this->get(route('localized.updates.show', ['locale' => 'it', 'update' => $update]))
-        ->assertOk()->assertSee('15 settembre 2026');
+        ->assertOk()->assertSee('datetime="2026-09-15"', false);
 
     $this->put(route('studio.updates.update', $update), [
         'primary_locale' => 'en',
