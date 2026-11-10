@@ -14,8 +14,8 @@
                 $activityOpen = request()->routeIs('tasks.*') || request()->routeIs('championships.*') || request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
                 $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
-                $managementOpen = request()->routeIs('calendar.*') || request()->routeIs('contracts.*') || request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*');
-                $studioOpen = request()->routeIs('studio.*');
+                $managementOpen = request()->routeIs('calendar.*') || request()->routeIs('contracts.*') || request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*') || request()->routeIs('studio.erp.*');
+                $studioOpen = request()->routeIs('studio.*') && ! request()->routeIs('studio.erp.*');
             @endphp
 
             <flux:sidebar.nav class="min-h-0 flex-1 overflow-y-auto pt-4 pe-1 [scrollbar-width:thin]">
@@ -97,6 +97,9 @@
                                     <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
                                 @endcan
                             @endif
+                            @can('manage-updates')
+                                <flux:sidebar.item icon="cpu-chip" :href="route('studio.erp.index')" :current="request()->routeIs('studio.erp.*')">{{ app()->getLocale() === 'it' ? 'Gestione tecnica ERP' : 'ERP technical management' }}</flux:sidebar.item>
+                            @endcan
                         </div>
                     </details>
 
