@@ -22,7 +22,7 @@ final class StudioErpTechnical
     /** @return list<array{key: string, name: string, description: string, status: string, count: ?int, missing: list<string>, route: string}> */
     public function modules(): array
     {
-        return array_map(function (array $module): array {
+        return array_values(array_map(function (array $module): array {
             try {
                 $missing = array_values(array_filter($module['tables'], fn (string $table): bool => ! Schema::hasTable($table)));
                 $routeReady = Route::has($module['route']);
@@ -49,7 +49,7 @@ final class StudioErpTechnical
                     'route' => $module['route'],
                 ];
             }
-        }, self::MODULES);
+        }, self::MODULES));
     }
 
     /** @return array{workspaces: ?int, vehicles: ?int, sessions: ?int, open_orders: ?int} */
