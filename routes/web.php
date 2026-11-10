@@ -23,6 +23,7 @@ use App\Http\Controllers\SeasonContractController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SiteAppDownloadController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\StudioErpController;
 use App\Http\Controllers\StudioSiteManagementController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamTaskController;
@@ -307,6 +308,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
             Route::get('site', [StudioSiteManagementController::class, 'index'])->name('site.index');
             Route::post('site/checks', [StudioSiteManagementController::class, 'run'])->middleware('throttle:3,1')->name('site.checks');
+            Route::get('erp', [StudioErpController::class, 'index'])->name('erp.index');
+            Route::post('erp/checks', [StudioErpController::class, 'run'])->middleware('throttle:3,1')->name('erp.checks');
             Route::get('f1-live', [F1LiveController::class, 'index'])->name('f1-live.index');
             Route::get('f1-live/feed', [F1LiveController::class, 'live'])->middleware('throttle:30,1,f1-feed')->name('f1-live.feed');
             Route::get('f1-live/events', [F1LiveController::class, 'events'])->middleware('throttle:12,1,f1-events')->name('f1-live.events');
