@@ -36,7 +36,11 @@
                         <div class="flex flex-1 flex-col p-6">
                             <div class="flex items-center justify-between gap-3">
                                 <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $update->status === 'published' ? 'bg-pm-success-subtle text-pm-success' : 'bg-pm-warning-subtle text-pm-warning' }}">{{ __('pitmetric.studio.'.$update->status) }}</span>
-                                <span class="text-xs text-pm-muted">{{ $update->updated_at?->format('d/m/Y') }}</span>
+                                @if ($update->status === 'published' && $update->published_at)
+                                    <time datetime="{{ $update->published_at->toDateString() }}" title="{{ __('pitmetric.studio.publication_date') }}" class="text-xs text-pm-muted">{{ $update->published_at->copy()->timezone('Europe/Rome')->format('d/m/Y') }}</time>
+                                @else
+                                    <time datetime="{{ $update->updated_at?->toDateString() }}" title="{{ __('pitmetric.studio.last_modified') }}" class="text-xs text-pm-muted">{{ $update->updated_at?->timezone('Europe/Rome')->format('d/m/Y') }}</time>
+                                @endif
                             </div>
                             <h2 class="mt-5 text-xl font-black tracking-[-0.025em] text-pm-text">{{ $update->titleForLocale() }}</h2>
                             <p class="mt-3 line-clamp-3 text-sm leading-6 text-pm-text-secondary">{{ $update->excerptForLocale() }}</p>

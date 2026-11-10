@@ -45,6 +45,65 @@ it('lets an editor publish a text only update', function () {
         ->assertSee('Abbiamo rifatto il flusso sessione.');
 });
 
+it('lets editors change a published post date without changing its content or status', function () {
+    $editor = User::factory()->create(['email' => 'editor@example.com']);
+    $update = Update::factory()->create([
+        'title' => 'Trackside improvements',
+        'content' => 'The new offline workflow is ready.',
+        'status' => 'published',
+        'published_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($editor)->get(route('studio.updates.edit', $update))
+        ->assertOk()
+        ->assertSee('name="published_at"', false);
+
+    $this->put(route('studio.updates.update', $update), [
+        'primary_locale' => 'en',
+        'primary_title' => 'Trackside improvements',
+        'primary_content' => 'The new offline workflow is ready.',
+        'status' => 'published',
+        'published_at' => '2026-09-15T10:30',
+    ])->assertRedirect(route('studio.updates.index'));
+
+    $update->refresh();
+    expect($update->published_at?->copy()->timezone('Europe/Rome')->format('Y-m-d H:i'))->toBe('2026-09-15 10:30')
+        ->and($update->status)->toBe('published')
+        ->and($update->content)->toBe('The new offline workflow is ready.');
+
+    $this->get(route('studio.updates.index'))->assertOk()->assertSee('15/09/2026');
+    $this->get(route('studio.updates.edit', $update))->assertOk()->assertSee('value="2026-09-15T10:30"', false);
+    $this->get(route('localized.updates.show', ['locale' => 'it', 'update' => $update]))
+        ->assertOk()->assertSee('15 settembre 2026');
+
+    $this->put(route('studio.updates.update', $update), [
+        'primary_locale' => 'en',
+        'primary_title' => 'Trackside improvements',
+        'primary_content' => 'The new offline workflow is ready.',
+        'status' => 'published',
+    ])->assertRedirect(route('studio.updates.index'));
+
+    expect($update->fresh()?->published_at?->copy()->timezone('Europe/Rome')->format('Y-m-d H:i'))->toBe('2026-09-15 10:30');
+});
+
+it('rejects invalid or future publication dates without changing the post', function () {
+    $editor = User::factory()->create(['email' => 'editor@example.com']);
+    $update = Update::factory()->create(['status' => 'published', 'published_at' => now()->subDay()]);
+    $originalDate = $update->published_at?->toDateTimeString();
+
+    foreach (['not-a-date', now('Europe/Rome')->addYear()->format('Y-m-d\TH:i')] as $invalidDate) {
+        $this->actingAs($editor)->put(route('studio.updates.update', $update), [
+            'primary_locale' => 'en',
+            'primary_title' => $update->title,
+            'primary_content' => $update->content,
+            'status' => 'published',
+            'published_at' => $invalidDate,
+        ])->assertSessionHasErrors('published_at');
+    }
+
+    expect($update->fresh()?->published_at?->toDateTimeString())->toBe($originalDate);
+});
+
 it('lets an editor publish a media only update from an external url', function () {
     $editor = User::factory()->create([
         'email' => 'editor@example.com',
