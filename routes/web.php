@@ -70,6 +70,10 @@ Route::get('/updates/{update:slug}', fn (Update $update) => redirect()->route('l
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/app/download/android', [SiteAppDownloadController::class, 'android'])->middleware('throttle:60,1')->name('app.download.android');
 Route::get('/app/open/pwa', [SiteAppDownloadController::class, 'pwa'])->middleware('throttle:60,1')->name('app.open.pwa');
+Route::get('/formula-lab', fn () => response()
+    ->view('formula-lab')
+    ->header('X-Robots-Tag', 'noindex, nofollow, noarchive'))
+    ->name('formula-lab');
 Route::get('/game_dev', fn () => response()
     ->view('game-dev')
     ->header('X-Robots-Tag', 'noindex, nofollow'))
