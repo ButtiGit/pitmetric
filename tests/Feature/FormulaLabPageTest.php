@@ -6,7 +6,7 @@ test('formula lab is available by direct URL without indexing', function () {
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
         ->assertSee('<meta name="robots" content="noindex, nofollow, noarchive">', false)
         ->assertSee('Formula Lab · PitMetric')
-        ->assertSee('/game_assets/formula-lab/app.mjs?v=1', false)
+        ->assertSee('/game_assets/formula-lab/app.js?v=1', false)
         ->assertSee('/game_assets/formula-lab/style.css?v=1', false);
 });
 

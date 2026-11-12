@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import * as G from '../../../public/game_assets/formula-lab/engine.mjs';
+import * as G from '../../../public/game_assets/formula-lab/engine.js';
 const career=()=>G.createCareer('aurora',12345);
 function complete(s, choice='adapt') {if(!s.race)G.startRace(s);let ticks=0;while(!s.race.finished&&ticks++<100){if(s.race.event)G.resolveEvent(s,choice);else G.advanceLap(s);}assert.ok(s.race.finished);return s;}
 const tune=(s,seat)=>{const targets=G.setupTargets(s,seat);for(const key of Object.keys(G.AXES))G.setSetup(s,seat,key,Math.round(targets[key]));};

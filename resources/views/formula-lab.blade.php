@@ -9,7 +9,7 @@
     <title>Formula Lab · PitMetric</title>
     <link rel="icon" href="/brand/pitmetric-app-icon-dark.svg">
     <link rel="stylesheet" href="/game_assets/formula-lab/style.css?v=1">
-    <script type="module" src="/game_assets/formula-lab/app.mjs?v=1"></script>
+    <script type="module" src="/game_assets/formula-lab/app.js?v=1"></script>
 </head>
 <body>
     <a class="skip" href="#content">Vai al gioco</a>

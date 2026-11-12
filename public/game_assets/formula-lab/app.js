@@ -1,4 +1,4 @@
-import * as G from './engine.mjs';
+import * as G from './engine.js';
 const $ = selector => document.querySelector(selector);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = n => new Intl.NumberFormat('it-IT', {maximumFractionDigits:0}).format(n);
