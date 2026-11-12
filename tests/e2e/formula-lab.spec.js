@@ -42,7 +42,7 @@ test('a race pauses for decisions and can be resumed through a complete GP', asy
     await expect(page.getByRole('heading', { name: 'Safety car in pista' })).toBeVisible();
     await page.getByRole('button', { name: 'Segui il consiglio' }).click();
     for (let i = 0; i < 13; i++) await page.getByRole('button', { name: 'Un giro', exact: true }).click();
-    await expect(page.getByText('GP completato', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'C’è sempre qualcosa da portare a casa.', exact: true })).toBeVisible();
     await expect(page.getByText(/Il prossimo passo è già finanziato/)).toBeVisible();
     await page.getByRole('button', { name: 'Al prossimo GP →' }).click();
     await expect(page.getByText(/STAGIONE 1 · GP 2 DI 6/i)).toBeVisible();
