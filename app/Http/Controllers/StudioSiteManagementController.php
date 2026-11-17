@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\StudioErpCheckRun;
 use App\Models\StudioSiteCheckRun;
 use App\Models\StudioSiteMetric;
 use App\Services\StudioAppActivations;
+use App\Services\StudioErpTechnical;
 use App\Services\StudioSiteDiagnostics;
 use App\Services\StudioSiteReleaseDownloads;
 use Illuminate\Contracts\View\View;
@@ -15,16 +17,14 @@ use Illuminate\Support\Facades\Schema;
 
 final class StudioSiteManagementController extends Controller
 {
-    public function index(StudioSiteReleaseDownloads $releases, StudioAppActivations $activations): View
+    public function index(StudioSiteReleaseDownloads $releases, StudioAppActivations $activations, StudioErpTechnical $erp): View
     {
-        if (! $this->isReady()) {
-            return view('studio.site.setup');
-        }
-
+        $siteReady = $this->isReady();
+        $erpReady = Schema::hasTable('studio_erp_check_runs');
         $since = now('Europe/Rome')->subDays(29)->startOfDay();
-        $metrics = StudioSiteMetric::query()
+        $metrics = $siteReady ? StudioSiteMetric::query()
             ->whereDate('day', '>=', $since->toDateString())
-            ->get(['day', 'kind', 'subject', 'value']);
+            ->get(['day', 'kind', 'subject', 'value']) : collect();
 
         $totals = [
             'page_view' => (int) $metrics->where('kind', 'page_view')->sum('value'),
@@ -50,12 +50,15 @@ final class StudioSiteManagementController extends Controller
             ->map(fn ($items, string $route): array => ['route' => $route, 'count' => (int) $items->sum('value')])
             ->sortByDesc('count')->take(6)->values();
 
-        $runs = StudioSiteCheckRun::query()->with('author:id,name')->latest()->limit(8)->get();
+        $runs = $siteReady ? StudioSiteCheckRun::query()->with('author:id,name')->latest()->limit(8)->get() : collect();
+        $erpRuns = $erpReady ? StudioErpCheckRun::query()->with('author:id,name')->latest()->limit(8)->get() : collect();
+        $erpTotals = $erp->totals();
+        $modules = $erp->modules();
         $githubApkDownloads = $releases->count();
         $activationReady = Schema::hasTable('studio_app_activations');
         $appActivations = $activationReady ? $activations->totals() : null;
 
-        return view('studio.site.index', compact('totals', 'trend', 'trendMaximum', 'topPages', 'httpErrors', 'runs', 'githubApkDownloads', 'activationReady', 'appActivations'));
+        return view('studio.site.index', compact('totals', 'trend', 'trendMaximum', 'topPages', 'httpErrors', 'runs', 'githubApkDownloads', 'activationReady', 'appActivations', 'siteReady', 'erpReady', 'erpRuns', 'erpTotals', 'modules'));
     }
 
     public function run(Request $request, StudioSiteDiagnostics $diagnostics): RedirectResponse

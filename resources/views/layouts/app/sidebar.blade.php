@@ -14,8 +14,8 @@
                 $activityOpen = request()->routeIs('tasks.*') || request()->routeIs('championships.*') || request()->routeIs('events.*') || request()->routeIs('sessions.*') || request()->routeIs('circuits.*');
                 $vehicleOpen = request()->routeIs('garage.*') || request()->routeIs('components.*') || request()->routeIs('component-installations.*') || request()->routeIs('configurations.*') || request()->routeIs('setups.*') || request()->routeIs('maintenance.*');
                 $performanceOpen = request()->routeIs('timing.*') || request()->routeIs('telemetry.*') || request()->routeIs('insights.*');
-                $managementOpen = request()->routeIs('calendar.*') || request()->routeIs('contracts.*') || request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*') || request()->routeIs('studio.erp.*');
-                $studioOpen = request()->routeIs('studio.*') && ! request()->routeIs('studio.erp.*');
+                $managementOpen = request()->routeIs('calendar.*') || request()->routeIs('contracts.*') || request()->routeIs('expenses.*') || request()->routeIs('team.*') || request()->routeIs('control-center.*') || request()->routeIs('buttidesk.*');
+                $studioOpen = request()->routeIs('studio.*');
             @endphp
 
             <flux:sidebar.nav class="min-h-0 flex-1 overflow-y-auto pt-4 pe-1 [scrollbar-width:thin]">
@@ -97,9 +97,6 @@
                                     <flux:sidebar.item icon="shield-check" :href="route('control-center.index')" :current="request()->routeIs('control-center.*')">Control Center</flux:sidebar.item>
                                 @endcan
                             @endif
-                            @can('manage-updates')
-                                <flux:sidebar.item icon="cpu-chip" :href="route('studio.erp.index')" :current="request()->routeIs('studio.erp.*')">{{ app()->getLocale() === 'it' ? 'Gestione tecnica ERP' : 'ERP technical management' }}</flux:sidebar.item>
-                            @endcan
                         </div>
                     </details>
 
@@ -112,7 +109,7 @@
                             </summary>
                             <div class="ml-3 mt-1 grid gap-1 border-l border-white/10 pl-2">
                                 <flux:sidebar.item icon="pencil-square" :href="route('studio.updates.index')" :current="request()->routeIs('studio.updates.*')">{{ __('pitmetric.studio.nav') }}</flux:sidebar.item>
-                                <flux:sidebar.item icon="chart-bar-square" :href="route('studio.site.index')" :current="request()->routeIs('studio.site.*')">{{ app()->getLocale() === 'it' ? 'Gestione sito' : 'Site management' }}</flux:sidebar.item>
+                                <flux:sidebar.item icon="chart-bar-square" :href="route('studio.site.index')" :current="request()->routeIs('studio.site.*', 'studio.erp.*')">{{ app()->getLocale() === 'it' ? 'Controlli e analisi' : 'Checks and analytics' }}</flux:sidebar.item>
                                 <flux:sidebar.item icon="inbox" :href="route('studio.mail.index')" :current="request()->routeIs('studio.mail.*')">Inbox</flux:sidebar.item>
                                 <flux:sidebar.item icon="bolt" :href="route('studio.f1-live.index')" :current="request()->routeIs('studio.f1-live.*')" wire:navigate>F1 Live</flux:sidebar.item>
                                 <flux:sidebar.item icon="paper-airplane" :href="route('studio.outreach.index')" :current="request()->routeIs('studio.outreach.*')">Outreach</flux:sidebar.item>

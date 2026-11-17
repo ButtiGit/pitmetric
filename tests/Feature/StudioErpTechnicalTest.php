@@ -7,9 +7,12 @@ use App\Models\Workspace;
 use App\Services\StudioErpTechnical;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     config()->set('pitmetric.update_editor_emails', ['editor@pitmetric.test']);
+    Http::preventStrayRequests();
+    Http::fake(['https://api.github.com/repos/ButtiGit/pitmetric/releases/tags/android-latest' => Http::response(['assets' => []])]);
 });
 
 test('ERP technical management and diagnostic actions are accessible only to Studio editors', function () {
@@ -24,18 +27,21 @@ test('ERP technical management and diagnostic actions are accessible only to Stu
     $this->get(route('dashboard'))->assertDontSee('Gestione tecnica ERP');
 
     $this->actingAs($editor)->get(route('studio.erp.index'))
+        ->assertRedirect(route('studio.site.index').'#gestionale');
+
+    $this->get(route('studio.site.index'))
         ->assertOk()
-        ->assertSee('Gestione tecnica ERP')
-        ->assertSee('Esegui diagnostica ERP')
+        ->assertSee('Controlli e analisi')
+        ->assertSee('Verifica gestionale')
         ->assertSee('Garage e componenti');
 
-    $this->post(route('studio.erp.checks'))->assertRedirect(route('studio.erp.index'));
+    $this->post(route('studio.erp.checks'))->assertRedirect(route('studio.site.index').'#controlli');
 
     $run = StudioErpCheckRun::query()->sole();
     expect($run->user_id)->toBe($editor->id)
         ->and(collect($run->results)->pluck('key'))->toContain('database', 'migrations', 'module_garage', 'tenant_integrity', 'queue');
 
-    $this->get(route('studio.erp.index'))->assertOk()->assertSee('Storico report ERP');
+    $this->get(route('studio.site.index'))->assertOk()->assertSee('Storico report ERP');
 });
 
 test('ERP overview shows aggregate counts without changing operational records', function () {
@@ -43,13 +49,13 @@ test('ERP overview shows aggregate counts without changing operational records',
     $workspace = Workspace::factory()->create();
     $vehicle = Vehicle::factory()->for($workspace)->create();
 
-    $this->actingAs($editor)->get(route('studio.erp.index'))
+    $this->actingAs($editor)->get(route('studio.site.index'))
         ->assertOk()->assertSee('Team / Workspace')->assertSee('Veicoli');
 
     expect(app(StudioErpTechnical::class)->totals())
         ->toMatchArray(['workspaces' => 1, 'vehicles' => 1, 'sessions' => 0, 'open_orders' => 0]);
 
-    $this->post(route('studio.erp.checks'))->assertRedirect(route('studio.erp.index'));
+    $this->post(route('studio.erp.checks'))->assertRedirect(route('studio.site.index').'#controlli');
 
     expect(DB::table('vehicles')->where('id', $vehicle->id)->exists())->toBeTrue()
         ->and(Workspace::query()->count())->toBe(1)

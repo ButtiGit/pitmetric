@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\RecordStudioSiteTraffic;
+use App\Models\StudioErpCheckRun;
 use App\Models\StudioSiteCheckRun;
 use App\Models\StudioSiteMetric;
 use App\Models\User;
@@ -8,6 +9,7 @@ use App\Services\StudioSiteTraffic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function () {
@@ -32,7 +34,7 @@ test('site management and manual diagnostic runs are restricted to Studio editor
     $this->actingAs($ordinary)->get(route('studio.site.index'))->assertForbidden();
     $this->post(route('studio.site.checks'))->assertForbidden();
 
-    $this->actingAs($editor)->get(route('studio.site.index'))->assertOk()->assertSee('Gestione sito');
+    $this->actingAs($editor)->get(route('studio.site.index'))->assertOk()->assertSee('Controlli e analisi');
     $this->post(route('studio.site.checks'))->assertRedirect(route('studio.site.index'));
 
     $run = StudioSiteCheckRun::query()->sole();
@@ -86,3 +88,47 @@ test('monitoring tracking keeps a broken metrics store from blocking ordinary re
 
     expect(StudioSiteMetric::query()->where('kind', 'apk_download')->sole()->value)->toBe(2);
 });
+
+test('editors have one monitoring entry with site and ERP data kept distinct', function () {
+    $editor = User::factory()->create(['email' => 'editor@pitmetric.test', 'database_access_enabled' => false]);
+    StudioSiteMetric::query()->create(['day' => today(), 'kind' => 'page_view', 'subject' => '/it', 'value' => 321]);
+    $siteRun = StudioSiteCheckRun::query()->create([
+        'user_id' => $editor->id, 'status' => 'warning', 'passed' => 2, 'warnings' => 1, 'failed' => 0,
+        'results' => [['key' => 'site', 'name' => 'Site-specific check', 'status' => 'warning', 'detail' => 'Site report detail']],
+    ]);
+    $erpRun = StudioErpCheckRun::query()->create([
+        'user_id' => $editor->id, 'status' => 'error', 'passed' => 4, 'warnings' => 0, 'failed' => 1,
+        'results' => [['key' => 'erp', 'name' => 'ERP-specific check', 'status' => 'error', 'detail' => 'ERP report detail']],
+    ]);
+
+    $this->actingAs($editor)->get(route('studio.site.index'))
+        ->assertOk()
+        ->assertSee('Sezioni controlli e analisi')
+        ->assertSee('Site report detail')->assertSee('ERP report detail')
+        ->assertSee('Verifica sito')->assertSee('Verifica gestionale')
+        ->assertSee('App e PWA')->assertSee('Utenti, attività e ultimi accessi')
+        ->assertSee('Garage e componenti')
+        ->assertDontSee('href="'.route('studio.erp.index').'"', false)
+        ->assertViewHas('totals', fn (array $totals): bool => $totals['page_view'] === 321)
+        ->assertViewHas('erpTotals', fn (array $totals): bool => $totals['vehicles'] === 0)
+        ->assertViewHas('runs', fn ($runs): bool => $runs->first()->id === $siteRun->id)
+        ->assertViewHas('erpRuns', fn ($runs): bool => $runs->first()->id === $erpRun->id);
+
+    expect(StudioSiteCheckRun::query()->count())->toBe(1)
+        ->and(StudioErpCheckRun::query()->count())->toBe(1);
+});
+
+test('missing monitoring tables do not hide the other areas or run unavailable checks', function (string $table, string $flag, string $action) {
+    $editor = User::factory()->create(['email' => 'editor@pitmetric.test', 'database_access_enabled' => false]);
+    Schema::drop($table);
+
+    $this->actingAs($editor)->get(route('studio.site.index'))
+        ->assertOk()->assertSee('Configurazione richiesta')->assertSee('Garage e componenti')
+        ->assertViewHas($flag, false);
+
+    $this->post(route($action))->assertRedirect(route('studio.site.index'));
+})->with([
+    ['studio_site_metrics', 'siteReady', 'studio.site.checks'],
+    ['studio_site_check_runs', 'siteReady', 'studio.site.checks'],
+    ['studio_erp_check_runs', 'erpReady', 'studio.erp.checks'],
+]);

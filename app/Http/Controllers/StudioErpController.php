@@ -4,30 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\StudioErpCheckRun;
 use App\Services\StudioErpTechnical;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 final class StudioErpController extends Controller
 {
-    public function index(StudioErpTechnical $erp): View
+    public function index(): RedirectResponse
     {
-        if (! Schema::hasTable('studio_erp_check_runs')) {
-            return view('studio.erp.setup');
-        }
-
-        return view('studio.erp.index', [
-            'totals' => $erp->totals(),
-            'modules' => $erp->modules(),
-            'runs' => StudioErpCheckRun::query()->with('author:id,name')->latest()->limit(8)->get(),
-        ]);
+        return redirect()->to(route('studio.site.index').'#gestionale');
     }
 
     public function run(Request $request, StudioErpTechnical $erp): RedirectResponse
     {
         if (! Schema::hasTable('studio_erp_check_runs')) {
-            return to_route('studio.erp.index')->with('status', 'Applica le migrazioni Laravel per attivare la diagnostica ERP.');
+            return to_route('studio.site.index')->with('status', 'Applica le migrazioni Laravel per attivare la diagnostica ERP.');
         }
 
         $results = $erp->run();
@@ -44,6 +35,6 @@ final class StudioErpController extends Controller
             'results' => $results,
         ]);
 
-        return to_route('studio.erp.index')->with('status', 'Diagnostica ERP completata: report salvato nello storico.');
+        return redirect()->to(route('studio.site.index').'#controlli')->with('status', 'Diagnostica ERP completata: report salvato nello storico.');
     }
 }
