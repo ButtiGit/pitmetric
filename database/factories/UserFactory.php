@@ -71,11 +71,15 @@ class UserFactory extends Factory
     }
 
     /**
-     * Keep the starter-kit helper valid even when two-factor fields are not enabled.
+     * Create a confirmed two-factor account.
      */
     public function withTwoFactor(): static
     {
-        return $this->state(fn (array $attributes): array => []);
+        return $this->state(fn (array $attributes): array => [
+            'two_factor_secret' => encrypt('test-two-factor-secret'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['test-recovery-code'])),
+            'two_factor_confirmed_at' => now(),
+        ]);
     }
 
     public function withButtiDeskAccess(): static

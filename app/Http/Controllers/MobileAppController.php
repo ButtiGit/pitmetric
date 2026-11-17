@@ -33,6 +33,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Fortify;
 use RuntimeException;
 
 class MobileAppController extends Controller
@@ -47,6 +49,7 @@ class MobileAppController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'two_factor_code' => ['nullable', 'string', 'regex:/^[0-9]{6}$/'],
             'device_name' => ['nullable', 'string', 'max:120'],
         ]);
 
@@ -54,6 +57,13 @@ class MobileAppController extends Controller
 
         if (! $user instanceof User || ! Hash::check($validated['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 422);
+        }
+
+        if ($user->hasEnabledTwoFactorAuthentication() && ! app(TwoFactorAuthenticationProvider::class)->verify(
+            Fortify::currentEncrypter()->decrypt($user->two_factor_secret),
+            $validated['two_factor_code'] ?? '',
+        )) {
+            return response()->json(['message' => 'Inserisci un codice valido della tua app di autenticazione.', 'two_factor_required' => true], 422);
         }
 
         return $this->issueToken($user, $validated['device_name'] ?? null);

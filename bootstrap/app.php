@@ -4,12 +4,14 @@ use App\Http\Controllers\ResendWebhookController;
 use App\Http\Middleware\AuthenticateMobileToken;
 use App\Http\Middleware\EnsureDatabaseAccess;
 use App\Http\Middleware\RecordStudioSiteTraffic;
+use App\Http\Middleware\SecureResponses;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -25,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->append(SecureResponses::class);
         $middleware->appendToGroup('web', [SetLocale::class, RecordStudioSiteTraffic::class]);
         $middleware->alias([
             'database.access' => EnsureDatabaseAccess::class,
@@ -32,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['current_password', 'password', 'password_confirmation', 'details', 'message', 'code', 'recovery_code', 'two_factor_code']);
+        $exceptions->respond(fn (Response $response) => app(SecureResponses::class)->protect(request(), $response));
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

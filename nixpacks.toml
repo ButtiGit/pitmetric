@@ -16,7 +16,7 @@ cmds = [
     "php -r 'if (PHP_VERSION_ID < 80427 || PHP_VERSION_ID >= 80500) { fwrite(STDERR, \"PHP 8.4.27 or a newer 8.4 security release is required.\\n\"); exit(1); }'",
     "composer check-platform-reqs --no-dev",
     "npm run build",
-    "npm --prefix mobile install --include=dev --no-fund",
+    "npm --prefix mobile ci --include=dev --no-fund",
     "npm --prefix mobile run build:pwa",
     "mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache",
     "rm -rf public/storage && ln -s ../storage/app/public public/storage",
@@ -62,9 +62,8 @@ http {
     index index.html index.htm index.php;
     default_type application/octet-stream;
 
-    log_format main '$remote_addr - $remote_user [$time_local] $status '
-        '"$request" $body_bytes_sent "$http_referer" '
-        '"$http_user_agent" "$http_x_forwarded_for"';
+    # Keep tokens, IPs, referrers and user agents out of routine access logs.
+    log_format main '$time_iso8601 $status $request_method $body_bytes_sent $request_time';
 
     access_log /dev/stdout main;
     error_log /dev/stderr warn;

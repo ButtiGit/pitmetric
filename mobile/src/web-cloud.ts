@@ -25,16 +25,16 @@ async function request(path: string, init: RequestInit = {}, scope?: WebStorageS
   if (!response.ok) {
     const message = response.status === 401 ? 'Accesso scaduto: accedi di nuovo. I dati da inviare sono conservati.'
       : response.status === 403 ? 'Accesso o permessi cloud non disponibili. I dati da inviare sono conservati.'
-      : response.status === 422 ? (path === '/login' ? 'Credenziali non valide.' : 'Dati non accettati dal server. La registrazione resta sul dispositivo.')
+      : response.status === 422 ? (path === '/login' ? 'Credenziali non valide. Verifica anche il codice autenticatore, se attivo.' : 'Dati non accettati dal server. La registrazione resta sul dispositivo.')
       : 'Server non disponibile. I dati da inviare sono conservati: riprova più tardi.';
     throw new Error(message);
   }
   return response;
 }
 
-export async function loginWeb(email: string, password: string, name?: string): Promise<SessionState> {
+export async function loginWeb(email: string, password: string, name?: string, twoFactorCode = ''): Promise<SessionState> {
   const response = await request(name === undefined ? '/login' : '/register', {
-    method: 'POST', body: JSON.stringify({ email, password, ...(name === undefined ? {} : { name, password_confirmation: password }), device_name: 'PWA' }),
+    method: 'POST', body: JSON.stringify({ email, password, two_factor_code: twoFactorCode, ...(name === undefined ? {} : { name, password_confirmation: password }), device_name: 'PWA' }),
   });
   const body = await response.json();
   if (typeof body.token !== 'string' || !body.session?.authenticated || !Number.isSafeInteger(body.session.user?.id)) {

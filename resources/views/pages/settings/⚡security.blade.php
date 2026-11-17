@@ -97,6 +97,7 @@ new #[Title('Security settings')] class extends Component {
         </form>
 
 
+        @include('partials.two-factor-settings')
     </x-pages::settings.layout>
 
 </section>

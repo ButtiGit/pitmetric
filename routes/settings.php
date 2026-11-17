@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\PrivacyController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
+    Route::get('settings/privacy', [PrivacyController::class, 'index'])->name('privacy.index');
+    Route::post('settings/privacy', [PrivacyController::class, 'store'])->middleware(['password.confirm', 'throttle:5,60'])->name('privacy.store');
 
     Route::livewire('settings/profile', 'pages::settings.profile')->name('profile.edit');
 });

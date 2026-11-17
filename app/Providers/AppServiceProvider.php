@@ -17,6 +17,7 @@ use App\Models\Expense;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceSchedule;
 use App\Models\MaintenanceWorkOrder;
+use App\Models\MobileAccessToken;
 use App\Models\RaceEvent;
 use App\Models\SeasonContract;
 use App\Models\Session;
@@ -38,6 +39,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -80,6 +82,10 @@ class AppServiceProvider extends ServiceProvider
                 app(TrackCaptureContextService::class)->modelCreated($created);
             });
         }
+
+        Event::listen(TwoFactorAuthenticationConfirmed::class, function (TwoFactorAuthenticationConfirmed $event): void {
+            MobileAccessToken::query()->where('user_id', $event->user->id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        });
 
         Gate::define('manage-updates', fn (User $user): bool => $this->isUpdateEditor($user));
 

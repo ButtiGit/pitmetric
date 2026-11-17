@@ -10,7 +10,7 @@
                 <h1 class="mt-3 text-3xl font-black tracking-tight text-pm-text sm:text-4xl">Controlli e analisi<span class="text-[#FF5A36]">.</span></h1>
                 <p class="mt-3 max-w-3xl text-sm leading-6 text-pm-text-secondary">Un solo punto per verificare sito e gestionale, consultare traffico e app e capire come viene utilizzato PitMetric.</p>
                 <nav aria-label="Sezioni controlli e analisi" class="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                    @foreach (['panoramica' => 'Panoramica', 'controlli' => 'Controlli', 'traffico' => 'Traffico', 'app' => 'App e PWA', 'gestionale' => 'Utilizzo gestionale', 'storico' => 'Storico report'] as $anchor => $label)
+                    @foreach (['panoramica' => 'Panoramica', 'controlli' => 'Controlli', 'privacy' => 'Sicurezza e privacy', 'traffico' => 'Traffico', 'app' => 'App e PWA', 'gestionale' => 'Utilizzo gestionale', 'storico' => 'Storico report'] as $anchor => $label)
                         <a href="#{{ $anchor }}" class="pm-ghost-button justify-center text-center text-xs">{{ $label }}</a>
                     @endforeach
                 </nav>
@@ -71,6 +71,8 @@
                     <p class="pm-panel p-5 text-sm text-pm-warning">Diagnostica ERP in attesa delle migrazioni. Le analisi di utilizzo restano consultabili.</p>
                 @endif
             </section>
+
+            @include('studio.site.partials.privacy')
 
             <section id="traffico" aria-labelledby="traffic-title" class="scroll-mt-6 space-y-4">
                 <h2 id="traffic-title" class="text-xl font-black text-pm-text">Traffico del sito</h2>

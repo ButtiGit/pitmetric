@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PrivacyRequest;
 use App\Models\StudioErpCheckRun;
 use App\Models\StudioSiteCheckRun;
 use App\Models\StudioSiteMetric;
+use App\Services\PrivacyReadiness;
 use App\Services\StudioAppActivations;
 use App\Services\StudioErpTechnical;
 use App\Services\StudioSiteDiagnostics;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
 
 final class StudioSiteManagementController extends Controller
 {
-    public function index(StudioSiteReleaseDownloads $releases, StudioAppActivations $activations, StudioErpTechnical $erp): View
+    public function index(StudioSiteReleaseDownloads $releases, StudioAppActivations $activations, StudioErpTechnical $erp, PrivacyReadiness $privacy): View
     {
         $siteReady = $this->isReady();
         $erpReady = Schema::hasTable('studio_erp_check_runs');
@@ -58,7 +60,13 @@ final class StudioSiteManagementController extends Controller
         $activationReady = Schema::hasTable('studio_app_activations');
         $appActivations = $activationReady ? $activations->totals() : null;
 
-        return view('studio.site.index', compact('totals', 'trend', 'trendMaximum', 'topPages', 'httpErrors', 'runs', 'githubApkDownloads', 'activationReady', 'appActivations', 'siteReady', 'erpReady', 'erpRuns', 'erpTotals', 'modules'));
+        $privacyReady = Schema::hasTable('privacy_requests');
+        $privacyRequests = $privacyReady ? PrivacyRequest::query()->with('user:id,name,email')->orderByRaw('CASE WHEN closed_at IS NULL THEN 0 ELSE 1 END')->orderBy('due_at')->paginate(10, ['*'], 'privacy_page') : null;
+        $privacyOverdue = $privacyReady ? PrivacyRequest::query()->whereNull('closed_at')->where('due_at', '<', now())->count() : 0;
+        $privacyChecks = $privacy->checks();
+        $privacyOutstanding = $privacy->outstanding();
+
+        return view('studio.site.index', compact('privacyReady', 'privacyRequests', 'privacyOverdue', 'privacyChecks', 'privacyOutstanding', 'totals', 'trend', 'trendMaximum', 'topPages', 'httpErrors', 'runs', 'githubApkDownloads', 'activationReady', 'appActivations', 'siteReady', 'erpReady', 'erpRuns', 'erpTotals', 'modules'));
     }
 
     public function run(Request $request, StudioSiteDiagnostics $diagnostics): RedirectResponse

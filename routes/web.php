@@ -16,6 +16,7 @@ use App\Http\Controllers\IntelligenceController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\NewsletterPreferencesController;
 use App\Http\Controllers\PrintDocumentController;
+use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PublicUpdateController;
 use App\Http\Controllers\RaceEventController;
 use App\Http\Controllers\RaceEventOperationsController;
@@ -311,6 +312,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->group(function () {
             Route::resource('updates', UpdateStudioController::class)->except('show');
             Route::get('site', [StudioSiteManagementController::class, 'index'])->name('site.index');
+            Route::post('privacy/{privacyRequest}/response', [PrivacyController::class, 'respond'])->middleware(['password.confirm', 'throttle:20,1'])->name('privacy.respond');
             Route::post('site/checks', [StudioSiteManagementController::class, 'run'])->middleware('throttle:3,1')->name('site.checks');
             Route::get('erp', [StudioErpController::class, 'index'])->name('erp.index');
             Route::post('erp/checks', [StudioErpController::class, 'run'])->middleware('throttle:3,1')->name('erp.checks');

@@ -259,9 +259,9 @@ async function api(path: string, init: RequestInit = {}): Promise<Response> {
   return fetch(`${API_BASE}${path}`, { ...init, headers });
 }
 
-export async function login(email: string, password: string): Promise<SessionState> {
-  if (!Capacitor.isNativePlatform()) return loginWeb(email, password);
-  const response = await api('/login', { method: 'POST', body: JSON.stringify({ email, password, device_name: Capacitor.getPlatform() }) });
+export async function login(email: string, password: string, twoFactorCode = ''): Promise<SessionState> {
+  if (!Capacitor.isNativePlatform()) return loginWeb(email, password, undefined, twoFactorCode);
+  const response = await api('/login', { method: 'POST', body: JSON.stringify({ email, password, two_factor_code: twoFactorCode, device_name: Capacitor.getPlatform() }) });
   if (!response.ok) throw new Error(response.status === 422 ? 'Credenziali non valide.' : 'Accesso non riuscito.');
   const data = await response.json();
   await SecureStorage.set('pitmetric.mobile.token', data.token);

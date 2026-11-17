@@ -143,3 +143,14 @@ test('logout, reopening and a different account preserve isolated local data wit
   assert.equal((await cachedWebSnapshot()).workspace.id, 50);
   assert.equal(requests, 1);
 });
+
+
+test('two factor code is sent at login without persisting the password or code', async () => {
+  globalThis.fetch = async (url, init) => {
+    assert.equal(JSON.parse(init.body).two_factor_code, '123456');
+    return json({ token: 'mfa-token', session });
+  };
+  await loginWeb('pn@example.test', 'secret', undefined, '123456');
+  assert.ok(!JSON.stringify(readWebSession()).includes('123456'));
+  assert.ok(!JSON.stringify(readWebSession()).includes('secret'));
+});
